@@ -29,3 +29,11 @@ class ToggleObscurePassword extends LoginEvent {
 class LoginSubmitted extends LoginEvent {
   const LoginSubmitted();
 }
+
+class InitLogin extends LoginEvent {
+  const InitLogin();
+}
+
+class Logout extends LoginEvent {
+  const Logout();
+}

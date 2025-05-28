@@ -1,0 +1,39 @@
+import 'package:equatable/equatable.dart';
+import 'package:latlong2/latlong.dart';
+import '../../models/tag_data.dart';
+
+abstract class TaggingEvent extends Equatable {
+  const TaggingEvent();
+  @override
+  List<Object?> get props => [];
+}
+
+class TagLocation extends TaggingEvent {
+  const TagLocation();
+}
+
+class GetCurrentLocation extends TaggingEvent {
+  const GetCurrentLocation();
+}
+
+class UpdateZoom extends TaggingEvent {
+  final double zoomLevel;
+  const UpdateZoom({required this.zoomLevel});
+}
+
+class UpdateCurrentLocation extends TaggingEvent {
+  final LatLng newPosition;
+  const UpdateCurrentLocation({required this.newPosition});
+}
+
+class DeleteTag extends TaggingEvent {
+  final TagData tagData;
+  const DeleteTag(this.tagData);
+
+  @override
+  List<Object?> get props => [tagData];
+}
+
+class AddTag extends TaggingEvent {
+  const AddTag();
+}

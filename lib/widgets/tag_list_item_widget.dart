@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/tag_data.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 
 class TagListItemWidget extends StatelessWidget {
   final TagData tag;

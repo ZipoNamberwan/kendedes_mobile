@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../models/tag_data.dart';
-import '../bloc/tagging/tagging_bloc.dart';
-import '../bloc/tagging/tagging_event.dart';
+import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
+import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 
 class MarkerDialog extends StatelessWidget {
   final TagData markerData;

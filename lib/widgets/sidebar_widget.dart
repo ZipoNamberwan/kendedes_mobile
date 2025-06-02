@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
-import 'tag_list_item_widget.dart';
+import 'package:kendedes_mobile/widgets/tag_list_item_widget.dart';
 
 class SidebarWidget extends StatelessWidget {
   final List<TagData> tags;

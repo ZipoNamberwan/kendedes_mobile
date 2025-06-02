@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/tag_data.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 
 class MarkerWidget extends StatelessWidget {
   final TagData markerData;

@@ -7,9 +7,9 @@ import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
 import 'package:kendedes_mobile/models/poligon_data.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
-import '../widgets/marker_widget.dart';
-import '../widgets/sidebar_widget.dart';
-import '../widgets/marker_dialog.dart';
+import 'package:kendedes_mobile/widgets/marker_dialog.dart';
+import 'package:kendedes_mobile/widgets/marker_widget.dart';
+import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
@@ -137,10 +137,7 @@ class _HomePageState extends State<_HomePageContent>
           } else if (state is TagSelected) {
             if (state.data.selectedTags.isNotEmpty) {
               final selectedTag = state.data.selectedTags.first;
-              _mapController.move(
-                selectedTag.position,
-                state.data.currentZoom,
-              );
+              _mapController.move(selectedTag.position, state.data.currentZoom);
               _toggleSidebar();
             }
           }
@@ -183,8 +180,9 @@ class _HomePageState extends State<_HomePageContent>
                       markers: [
                         // User tags
                         ...state.data.tags.map((markerData) {
-                          final isSelected = state.data.selectedTags
-                              .contains(markerData);
+                          final isSelected = state.data.selectedTags.contains(
+                            markerData,
+                          );
                           return Marker(
                             point: markerData.position,
                             width: isSelected ? 40 : 30,

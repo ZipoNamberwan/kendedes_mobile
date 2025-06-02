@@ -21,6 +21,11 @@ class UpdateZoom extends TaggingEvent {
   const UpdateZoom({required this.zoomLevel});
 }
 
+class UpdateRotation extends TaggingEvent {
+  final double rotation;
+  const UpdateRotation({required this.rotation});
+}
+
 class UpdateCurrentLocation extends TaggingEvent {
   final LatLng newPosition;
   const UpdateCurrentLocation({required this.newPosition});
@@ -34,6 +39,10 @@ class DeleteTag extends TaggingEvent {
   List<Object?> get props => [tagData];
 }
 
-class AddTag extends TaggingEvent {
-  const AddTag();
+class SelectTag extends TaggingEvent {
+  final TagData tagData;
+  const SelectTag(this.tagData);
+
+  @override
+  List<Object?> get props => [tagData];
 }

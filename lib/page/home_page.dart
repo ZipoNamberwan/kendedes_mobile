@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
+import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
+import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
+import 'package:kendedes_mobile/models/poligon_data.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
+import '../widgets/marker_widget.dart';
+import '../widgets/sidebar_widget.dart';
+import '../widgets/marker_dialog.dart';
 import 'package:latlong2/latlong.dart';
-import '../models/tag_data.dart';
-import '../models/poligon_data.dart';
-import '../bloc/tagging/tagging_bloc.dart';
-import '../bloc/tagging/tagging_event.dart';
-import '../bloc/tagging/tagging_state.dart';
+import 'dart:math' as math;
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -31,6 +35,7 @@ class _HomePageState extends State<_HomePageContent>
   late AnimationController _rippleController;
   late Animation<double> _rippleAnimation;
   late TaggingBloc _taggingBloc;
+  bool _isSidebarOpen = false;
 
   // Example polygon data
   final List<PoligonData> _polygonData = [
@@ -63,7 +68,7 @@ class _HomePageState extends State<_HomePageContent>
     Geolocator.getPositionStream(
       locationSettings: LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // update every 10 meters
+        distanceFilter: 10,
       ),
     ).listen((Position position) {
       final newLocation = LatLng(position.latitude, position.longitude);
@@ -71,8 +76,13 @@ class _HomePageState extends State<_HomePageContent>
     });
 
     _mapController.mapEventStream.listen((event) {
-      final zoom = _mapController.camera.zoom;
-      _taggingBloc.add(UpdateZoom(zoomLevel: zoom));
+      if (event is MapEventMove) {
+        _taggingBloc.add(UpdateZoom(zoomLevel: event.camera.zoom));
+      }
+
+      if (event is MapEventRotate) {
+        _taggingBloc.add(UpdateRotation(rotation: event.camera.rotation));
+      }
     });
   }
 
@@ -82,86 +92,17 @@ class _HomePageState extends State<_HomePageContent>
     super.dispose();
   }
 
-  Widget _buildMarker(TagData markerData) {
-    return GestureDetector(
-      onTap: () => _showMarkerDialog(markerData),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.deepOrange,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(Icons.location_on, color: Colors.white, size: 16),
-      ),
-    );
-  }
-
   void _showMarkerDialog(TagData markerData) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.location_on, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('Marker Details'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ID: ${markerData.id}',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text('Type: ${markerData.type}'),
-              SizedBox(height: 8),
-              Text(
-                'Position: ${markerData.position.latitude.toStringAsFixed(4)}, ${markerData.position.longitude.toStringAsFixed(4)}',
-              ),
-            ],
-          ),
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    // Edit functionality
-                  },
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    context.read<TaggingBloc>().add(DeleteTag(markerData));
-                  },
-                ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
+      builder: (context) => MarkerDialog(markerData: markerData),
     );
+  }
+
+  void _toggleSidebar() {
+    setState(() {
+      _isSidebarOpen = !_isSidebarOpen;
+    });
   }
 
   @override
@@ -178,11 +119,7 @@ class _HomePageState extends State<_HomePageContent>
               ),
             );
 
-            // Zoom and center to the newly added tag
-            _mapController.move(
-              state.newTag.position,
-              state.data.currentZoom, // Zoom level
-            );
+            _mapController.move(state.newTag.position, state.data.currentZoom);
           } else if (state is TagError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -194,8 +131,17 @@ class _HomePageState extends State<_HomePageContent>
             if (state.data.currentLocation != null) {
               _mapController.move(
                 state.data.currentLocation ?? LatLng(-7.9666, 112.6326),
-                state.data.currentZoom, // Zoom level
+                state.data.currentZoom,
               );
+            }
+          } else if (state is TagSelected) {
+            if (state.data.selectedTags.isNotEmpty) {
+              final selectedTag = state.data.selectedTags.first;
+              _mapController.move(
+                selectedTag.position,
+                state.data.currentZoom,
+              );
+              _toggleSidebar();
             }
           }
         },
@@ -236,14 +182,20 @@ class _HomePageState extends State<_HomePageContent>
                     MarkerLayer(
                       markers: [
                         // User tags
-                        ...state.data.tags.map(
-                          (markerData) => Marker(
+                        ...state.data.tags.map((markerData) {
+                          final isSelected = state.data.selectedTags
+                              .contains(markerData);
+                          return Marker(
                             point: markerData.position,
-                            width: 30,
-                            height: 30,
-                            child: _buildMarker(markerData),
-                          ),
-                        ),
+                            width: isSelected ? 40 : 30,
+                            height: isSelected ? 40 : 30,
+                            child: MarkerWidget(
+                              markerData: markerData,
+                              isSelected: isSelected,
+                              onTap: () => _showMarkerDialog(markerData),
+                            ),
+                          );
+                        }),
 
                         // Current location marker
                         if (state.data.currentLocation != null)
@@ -362,10 +314,10 @@ class _HomePageState extends State<_HomePageContent>
                           ),
                           child: IconButton(
                             icon: const Icon(
-                              Icons.person_outline,
+                              Icons.list_alt,
                               color: Colors.white,
                             ),
-                            onPressed: () {},
+                            onPressed: _toggleSidebar,
                           ),
                         ),
                       ],
@@ -389,16 +341,19 @@ class _HomePageState extends State<_HomePageContent>
                         ),
                       ],
                     ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.navigation_outlined,
-                        color: Colors.grey,
-                        size: 24,
+                    child: Transform.rotate(
+                      angle: state.data.rotation * math.pi / 180,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.navigation_outlined,
+                          color: Colors.grey,
+                          size: 24,
+                        ),
+                        onPressed: () {
+                          // Reset map rotation
+                          _mapController.rotate(0.0);
+                        },
                       ),
-                      onPressed: () {
-                        // Reset map rotation
-                        _mapController.rotate(0.0);
-                      },
                     ),
                   ),
                 ),
@@ -438,7 +393,7 @@ class _HomePageState extends State<_HomePageContent>
                                     ? null
                                     : () {
                                       context.read<TaggingBloc>().add(
-                                        const AddTag(),
+                                        const TagLocation(),
                                       );
                                     },
                             child: Row(
@@ -550,6 +505,24 @@ class _HomePageState extends State<_HomePageContent>
                               },
                     ),
                   ),
+                ),
+
+                // Sidebar overlay
+                if (_isSidebarOpen)
+                  GestureDetector(
+                    onTap: _toggleSidebar,
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.3),
+                    ),
+                  ),
+
+                // Right sidebar
+                SidebarWidget(
+                  tags: state.data.tags,
+                  selectedTags: state.data.selectedTags,
+                  isSidebarOpen: _isSidebarOpen,
+                  onToggleSidebar: _toggleSidebar,
+                  onTagTap: (tag) => _taggingBloc.add(SelectTag(tag)),
                 ),
               ],
             ),

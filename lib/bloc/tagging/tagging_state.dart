@@ -30,6 +30,13 @@ class TagError extends TaggingState {
   List<Object> get props => [errorMessage, data];
 }
 
+class TagSelected extends TaggingState {
+  const TagSelected({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class MovedCurrentLocation extends TaggingState {
   const MovedCurrentLocation({required super.data});
 
@@ -45,6 +52,8 @@ class TaggingStateData {
   final bool isLoadingPolygon;
   final bool isLoadingCurrentLocation;
   final double currentZoom;
+  final double rotation;
+  final List<TagData> selectedTags;
 
   TaggingStateData({
     required this.tags,
@@ -54,6 +63,8 @@ class TaggingStateData {
     required this.isLoadingCurrentLocation,
     this.currentLocation,
     required this.currentZoom,
+    required this.rotation,
+    required this.selectedTags,
   });
 
   TaggingStateData copyWith({
@@ -64,6 +75,8 @@ class TaggingStateData {
     bool? isLoadingCurrentLocation,
     LatLng? currentLocation,
     double? currentZoom,
+    double? rotation,
+    List<TagData>? selectedTags,
   }) {
     return TaggingStateData(
       tags: tags ?? this.tags,
@@ -74,6 +87,8 @@ class TaggingStateData {
           isLoadingCurrentLocation ?? this.isLoadingCurrentLocation,
       currentLocation: currentLocation ?? this.currentLocation,
       currentZoom: currentZoom ?? this.currentZoom,
+      rotation: rotation ?? this.rotation,
+      selectedTags: selectedTags ?? this.selectedTags,
     );
   }
 }

@@ -94,7 +94,21 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     });
 
     on<DeleteTag>((event, emit) {
-      // TODO: Implement delete tag logic
+      final updatedTags = List<TagData>.from(state.data.tags)
+        ..removeWhere((tag) => tag.id == event.tagData.id);
+
+      // Also remove from selectedTags if present
+      final updatedSelectedTags = List<TagData>.from(state.data.selectedTags)
+        ..removeWhere((tag) => tag.id == event.tagData.id);
+
+      emit(
+        TagDeleted(
+          data: state.data.copyWith(
+            tags: updatedTags,
+            selectedTags: updatedSelectedTags,
+          ),
+        ),
+      );
     });
 
     on<SelectTag>((event, emit) {

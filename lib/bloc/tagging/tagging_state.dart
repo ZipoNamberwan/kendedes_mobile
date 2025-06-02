@@ -37,6 +37,13 @@ class TagSelected extends TaggingState {
   List<Object> get props => [data];
 }
 
+class TagDeleted extends TaggingState {
+  const TagDeleted({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class MovedCurrentLocation extends TaggingState {
   const MovedCurrentLocation({required super.data});
 

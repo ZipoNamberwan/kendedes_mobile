@@ -21,7 +21,7 @@ class SidebarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedPositioned(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 200),
       top: 0,
       right: isSidebarOpen ? 0 : -300,
       bottom: 0,

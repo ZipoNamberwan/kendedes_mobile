@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 
 class MarkerWidget extends StatelessWidget {
-  final TagData markerData;
+  final TagData tagData;
   final bool isSelected;
   final VoidCallback onTap;
 
   const MarkerWidget({
     super.key,
-    required this.markerData,
+    required this.tagData,
     required this.isSelected,
     required this.onTap,
   });

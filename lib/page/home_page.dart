@@ -641,8 +641,28 @@ class _HomePageState extends State<_HomePageContent>
                       tags: state.data.tags,
                       selectedTags: state.data.selectedTags,
                       isSidebarOpen: _isSidebarOpen,
+                      isMultiSelectMode: state.data.isMultiSelectMode,
                       onToggleSidebar: _toggleSidebar,
-                      onTagTap: (tag) => _taggingBloc.add(SelectTag(tag)),
+                      onTagTap: (tag) {
+                        if (state.data.isMultiSelectMode) {
+                          if (state.data.selectedTags.contains(tag)) {
+                            _taggingBloc.add(RemoveTagFromSelection(tag));
+                          } else {
+                            _taggingBloc.add(AddTagToSelection(tag));
+                          }
+                        } else {
+                          _taggingBloc.add(SelectTag(tag));
+                        }
+                      },
+                      onTagLongPress: (tag) {
+                        if (!state.data.isMultiSelectMode) {
+                          _taggingBloc.add(ToggleMultiSelectMode());
+                          _taggingBloc.add(AddTagToSelection(tag));
+                        }
+                      },
+                      toggleMultiSelectMode: () {
+                        _taggingBloc.add(ToggleMultiSelectMode());
+                      },
                     ),
                   ],
                 );

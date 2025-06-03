@@ -61,6 +61,7 @@ class TaggingStateData {
   final double currentZoom;
   final double rotation;
   final List<TagData> selectedTags;
+  final bool isMultiSelectMode;
 
   TaggingStateData({
     required this.tags,
@@ -72,6 +73,7 @@ class TaggingStateData {
     required this.currentZoom,
     required this.rotation,
     required this.selectedTags,
+    required this.isMultiSelectMode,
   });
 
   TaggingStateData copyWith({
@@ -84,6 +86,7 @@ class TaggingStateData {
     double? currentZoom,
     double? rotation,
     List<TagData>? selectedTags,
+    bool? isMultiSelectMode,
   }) {
     return TaggingStateData(
       tags: tags ?? this.tags,
@@ -96,6 +99,7 @@ class TaggingStateData {
       currentZoom: currentZoom ?? this.currentZoom,
       rotation: rotation ?? this.rotation,
       selectedTags: selectedTags ?? this.selectedTags,
+      isMultiSelectMode: isMultiSelectMode ?? this.isMultiSelectMode,
     );
   }
 }

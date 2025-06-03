@@ -8,6 +8,9 @@ class SidebarWidget extends StatelessWidget {
   final bool isSidebarOpen;
   final VoidCallback onToggleSidebar;
   final void Function(TagData tag) onTagTap;
+  final void Function(TagData tag) onTagLongPress;
+  final void Function() toggleMultiSelectMode;
+  final bool isMultiSelectMode;
 
   const SidebarWidget({
     super.key,
@@ -16,6 +19,9 @@ class SidebarWidget extends StatelessWidget {
     required this.onTagTap,
     required this.tags,
     required this.selectedTags,
+    required this.onTagLongPress,
+    required this.toggleMultiSelectMode,
+    required this.isMultiSelectMode,
   });
 
   @override
@@ -46,25 +52,40 @@ class SidebarWidget extends StatelessWidget {
                 left: 20,
                 right: 10,
               ),
-              decoration: const BoxDecoration(color: Colors.orange),
+              decoration: BoxDecoration(
+                color: isMultiSelectMode ? Colors.blue : Colors.orange,
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.location_on, color: Colors.white, size: 24),
+                  Icon(
+                    isMultiSelectMode ? Icons.check_circle : Icons.location_on,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Tagged Locations',
-                      style: TextStyle(
+                      isMultiSelectMode
+                          ? 'Select Tags (${selectedTags.length})'
+                          : 'Tagged Locations',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: onToggleSidebar,
-                  ),
+                  if (isMultiSelectMode)
+                    IconButton(
+                      icon: const Icon(Icons.done, color: Colors.white),
+                      onPressed: toggleMultiSelectMode,
+                      tooltip: 'Done selecting',
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: onToggleSidebar,
+                    ),
                 ],
               ),
             ),
@@ -75,9 +96,12 @@ class SidebarWidget extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Total Tags:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  Text(
+                    isMultiSelectMode ? 'Selected:' : 'Total Tags:',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -85,11 +109,13 @@ class SidebarWidget extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.orange,
+                      color: isMultiSelectMode ? Colors.blue : Colors.orange,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '${tags.length}',
+                      isMultiSelectMode
+                          ? '${selectedTags.length}'
+                          : '${tags.length}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -128,11 +154,17 @@ class SidebarWidget extends StatelessWidget {
                         itemCount: tags.length,
                         itemBuilder: (context, index) {
                           final tag = tags[index];
-                          final isSelected = selectedTags.contains(tag);
+                          final isSelected =
+                              isMultiSelectMode
+                                  ? selectedTags.contains(tag)
+                                  : selectedTags.contains(tag);
+
                           return TagListItemWidget(
                             tag: tag,
                             isSelected: isSelected,
                             onTap: () => onTagTap(tag),
+                            onLongPress: () => onTagLongPress(tag),
+                            isMultiSelectMode: isMultiSelectMode,
                           );
                         },
                       ),

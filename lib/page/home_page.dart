@@ -13,6 +13,7 @@ import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
 import '../widgets/clustered_markers_dialog.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
+import 'package:kendedes_mobile/widgets/delete_confirmation_dialog.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -641,8 +642,52 @@ class _HomePageState extends State<_HomePageContent>
                       tags: state.data.tags,
                       selectedTags: state.data.selectedTags,
                       isSidebarOpen: _isSidebarOpen,
+                      isMultiSelectMode: state.data.isMultiSelectMode,
                       onToggleSidebar: _toggleSidebar,
-                      onTagTap: (tag) => _taggingBloc.add(SelectTag(tag)),
+                      onTagTap: (tag) {
+                        if (state.data.isMultiSelectMode) {
+                          if (state.data.selectedTags.contains(tag)) {
+                            _taggingBloc.add(RemoveTagFromSelection(tag));
+                          } else {
+                            _taggingBloc.add(AddTagToSelection(tag));
+                          }
+                        } else {
+                          _taggingBloc.add(SelectTag(tag));
+                        }
+                      },
+                      onTagLongPress: (tag) {
+                        if (!state.data.isMultiSelectMode) {
+                          _taggingBloc.add(ToggleMultiSelectMode());
+                          _taggingBloc.add(AddTagToSelection(tag));
+                        }
+                      },
+                      toggleMultiSelectMode:
+                          () => _taggingBloc.add(ToggleMultiSelectMode()),
+                      clearTagSelection:
+                          () => _taggingBloc.add(ClearTagSelection()),
+                      deleteSelectedTags: () {
+                        if (state.data.selectedTags.length == 1) {
+                          // Direct delete for single tag
+                          _taggingBloc.add(DeleteSelectedTags());
+                        } else if (state.data.selectedTags.length > 1) {
+                          // Show confirmation dialog for multiple tags
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return DeleteConfirmationDialog(
+                                tagCount: state.data.selectedTags.length,
+                                onConfirm: () {
+                                  Navigator.of(context).pop();
+                                  _taggingBloc.add(DeleteSelectedTags());
+                                },
+                                onCancel: () {
+                                  Navigator.of(context).pop();
+                                },
+                              );
+                            },
+                          );
+                        }
+                      },
                     ),
                   ],
                 );

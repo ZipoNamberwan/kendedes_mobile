@@ -46,3 +46,31 @@ class SelectTag extends TaggingEvent {
   @override
   List<Object?> get props => [tagData];
 }
+
+class AddTagToSelection extends TaggingEvent {
+  final TagData tagData;
+  const AddTagToSelection(this.tagData);
+
+  @override
+  List<Object?> get props => [tagData];
+}
+
+class RemoveTagFromSelection extends TaggingEvent {
+  final TagData tagData;
+  const RemoveTagFromSelection(this.tagData);
+
+  @override
+  List<Object?> get props => [tagData];
+}
+
+class ToggleMultiSelectMode extends TaggingEvent {
+  const ToggleMultiSelectMode();
+}
+
+class ClearTagSelection extends TaggingEvent {
+  const ClearTagSelection();
+}
+
+class DeleteSelectedTags extends TaggingEvent {
+  const DeleteSelectedTags();
+}

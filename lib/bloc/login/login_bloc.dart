@@ -48,6 +48,21 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       );
     });
 
+    on<MockupLogin>((event, emit) async {
+      emit(
+        LoginState(
+          data: state.data.copyWith(
+            isSubmitting: true,
+            resetAllErrorMessages: true,
+            isSuccess: false,
+            isFailure: false,
+          ),
+        ),
+      );
+      await Future.delayed(const Duration(seconds: 2));
+      emit(LoginSuccess(data: state.data.copyWith(isSuccess: true)));
+    });
+
     on<LoginSubmitted>((event, emit) async {
       emit(
         LoginState(
@@ -75,7 +90,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
       if (password == null || password.isEmpty) {
         passwordError = 'Password kosong';
-      } 
+      }
 
       if (emailError != null || passwordError != null) {
         emit(

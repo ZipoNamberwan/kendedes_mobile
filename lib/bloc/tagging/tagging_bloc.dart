@@ -21,6 +21,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             currentZoom: 16.0,
             rotation: 0.0,
             selectedTags: [],
+            isMultiSelectMode: false,
           ),
         ),
       ) {
@@ -114,6 +115,57 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     on<SelectTag>((event, emit) {
       emit(
         TagSelected(data: state.data.copyWith(selectedTags: [event.tagData])),
+      );
+    });
+
+    on<AddTagToSelection>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            selectedTags: [...state.data.selectedTags, event.tagData],
+          ),
+        ),
+      );
+    });
+
+    on<RemoveTagFromSelection>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            selectedTags:
+                state.data.selectedTags
+                    .where((tag) => tag.id != event.tagData.id)
+                    .toList(),
+          ),
+        ),
+      );
+    });
+
+    on<ToggleMultiSelectMode>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            isMultiSelectMode: !state.data.isMultiSelectMode,
+          ),
+        ),
+      );
+    });
+
+    on<ClearTagSelection>((event, emit) {
+      emit(TaggingState(data: state.data.copyWith(selectedTags: [])));
+    });
+
+    on<DeleteSelectedTags>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            tags:
+                state.data.tags
+                    .where((tag) => !state.data.selectedTags.contains(tag))
+                    .toList(),
+            selectedTags: [],
+          ),
+        ),
       );
     });
 

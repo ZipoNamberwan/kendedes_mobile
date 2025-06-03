@@ -120,7 +120,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
     on<AddTagToSelection>((event, emit) {
       emit(
-        TagSelected(
+        TaggingState(
           data: state.data.copyWith(
             selectedTags: [...state.data.selectedTags, event.tagData],
           ),
@@ -130,7 +130,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
     on<RemoveTagFromSelection>((event, emit) {
       emit(
-        TagSelected(
+        TaggingState(
           data: state.data.copyWith(
             selectedTags:
                 state.data.selectedTags
@@ -143,9 +143,27 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
     on<ToggleMultiSelectMode>((event, emit) {
       emit(
-        TagSelected(
+        TaggingState(
           data: state.data.copyWith(
             isMultiSelectMode: !state.data.isMultiSelectMode,
+          ),
+        ),
+      );
+    });
+
+    on<ClearTagSelection>((event, emit) {
+      emit(TaggingState(data: state.data.copyWith(selectedTags: [])));
+    });
+
+    on<DeleteSelectedTags>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            tags:
+                state.data.tags
+                    .where((tag) => !state.data.selectedTags.contains(tag))
+                    .toList(),
+            selectedTags: [],
           ),
         ),
       );

@@ -66,3 +66,11 @@ class RemoveTagFromSelection extends TaggingEvent {
 class ToggleMultiSelectMode extends TaggingEvent {
   const ToggleMultiSelectMode();
 }
+
+class ClearTagSelection extends TaggingEvent {
+  const ClearTagSelection();
+}
+
+class DeleteSelectedTags extends TaggingEvent {
+  const DeleteSelectedTags();
+}

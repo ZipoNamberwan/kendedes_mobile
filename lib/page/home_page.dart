@@ -13,6 +13,7 @@ import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
 import '../widgets/clustered_markers_dialog.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
+import 'package:kendedes_mobile/widgets/delete_confirmation_dialog.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -660,8 +661,32 @@ class _HomePageState extends State<_HomePageContent>
                           _taggingBloc.add(AddTagToSelection(tag));
                         }
                       },
-                      toggleMultiSelectMode: () {
-                        _taggingBloc.add(ToggleMultiSelectMode());
+                      toggleMultiSelectMode:
+                          () => _taggingBloc.add(ToggleMultiSelectMode()),
+                      clearTagSelection:
+                          () => _taggingBloc.add(ClearTagSelection()),
+                      deleteSelectedTags: () {
+                        if (state.data.selectedTags.length == 1) {
+                          // Direct delete for single tag
+                          _taggingBloc.add(DeleteSelectedTags());
+                        } else if (state.data.selectedTags.length > 1) {
+                          // Show confirmation dialog for multiple tags
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return DeleteConfirmationDialog(
+                                tagCount: state.data.selectedTags.length,
+                                onConfirm: () {
+                                  Navigator.of(context).pop();
+                                  _taggingBloc.add(DeleteSelectedTags());
+                                },
+                                onCancel: () {
+                                  Navigator.of(context).pop();
+                                },
+                              );
+                            },
+                          );
+                        }
                       },
                     ),
                   ],

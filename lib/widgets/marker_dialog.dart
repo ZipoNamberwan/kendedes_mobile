@@ -65,8 +65,6 @@ class MarkerDialog extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  Text('Type: ${tagData.type}'),
-                  const SizedBox(height: 8),
                   Text(
                     'Position: ${tagData.position.latitude.toStringAsFixed(4)}, ${tagData.position.longitude.toStringAsFixed(4)}',
                   ),

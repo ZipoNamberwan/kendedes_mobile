@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/login_state.dart';
-import 'package:kendedes_mobile/page/home_page.dart';
+import 'package:kendedes_mobile/pages/project_list_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -30,7 +30,7 @@ class _LoginPageState extends State<LoginPage> {
           // Navigate to the home page or dashboard
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
+            MaterialPageRoute(builder: (context) => const ProjectListPage()),
           );
         }
       },

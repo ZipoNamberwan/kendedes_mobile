@@ -98,7 +98,7 @@ class ClusteredMarkersDialog extends StatelessWidget {
                       ],
                     ),
                     title: Text(
-                      tag.type ?? 'Tagged Location',
+                      'Tagged Location',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: isSelected ? Colors.green : null,

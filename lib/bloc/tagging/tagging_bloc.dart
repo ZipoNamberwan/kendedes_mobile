@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
@@ -13,6 +14,13 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     : super(
         TaggingState(
           data: TaggingStateData(
+            project: Project(
+              id: '',
+              name: '',
+              description: '',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
             tags: [],
             polygons: [],
             isLoadingTag: false,
@@ -25,17 +33,27 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           ),
         ),
       ) {
+    on<InitTag>((event, emit) {
+      emit(TaggingState(data: state.data.copyWith(project: event.project)));
+    });
+
     on<TagLocation>((event, emit) async {
       emit(TaggingState(data: state.data.copyWith(isLoadingTag: true)));
 
       try {
         Position position = await _getCurrentPosition();
 
+        final time = DateTime.now();
         // Create new tag data
         final newTag = TagData(
           id: _uuid.v4(),
-          type: 'Tagged Location',
           position: LatLng(position.latitude, position.longitude),
+          createdAt: time,
+          updatedAt: time,
+          hasChanged: true,
+          type: TagType.auto,
+          initialPosition: LatLng(position.latitude, position.longitude),
+          isDeleted: false,
         );
 
         // Add to existing tags

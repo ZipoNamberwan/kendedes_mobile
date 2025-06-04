@@ -6,32 +6,26 @@ import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
 import 'package:kendedes_mobile/models/poligon_data.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_widget.dart';
 import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
-import '../widgets/clustered_markers_dialog.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
-import 'package:kendedes_mobile/widgets/delete_confirmation_dialog.dart';
+import 'package:kendedes_mobile/widgets/delete_tagging_confirmation_dialog.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class TaggingPage extends StatefulWidget {
+  final Project project;
 
-  @override
-  Widget build(BuildContext context) {
-    return _HomePageContent();
-  }
-}
-
-class _HomePageContent extends StatefulWidget {
-  const _HomePageContent();
+  const TaggingPage({super.key, required this.project});
 
   @override
-  State<_HomePageContent> createState() => _HomePageState();
+  State<TaggingPage> createState() => _TaggingPageState();
 }
 
-class _HomePageState extends State<_HomePageContent>
+class _TaggingPageState extends State<TaggingPage>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   late AnimationController _rippleController;
@@ -56,7 +50,7 @@ class _HomePageState extends State<_HomePageContent>
   @override
   void initState() {
     super.initState();
-    _taggingBloc = TaggingBloc();
+    _taggingBloc = TaggingBloc()..add(InitTag(project: widget.project));
 
     _rippleController = AnimationController(
       duration: const Duration(seconds: 2),
@@ -413,10 +407,10 @@ class _HomePageState extends State<_HomePageContent>
                               size: 24,
                             ),
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Text(
-                                'Kendedes Mobile',
-                                style: TextStyle(
+                                state.data.project.name,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -674,7 +668,7 @@ class _HomePageState extends State<_HomePageContent>
                           showDialog(
                             context: context,
                             builder: (BuildContext context) {
-                              return DeleteConfirmationDialog(
+                              return DeleteTaggingConfirmationDialog(
                                 tagCount: state.data.selectedTags.length,
                                 onConfirm: () {
                                   Navigator.of(context).pop();

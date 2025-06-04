@@ -91,7 +91,7 @@ class TagListItemWidget extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            tag.type ?? 'Tagged Location',
+                            'Tagged Location',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,

@@ -1,11 +1,17 @@
 import 'package:equatable/equatable.dart';
+import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:latlong2/latlong.dart';
-import '../../models/tag_data.dart';
 
 abstract class TaggingEvent extends Equatable {
   const TaggingEvent();
   @override
   List<Object?> get props => [];
+}
+
+class InitTag extends TaggingEvent {
+  final Project project;
+  const InitTag({required this.project});
 }
 
 class TagLocation extends TaggingEvent {

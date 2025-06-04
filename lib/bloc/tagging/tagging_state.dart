@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:kendedes_mobile/models/poligon_data.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -52,6 +53,7 @@ class MovedCurrentLocation extends TaggingState {
 }
 
 class TaggingStateData {
+  final Project project;
   final List<TagData> tags;
   final List<PoligonData> polygons;
   final LatLng? currentLocation;
@@ -64,6 +66,7 @@ class TaggingStateData {
   final bool isMultiSelectMode;
 
   TaggingStateData({
+    required this.project,
     required this.tags,
     required this.polygons,
     required this.isLoadingTag,
@@ -77,6 +80,7 @@ class TaggingStateData {
   });
 
   TaggingStateData copyWith({
+    Project? project,
     List<TagData>? tags,
     List<PoligonData>? polygons,
     bool? isLoadingTag,
@@ -89,6 +93,7 @@ class TaggingStateData {
     bool? isMultiSelectMode,
   }) {
     return TaggingStateData(
+      project: project ?? this.project,
       tags: tags ?? this.tags,
       polygons: polygons ?? this.polygons,
       isLoadingTag: isLoadingTag ?? this.isLoadingTag,

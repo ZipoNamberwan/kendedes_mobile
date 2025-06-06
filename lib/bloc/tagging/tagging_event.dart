@@ -80,3 +80,9 @@ class ClearTagSelection extends TaggingEvent {
 class DeleteSelectedTags extends TaggingEvent {
   const DeleteSelectedTags();
 }
+
+class RecordTagLocation extends TaggingEvent {
+  const RecordTagLocation();
+}
+
+

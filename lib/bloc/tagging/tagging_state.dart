@@ -52,6 +52,14 @@ class MovedCurrentLocation extends TaggingState {
   List<Object> get props => [data];
 }
 
+class RecordedLocation extends TaggingState {
+  final LatLng position;
+  const RecordedLocation({required this.position, required super.data});
+
+  @override
+  List<Object> get props => [position, data];
+}
+
 class TaggingStateData {
   final Project project;
   final List<TagData> tags;

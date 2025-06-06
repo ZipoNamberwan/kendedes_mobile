@@ -10,56 +10,30 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
   ProjectBloc() : super(ProjectState(data: ProjectStateData(projects: []))) {
     on<SaveProject>((event, emit) {
       final formFields = state.data.formFields;
-      final projectId = formFields['id']?.value as String?;
-      final projectName = formFields['name']?.value as String?;
-      final projectDescription = formFields['description']?.value as String?;
+      final validationResult = _validateProjectForm(formFields);
 
-      // Validate required fields
-      Map<String, ProjectFormFieldState<dynamic>> updatedFormFields = Map.from(
-        formFields,
-      );
-      bool hasErrors = false;
-
-      if (projectName == null || projectName.trim().isEmpty) {
-        updatedFormFields['name'] = ProjectFormFieldState<String>(
-          value: projectName,
-          error: 'Nama projek tidak bisa kosong',
-        );
-        hasErrors = true;
-      } else if (projectName.trim().length < 4) {
-        updatedFormFields['name'] = ProjectFormFieldState<String>(
-          value: projectName,
-          error: 'Nama projek minimal 4 karakter',
-        );
-        hasErrors = true;
-      } else {
-        updatedFormFields['name'] = ProjectFormFieldState<String>(
-          value: projectName,
-          error: null,
-        );
-      }
-
-      updatedFormFields['description'] = ProjectFormFieldState<String?>(
-        value: projectDescription,
-        error: null,
-      );
-
-      if (hasErrors) {
+      if (validationResult.hasErrors) {
         emit(
           ProjectState(
-            data: state.data.copyWith(formFields: updatedFormFields),
+            data: state.data.copyWith(
+              formFields: validationResult.updatedFields,
+            ),
           ),
         );
         return;
       }
 
-      final now = DateTime.now();
+      final projectId = formFields['id']?.value as String?;
+      final projectName = formFields['name']?.value as String;
+      final projectDescription = formFields['description']?.value as String?;
 
-      if (projectId == null || projectId.isEmpty) {
-        // Create new project
+      final now = DateTime.now();
+      final isNewProject = projectId == null || projectId.isEmpty;
+
+      if (isNewProject) {
         final newProject = Project(
           id: _uuid.v4(),
-          name: projectName!.trim(),
+          name: projectName.trim(),
           description: projectDescription?.trim(),
           createdAt: now,
           updatedAt: now,
@@ -69,29 +43,27 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
           ProjectAdded(
             data: state.data.copyWith(
               projects: [...state.data.projects, newProject],
-              resetForm: true, // Reset form after adding
+              resetForm: true,
             ),
           ),
         );
       } else {
-        // Update existing project
         final updatedProjects =
             state.data.projects.map((project) {
-              if (project.id == projectId) {
-                return project.copyWith(
-                  name: projectName!.trim(),
-                  description: projectDescription?.trim(),
-                  updatedAt: now,
-                );
-              }
-              return project;
+              return project.id == projectId
+                  ? project.copyWith(
+                    name: projectName.trim(),
+                    description: projectDescription?.trim(),
+                    updatedAt: now,
+                  )
+                  : project;
             }).toList();
 
         emit(
           ProjectUpdated(
             data: state.data.copyWith(
               projects: updatedProjects,
-              resetForm: true, // Reset form after updating
+              resetForm: true,
             ),
           ),
         );
@@ -175,4 +147,51 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       emit(ProjectState(data: state.data.copyWith(resetForm: true)));
     });
   }
+
+  ProjectValidationResult _validateProjectForm(
+    Map<String, ProjectFormFieldState<dynamic>> formFields,
+  ) {
+    Map<String, ProjectFormFieldState<dynamic>> updatedFields = Map.from(
+      formFields,
+    );
+    bool hasErrors = false;
+
+    final projectName = formFields['name']?.value as String?;
+    final projectDescription = formFields['description']?.value as String?;
+
+    // Validate project name
+    if (projectName == null || projectName.trim().isEmpty) {
+      updatedFields['name'] = ProjectFormFieldState<String>(
+        value: projectName,
+        error: 'Nama projek tidak bisa kosong',
+      );
+      hasErrors = true;
+    } else if (projectName.trim().length < 4) {
+      updatedFields['name'] = ProjectFormFieldState<String>(
+        value: projectName,
+        error: 'Nama projek minimal 4 karakter',
+      );
+      hasErrors = true;
+    } else {
+      updatedFields['name'] = ProjectFormFieldState<String>(
+        value: projectName,
+        error: null,
+      );
+    }
+
+    // Clear description error (if any)
+    updatedFields['description'] = ProjectFormFieldState<String?>(
+      value: projectDescription,
+      error: null,
+    );
+
+    return ProjectValidationResult(updatedFields, hasErrors);
+  }
+}
+
+class ProjectValidationResult {
+  final Map<String, ProjectFormFieldState<dynamic>> updatedFields;
+  final bool hasErrors;
+
+  ProjectValidationResult(this.updatedFields, this.hasErrors);
 }

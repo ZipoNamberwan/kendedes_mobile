@@ -66,11 +66,7 @@ class _ProjectListPageState extends State<ProjectListPage>
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ProjectBloc, ProjectState>(
-      listener: (context, state) {
-        if (state is ProjectDeleted) {
-          Navigator.of(context).pop();
-        }
-      },
+      listener: (context, state) {},
       builder: (context, state) {
         return Scaffold(
           backgroundColor: Colors.grey[50],
@@ -284,65 +280,77 @@ class _ProjectListPageState extends State<ProjectListPage>
                   opacity: _fadeAnimation,
                   child:
                       state.data.projects.isEmpty
-                          ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(32),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade50,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.grey.shade200,
-                                      width: 2,
+                          ? SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight:
+                                    MediaQuery.of(context).size.height * 0.5,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(32),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade50,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.grey.shade200,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.folder_open_rounded,
+                                      size: 64,
+                                      color: Colors.grey.shade400,
                                     ),
                                   ),
-                                  child: Icon(
-                                    Icons.folder_open_rounded,
-                                    size: 64,
-                                    color: Colors.grey.shade400,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                Text(
-                                  'Belum ada projek',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Buat projek untuk mulai tagging',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                                const SizedBox(height: 32),
-                                ElevatedButton.icon(
-                                  onPressed: () => _showProjectForm(),
-                                  icon: const Icon(Icons.add_rounded),
-                                  label: const Text('Buat Projek'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    elevation: 8,
-                                    shadowColor: Colors.orange.withValues(
-                                      alpha: 0.3,
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'Belum ada projek',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade600,
                                     ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Buat projek untuk mulai tagging',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
+                                  ElevatedButton.icon(
+                                    onPressed: () => _showProjectForm(),
+                                    icon: const Icon(Icons.add_rounded),
+                                    label: const Text('Buat Projek'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 32,
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      elevation: 8,
+                                      shadowColor: Colors.orange.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height:
+                                        MediaQuery.of(context).padding.bottom +
+                                        20,
+                                  ),
+                                ],
+                              ),
                             ),
                           )
                           : ListView.builder(

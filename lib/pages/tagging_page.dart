@@ -12,6 +12,7 @@ import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_widget.dart';
 import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
+import 'package:kendedes_mobile/widgets/add_tag_dialog.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 import 'package:kendedes_mobile/widgets/delete_tagging_confirmation_dialog.dart';
@@ -204,8 +205,6 @@ class _TaggingPageState extends State<TaggingPage>
                 backgroundColor: Colors.green,
               ),
             );
-
-            _mapController.move(state.newTag.position, state.data.currentZoom);
           } else if (state is TagError) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
@@ -227,6 +226,22 @@ class _TaggingPageState extends State<TaggingPage>
               _mapController.move(selectedTag.position, state.data.currentZoom);
               _toggleSidebar();
             }
+          } else if (state is RecordedLocation) {
+            _mapController.move(state.position, state.data.currentZoom);
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder:
+                  (context) => AddTagDialog(
+                    position: state.position,
+                    onCancel: () {
+                      Navigator.of(context).pop();
+                    },
+                    onSave: (TagData newTag) {
+                      // Navigator.of(context).pop();
+                    },
+                  ),
+            );
           }
         },
         builder: (context, state) {
@@ -506,11 +521,9 @@ class _TaggingPageState extends State<TaggingPage>
                                 onTap:
                                     state.data.isLoadingTag
                                         ? null
-                                        : () {
-                                          context.read<TaggingBloc>().add(
-                                            const TagLocation(),
-                                          );
-                                        },
+                                        : () => _taggingBloc.add(
+                                          RecordTagLocation(),
+                                        ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -613,11 +626,9 @@ class _TaggingPageState extends State<TaggingPage>
                           onPressed:
                               state.data.isLoadingCurrentLocation
                                   ? null
-                                  : () {
-                                    context.read<TaggingBloc>().add(
-                                      const GetCurrentLocation(),
-                                    );
-                                  },
+                                  : () => _taggingBloc.add(
+                                    const GetCurrentLocation(),
+                                  ),
                         ),
                       ),
                     ),

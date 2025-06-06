@@ -85,4 +85,28 @@ class RecordTagLocation extends TaggingEvent {
   const RecordTagLocation();
 }
 
+class CreateForm extends TaggingEvent {
+  const CreateForm();
+}
 
+class EditForm extends TaggingEvent {
+  final TagData tagData;
+  const EditForm({required this.tagData});
+}
+
+class SetTaggingFormField extends TaggingEvent {
+  final String key;
+  final dynamic value;
+  const SetTaggingFormField(this.key, this.value);
+
+  @override
+  List<Object?> get props => [key, value];
+}
+
+class SaveForm extends TaggingEvent {
+  const SaveForm();
+}
+
+class CancelForm extends TaggingEvent {
+  const CancelForm();
+}

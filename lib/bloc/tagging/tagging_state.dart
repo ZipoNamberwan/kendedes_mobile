@@ -53,11 +53,10 @@ class MovedCurrentLocation extends TaggingState {
 }
 
 class RecordedLocation extends TaggingState {
-  final LatLng position;
-  const RecordedLocation({required this.position, required super.data});
+  const RecordedLocation({required super.data});
 
   @override
-  List<Object> get props => [position, data];
+  List<Object> get props => [data];
 }
 
 class TaggingStateData {
@@ -73,6 +72,10 @@ class TaggingStateData {
   final List<TagData> selectedTags;
   final bool isMultiSelectMode;
 
+//form attribute
+  final bool isSubmitting;
+  final Map<String, TaggingFormFieldState<dynamic>> formFields;
+
   TaggingStateData({
     required this.project,
     required this.tags,
@@ -85,7 +88,26 @@ class TaggingStateData {
     required this.rotation,
     required this.selectedTags,
     required this.isMultiSelectMode,
-  });
+
+    required this.isSubmitting,
+    Map<String, TaggingFormFieldState<dynamic>>? formFields,
+  }) : formFields = formFields ?? _generateFormFields();
+
+  static Map<String, TaggingFormFieldState<dynamic>> _generateFormFields() {
+    final formFields = <String, TaggingFormFieldState<dynamic>>{};
+
+    formFields['id'] = TaggingFormFieldState<String?>();
+    formFields['name'] = TaggingFormFieldState<String>();
+    formFields['owner'] = TaggingFormFieldState<String?>();
+    formFields['address'] = TaggingFormFieldState<String?>();
+    formFields['building'] = TaggingFormFieldState<BuildingStatus>();
+    formFields['description'] = TaggingFormFieldState<String>();
+    formFields['sector'] = TaggingFormFieldState<Sector>();
+    formFields['note'] = TaggingFormFieldState<String?>();
+    formFields['position'] = TaggingFormFieldState<LatLng>();
+
+    return formFields;
+  }
 
   TaggingStateData copyWith({
     Project? project,
@@ -99,6 +121,10 @@ class TaggingStateData {
     double? rotation,
     List<TagData>? selectedTags,
     bool? isMultiSelectMode,
+
+    bool? isSubmitting,
+    Map<String, TaggingFormFieldState<dynamic>>? formFields,
+    bool? resetForm,
   }) {
     return TaggingStateData(
       project: project ?? this.project,
@@ -113,6 +139,25 @@ class TaggingStateData {
       rotation: rotation ?? this.rotation,
       selectedTags: selectedTags ?? this.selectedTags,
       isMultiSelectMode: isMultiSelectMode ?? this.isMultiSelectMode,
+
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      formFields:
+          (resetForm ?? false)
+              ? _generateFormFields()
+              : formFields ?? this.formFields,
     );
   }
+}
+
+class TaggingFormFieldState<T> {
+  final T? value;
+  final String? error;
+
+  TaggingFormFieldState({this.value, this.error});
+
+  TaggingFormFieldState<T> copyWith({T? value, String? error}) {
+    return TaggingFormFieldState<T>(value: value ?? this.value, error: error);
+  }
+
+  TaggingFormFieldState<T> clearError() => copyWith(error: null);
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
+import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'pages/login_page.dart';
 
 void main() {
@@ -20,6 +21,7 @@ class MyApp extends StatelessWidget {
           create: (context) => LoginBloc()..add(MockupLogin()),
         ),
         BlocProvider<ProjectBloc>(create: (context) => ProjectBloc()),
+        BlocProvider<TaggingBloc>(create: (context) => TaggingBloc()),
       ],
       child: MaterialApp(
         title: 'Kendedes Mobile',

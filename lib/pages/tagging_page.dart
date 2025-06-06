@@ -12,7 +12,7 @@ import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_widget.dart';
 import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
-import 'package:kendedes_mobile/widgets/add_tag_dialog.dart';
+import 'package:kendedes_mobile/widgets/tagging_form_dialog.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 import 'package:kendedes_mobile/widgets/delete_tagging_confirmation_dialog.dart';
@@ -51,7 +51,10 @@ class _TaggingPageState extends State<TaggingPage>
   @override
   void initState() {
     super.initState();
-    _taggingBloc = TaggingBloc()..add(InitTag(project: widget.project));
+    _taggingBloc =
+        context.read<TaggingBloc>()
+          ..add(InitTag(project: widget.project))
+          ..add(GetCurrentLocation());
 
     _rippleController = AnimationController(
       duration: const Duration(seconds: 2),
@@ -193,514 +196,496 @@ class _TaggingPageState extends State<TaggingPage>
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<TaggingBloc>(
-      create: (context) => _taggingBloc..add(GetCurrentLocation()),
-      child: BlocConsumer<TaggingBloc, TaggingState>(
-        listener: (context, state) {
-          if (state is TagSuccess) {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Location tagged successfully!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is TagError) {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage),
-                backgroundColor: Colors.red,
-              ),
-            );
-          } else if (state is MovedCurrentLocation) {
-            if (state.data.currentLocation != null) {
-              _mapController.move(
-                state.data.currentLocation ?? LatLng(-7.9666, 112.6326),
-                state.data.currentZoom,
-              );
-            }
-          } else if (state is TagSelected) {
-            if (state.data.selectedTags.isNotEmpty) {
-              final selectedTag = state.data.selectedTags.first;
-              _mapController.move(selectedTag.position, state.data.currentZoom);
-              _toggleSidebar();
-            }
-          } else if (state is RecordedLocation) {
-            _mapController.move(state.position, state.data.currentZoom);
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder:
-                  (context) => AddTagDialog(
-                    position: state.position,
-                    onCancel: () {
-                      Navigator.of(context).pop();
-                    },
-                    onSave: (TagData newTag) {
-                      // Navigator.of(context).pop();
-                    },
-                  ),
+    return BlocConsumer<TaggingBloc, TaggingState>(
+      listener: (context, state) {
+        if (state is TagSuccess) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Location tagged successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (state is TagError) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else if (state is MovedCurrentLocation) {
+          if (state.data.currentLocation != null) {
+            _mapController.move(
+              state.data.currentLocation ?? LatLng(-7.9666, 112.6326),
+              state.data.currentZoom,
             );
           }
-        },
-        builder: (context, state) {
-          return Scaffold(
-            body: LayoutBuilder(
-              builder: (context, constraints) {
-                final mapSize = Size(
-                  constraints.maxWidth,
-                  constraints.maxHeight,
-                );
-                return Stack(
-                  children: [
-                    FlutterMap(
-                      mapController: _mapController,
-                      options: MapOptions(
-                        initialCenter: LatLng(-7.9666, 112.6326),
-                        initialZoom: state.data.currentZoom,
-                        onLongPress: (tapPosition, point) => {},
+        } else if (state is TagSelected) {
+          if (state.data.selectedTags.isNotEmpty) {
+            final selectedTag = state.data.selectedTags.first;
+            _mapController.move(selectedTag.position, state.data.currentZoom);
+            _toggleSidebar();
+          }
+        } else if (state is RecordedLocation) {
+          _mapController.move(
+            state.data.formFields['position']?.value ??
+                LatLng(-7.9666, 112.6326),
+            state.data.currentZoom,
+          );
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => TaggingFormDialog(),
+          );
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final mapSize = Size(constraints.maxWidth, constraints.maxHeight);
+              return Stack(
+                children: [
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: LatLng(-7.9666, 112.6326),
+                      initialZoom: state.data.currentZoom,
+                      onLongPress: (tapPosition, point) => {},
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.kendedes_mobile',
                       ),
-                      children: [
-                        TileLayer(
-                          urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.example.kendedes_mobile',
-                        ),
 
-                        // Polygon layer
-                        PolygonLayer(
-                          polygons:
-                              _polygonData
-                                  .map(
-                                    (polygonData) => Polygon(
-                                      points: polygonData.points,
-                                      color: Colors.orange.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                      borderStrokeWidth: 2,
-                                      borderColor: Colors.orange,
+                      // Polygon layer
+                      PolygonLayer(
+                        polygons:
+                            _polygonData
+                                .map(
+                                  (polygonData) => Polygon(
+                                    points: polygonData.points,
+                                    color: Colors.orange.withValues(alpha: 0.3),
+                                    borderStrokeWidth: 2,
+                                    borderColor: Colors.orange,
+                                  ),
+                                )
+                                .toList(),
+                      ),
+
+                      // Marker layer from bloc state
+                      MarkerLayer(
+                        markers: [
+                          // User tags: show selected tags above non-selected tags
+                          ...[
+                            ...state.data.tags.where(
+                              (tag) => !state.data.selectedTags.contains(tag),
+                            ),
+                            ...state.data.selectedTags,
+                          ].map((tagData) {
+                            final isSelected = state.data.selectedTags.contains(
+                              tagData,
+                            );
+                            return Marker(
+                              point: tagData.position,
+                              width: isSelected ? 40 : 30,
+                              height: isSelected ? 40 : 30,
+                              child: MarkerWidget(
+                                tagData: tagData,
+                                isSelected: isSelected,
+                                onTap:
+                                    () => _handleMarkerClick(
+                                      tagData,
+                                      state.data.tags,
+                                      state.data.selectedTags,
+                                      state.data.currentZoom,
+                                      mapSize,
                                     ),
-                                  )
-                                  .toList(),
-                        ),
-
-                        // Marker layer from bloc state
-                        MarkerLayer(
-                          markers: [
-                            // User tags: show selected tags above non-selected tags
-                            ...[
-                              ...state.data.tags.where(
-                                (tag) => !state.data.selectedTags.contains(tag),
                               ),
-                              ...state.data.selectedTags,
-                            ].map((tagData) {
-                              final isSelected = state.data.selectedTags
-                                  .contains(tagData);
-                              return Marker(
-                                point: tagData.position,
-                                width: isSelected ? 40 : 30,
-                                height: isSelected ? 40 : 30,
-                                child: MarkerWidget(
-                                  tagData: tagData,
-                                  isSelected: isSelected,
-                                  onTap:
-                                      () => _handleMarkerClick(
-                                        tagData,
-                                        state.data.tags,
-                                        state.data.selectedTags,
-                                        state.data.currentZoom,
-                                        mapSize,
-                                      ),
-                                ),
-                              );
-                            }),
+                            );
+                          }),
 
-                            // Current location marker
-                            if (state.data.currentLocation != null)
-                              Marker(
-                                point: state.data.currentLocation!,
-                                width: 60,
-                                height: 60,
-                                child: IgnorePointer(
-                                  ignoring: true,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      // Animated ripple effect
-                                      AnimatedBuilder(
-                                        animation: _rippleAnimation,
-                                        builder: (context, child) {
-                                          return Container(
-                                            width: 60 * _rippleAnimation.value,
-                                            height: 60 * _rippleAnimation.value,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
+                          // Current location marker
+                          if (state.data.currentLocation != null)
+                            Marker(
+                              point: state.data.currentLocation!,
+                              width: 60,
+                              height: 60,
+                              child: IgnorePointer(
+                                ignoring: true,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    // Animated ripple effect
+                                    AnimatedBuilder(
+                                      animation: _rippleAnimation,
+                                      builder: (context, child) {
+                                        return Container(
+                                          width: 60 * _rippleAnimation.value,
+                                          height: 60 * _rippleAnimation.value,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.blue.withValues(
+                                              alpha:
+                                                  (1 - _rippleAnimation.value) *
+                                                  0.3,
+                                            ),
+                                            border: Border.all(
                                               color: Colors.blue.withValues(
                                                 alpha:
-                                                    (1 -
-                                                        _rippleAnimation
-                                                            .value) *
-                                                    0.3,
+                                                    1 - _rippleAnimation.value,
                                               ),
-                                              border: Border.all(
-                                                color: Colors.blue.withValues(
-                                                  alpha:
-                                                      1 -
-                                                      _rippleAnimation.value,
-                                                ),
-                                                width: 2,
-                                              ),
+                                              width: 2,
                                             ),
-                                          );
-                                        },
-                                      ),
-                                      // Main location dot
-                                      Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 3,
                                           ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(
-                                                alpha: 0.4,
-                                              ),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 3),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    // Floating title bar
-                    Positioned(
-                      top: MediaQuery.of(context).padding.top + 15,
-                      left: 15,
-                      right: 15,
-                      child: Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: const LinearGradient(
-                            colors: [Colors.orange, Colors.deepOrange],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                            BoxShadow(
-                              color: Colors.orange.withValues(alpha: 0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 16),
-                            const Icon(
-                              Icons.location_on,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                state.data.project.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.list_alt,
-                                  color: Colors.white,
-                                ),
-                                onPressed: _toggleSidebar,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Compass button
-                    Positioned(
-                      top: MediaQuery.of(context).padding.top + 85,
-                      right: 15,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Transform.rotate(
-                          angle: state.data.rotation * math.pi / 180,
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.navigation_outlined,
-                              color: Colors.grey,
-                              size: 24,
-                            ),
-                            onPressed: () {
-                              // Reset map rotation
-                              _mapController.rotate(0.0);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Main tag location button
-                    Positioned(
-                      bottom: 30,
-                      left: 20,
-                      right: 20,
-                      child: BlocBuilder<TaggingBloc, TaggingState>(
-                        builder: (context, state) {
-                          return Container(
-                            height: 60,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(30),
-                              gradient: const LinearGradient(
-                                colors: [Colors.orange, Colors.deepOrange],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.orange.withValues(alpha: 0.4),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(30),
-                                splashColor: Colors.white.withValues(
-                                  alpha: 0.2,
-                                ),
-                                highlightColor: Colors.white.withValues(
-                                  alpha: 0.1,
-                                ),
-                                onTap:
-                                    state.data.isLoadingTag
-                                        ? null
-                                        : () => _taggingBloc.add(
-                                          RecordTagLocation(),
-                                        ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (state.data.isLoadingTag)
-                                      const SizedBox(
-                                        width: 28,
-                                        height: 28,
-                                        child: CircularProgressIndicator(
+                                        );
+                                      },
+                                    ),
+                                    // Main location dot
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
                                           color: Colors.white,
-                                          strokeWidth: 2,
+                                          width: 3,
                                         ),
-                                      )
-                                    else
-                                      const Icon(
-                                        Icons.add_location_alt,
-                                        color: Colors.white,
-                                        size: 28,
-                                      ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      state.data.isLoadingTag
-                                          ? 'Tagging...'
-                                          : 'Tag Location',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.4,
+                                            ),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                          );
-                        },
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Floating title bar
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 15,
+                    left: 15,
+                    right: 15,
+                    child: Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: const LinearGradient(
+                          colors: [Colors.orange, Colors.deepOrange],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                          BoxShadow(
+                            color: Colors.orange.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 16),
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              state.data.project.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.list_alt,
+                                color: Colors.white,
+                              ),
+                              onPressed: _toggleSidebar,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
 
-                    // Download polygon button
-                    Positioned(
-                      bottom: 170,
-                      right: 15,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
+                  // Compass button
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 85,
+                    right: 15,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Transform.rotate(
+                        angle: state.data.rotation * math.pi / 180,
                         child: IconButton(
                           icon: const Icon(
-                            Icons.download,
-                            color: Colors.orange,
+                            Icons.navigation_outlined,
+                            color: Colors.grey,
                             size: 24,
                           ),
                           onPressed: () {
-                            // Download polygon functionality
+                            // Reset map rotation
+                            _mapController.rotate(0.0);
                           },
                         ),
                       ),
                     ),
+                  ),
 
-                    // My location button
-                    Positioned(
-                      bottom: 110,
-                      right: 15,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
+                  // Main tag location button
+                  Positioned(
+                    bottom: 30,
+                    left: 20,
+                    right: 20,
+                    child: BlocBuilder<TaggingBloc, TaggingState>(
+                      builder: (context, state) {
+                        return Container(
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                            gradient: const LinearGradient(
+                              colors: [Colors.orange, Colors.deepOrange],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
                             ),
-                          ],
-                        ),
-                        child: IconButton(
-                          icon:
-                              state.data.isLoadingCurrentLocation
-                                  ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.orange,
-                                      strokeWidth: 2,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.orange.withValues(alpha: 0.4),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(30),
+                              splashColor: Colors.white.withValues(alpha: 0.2),
+                              highlightColor: Colors.white.withValues(
+                                alpha: 0.1,
+                              ),
+                              onTap:
+                                  state.data.isLoadingTag
+                                      ? null
+                                      : () =>
+                                          _taggingBloc.add(RecordTagLocation()),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (state.data.isLoadingTag)
+                                    const SizedBox(
+                                      width: 28,
+                                      height: 28,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  else
+                                    const Icon(
+                                      Icons.add_location_alt,
+                                      color: Colors.white,
+                                      size: 28,
                                     ),
-                                  )
-                                  : const Icon(
-                                    Icons.my_location,
-                                    color: Colors.orange,
-                                    size: 24,
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    state.data.isLoadingTag
+                                        ? 'Tagging...'
+                                        : 'Tag Location',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                          onPressed:
-                              state.data.isLoadingCurrentLocation
-                                  ? null
-                                  : () => _taggingBloc.add(
-                                    const GetCurrentLocation(),
-                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Download polygon button
+                  Positioned(
+                    bottom: 170,
+                    right: 15,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.download,
+                          color: Colors.orange,
+                          size: 24,
                         ),
+                        onPressed: () {
+                          // Download polygon functionality
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // My location button
+                  Positioned(
+                    bottom: 110,
+                    right: 15,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon:
+                            state.data.isLoadingCurrentLocation
+                                ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.orange,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Icon(
+                                  Icons.my_location,
+                                  color: Colors.orange,
+                                  size: 24,
+                                ),
+                        onPressed:
+                            state.data.isLoadingCurrentLocation
+                                ? null
+                                : () => _taggingBloc.add(
+                                  const GetCurrentLocation(),
+                                ),
+                      ),
+                    ),
+                  ),
+
+                  // Sidebar overlay
+                  if (_isSidebarOpen)
+                    GestureDetector(
+                      onTap: _toggleSidebar,
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.3),
                       ),
                     ),
 
-                    // Sidebar overlay
-                    if (_isSidebarOpen)
-                      GestureDetector(
-                        onTap: _toggleSidebar,
-                        child: Container(
-                          color: Colors.black.withValues(alpha: 0.3),
-                        ),
-                      ),
-
-                    // Right sidebar
-                    SidebarWidget(
-                      tags: state.data.tags,
-                      selectedTags: state.data.selectedTags,
-                      isSidebarOpen: _isSidebarOpen,
-                      isMultiSelectMode: state.data.isMultiSelectMode,
-                      onToggleSidebar: _toggleSidebar,
-                      onTagTap: (tag) {
-                        if (state.data.isMultiSelectMode) {
-                          if (state.data.selectedTags.contains(tag)) {
-                            _taggingBloc.add(RemoveTagFromSelection(tag));
-                          } else {
-                            _taggingBloc.add(AddTagToSelection(tag));
-                          }
+                  // Right sidebar
+                  SidebarWidget(
+                    tags: state.data.tags,
+                    selectedTags: state.data.selectedTags,
+                    isSidebarOpen: _isSidebarOpen,
+                    isMultiSelectMode: state.data.isMultiSelectMode,
+                    onToggleSidebar: _toggleSidebar,
+                    onTagTap: (tag) {
+                      if (state.data.isMultiSelectMode) {
+                        if (state.data.selectedTags.contains(tag)) {
+                          _taggingBloc.add(RemoveTagFromSelection(tag));
                         } else {
-                          _taggingBloc.add(SelectTag(tag));
-                        }
-                      },
-                      onTagLongPress: (tag) {
-                        if (!state.data.isMultiSelectMode) {
-                          _taggingBloc.add(ToggleMultiSelectMode());
                           _taggingBloc.add(AddTagToSelection(tag));
                         }
-                      },
-                      toggleMultiSelectMode:
-                          () => _taggingBloc.add(ToggleMultiSelectMode()),
-                      clearTagSelection:
-                          () => _taggingBloc.add(ClearTagSelection()),
-                      deleteSelectedTags: () {
-                        if (state.data.selectedTags.length == 1) {
-                          // Direct delete for single tag
-                          _taggingBloc.add(DeleteSelectedTags());
-                        } else if (state.data.selectedTags.length > 1) {
-                          // Show confirmation dialog for multiple tags
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return DeleteTaggingConfirmationDialog(
-                                tagCount: state.data.selectedTags.length,
-                                onConfirm: () {
-                                  Navigator.of(context).pop();
-                                  _taggingBloc.add(DeleteSelectedTags());
-                                },
-                                onCancel: () {
-                                  Navigator.of(context).pop();
-                                },
-                              );
-                            },
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
-          );
-        },
-      ),
+                      } else {
+                        _taggingBloc.add(SelectTag(tag));
+                      }
+                    },
+                    onTagLongPress: (tag) {
+                      if (!state.data.isMultiSelectMode) {
+                        _taggingBloc.add(ToggleMultiSelectMode());
+                        _taggingBloc.add(AddTagToSelection(tag));
+                      }
+                    },
+                    toggleMultiSelectMode:
+                        () => _taggingBloc.add(ToggleMultiSelectMode()),
+                    clearTagSelection:
+                        () => _taggingBloc.add(ClearTagSelection()),
+                    deleteSelectedTags: () {
+                      if (state.data.selectedTags.length == 1) {
+                        // Direct delete for single tag
+                        _taggingBloc.add(DeleteSelectedTags());
+                      } else if (state.data.selectedTags.length > 1) {
+                        // Show confirmation dialog for multiple tags
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return DeleteTaggingConfirmationDialog(
+                              tagCount: state.data.selectedTags.length,
+                              onConfirm: () {
+                                Navigator.of(context).pop();
+                                _taggingBloc.add(DeleteSelectedTags());
+                              },
+                              onCancel: () {
+                                Navigator.of(context).pop();
+                              },
+                            );
+                          },
+                        );
+                      }
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

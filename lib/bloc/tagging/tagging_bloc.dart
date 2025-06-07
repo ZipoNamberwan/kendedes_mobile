@@ -322,7 +322,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       if (event.isOpen) {
         emit(SideBarOpened(data: newDataState));
       } else {
-        emit(TaggingState(data: newDataState));
+        emit(SideBarClosed(data: newDataState));
       }
     });
 

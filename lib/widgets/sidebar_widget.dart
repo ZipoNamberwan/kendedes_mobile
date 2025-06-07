@@ -18,6 +18,7 @@ class SidebarWidget extends StatefulWidget {
 class _SidebarWidgetState extends State<SidebarWidget> {
   late TaggingBloc _taggingBloc;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -51,6 +52,8 @@ class _SidebarWidgetState extends State<SidebarWidget> {
             state is SearchQueryCleared ||
             state is AllFilterCleared) {
           _searchController.text = '';
+        } else if (state is SideBarClosed) {
+          _searchFocusNode.unfocus();
         }
       },
       builder: (context, state) {
@@ -165,6 +168,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                         ),
                         child: Center(
                           child: TextField(
+                            focusNode: _searchFocusNode,
                             onChanged:
                                 (query) => _taggingBloc.add(
                                   SearchTagging(query: query),
@@ -541,7 +545,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                             },
                             icon: const Icon(Icons.delete, size: 16),
                             label: const Text(
-                              'Delete',
+                              'Hapus',
                               style: TextStyle(fontSize: 12),
                             ),
                             style: ElevatedButton.styleFrom(

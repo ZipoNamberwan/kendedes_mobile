@@ -112,7 +112,7 @@ class MarkerDialog extends StatelessWidget {
                 children: [
                   _buildActionButton(
                     icon: Icons.edit,
-                    label: 'Edit',
+                    label: 'Ubah',
                     color: Colors.green,
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -121,7 +121,7 @@ class MarkerDialog extends StatelessWidget {
                   ),
                   _buildActionButton(
                     icon: Icons.open_with,
-                    label: 'Move',
+                    label: 'Pindah',
                     color: Colors.blue,
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -130,7 +130,7 @@ class MarkerDialog extends StatelessWidget {
                   ),
                   _buildActionButton(
                     icon: Icons.delete,
-                    label: 'Delete',
+                    label: 'Hapus',
                     color: Colors.red,
                     onPressed: () {
                       Navigator.of(context).pop();

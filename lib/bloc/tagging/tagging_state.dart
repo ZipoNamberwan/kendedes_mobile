@@ -73,6 +73,13 @@ class SideBarOpened extends TaggingState {
   List<Object> get props => [data];
 }
 
+class SideBarClosed extends TaggingState {
+  const SideBarClosed({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class SearchQueryCleared extends TaggingState {
   const SearchQueryCleared({required super.data});
 

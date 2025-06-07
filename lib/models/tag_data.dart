@@ -13,7 +13,7 @@ class TagData {
   final DateTime? updatedAt;
   final DateTime? deletedAt;
   final int? incrementalId;
-  final Project? project;
+  final Project project;
 
   // Attributes for the supplement tag data
   final String businessName;
@@ -35,7 +35,7 @@ class TagData {
     this.updatedAt,
     this.deletedAt,
     this.incrementalId,
-    this.project,
+    required this.project,
 
     // Supplement tag data
     required this.businessName,
@@ -46,59 +46,157 @@ class TagData {
     required this.sector,
     this.note,
   });
+
+  String getTagLabel(String? selectedField) {
+    switch (selectedField) {
+      case 'name_owner':
+        return businessName +
+            (businessOwner != null ? ' <$businessOwner>' : '');
+      case 'name':
+        return businessName;
+      case 'owner':
+        return businessOwner ?? '';
+      case 'sector':
+        return sector.key;
+      default:
+        return businessName +
+            (businessOwner != null ? ' <$businessOwner>' : '');
+    }
+  }
 }
 
 enum TagType { auto, manual, move }
 
 class Sector extends Equatable {
-  final String label;
+  final String key;
   final String text;
 
-  const Sector({required this.label, required this.text});
+  const Sector._(this.key, this.text);
+
+  static const A = Sector._('A', 'A. Pertanian, Kehutanan dan Perikanan');
+  static const B = Sector._('B', 'B. Pertambangan dan Penggalian');
+  static const C = Sector._('C', 'C. Industri Pengolahan');
+  static const D = Sector._(
+    'D',
+    'D. Pengadaan Listrik, Gas, Uap/Air Panas Dan Udara Dingin',
+  );
+  static const E = Sector._(
+    'E',
+    'E. Treatment Air, Treatment Air Limbah, Treatment dan Pemulihan Material Sampah, dan Aktivitas Remediasi',
+  );
+  static const F = Sector._('F', 'F. Konstruksi');
+  static const G = Sector._(
+    'G',
+    'G. Perdagangan Besar Dan Eceran, Reparasi Dan Perawatan Mobil Dan Sepeda Motor',
+  );
+  static const H = Sector._('H', 'H. Pengangkutan dan Pergudangan');
+  static const I = Sector._(
+    'I',
+    'I. Penyediaan Akomodasi Dan Penyediaan Makan Minum',
+  );
+  static const J = Sector._('J', 'J. Informasi Dan Komunikasi');
+  static const K = Sector._('K', 'K. Aktivitas Keuangan dan Asuransi');
+  static const L = Sector._('L', 'L. Real Estat');
+  static const M = Sector._('M', 'M. Aktivitas Profesional, Ilmiah Dan Teknis');
+  static const N = Sector._(
+    'N',
+    'N. Aktivitas Penyewaan dan Sewa Guna Usaha Tanpa Hak Opsi, Ketenagakerjaan, Agen Perjalanan dan Penunjang Usaha Lainnya',
+  );
+  static const O = Sector._(
+    'O',
+    'O. Administrasi Pemerintahan, Pertahanan Dan Jaminan Sosial Wajib',
+  );
+  static const P = Sector._('P', 'P. Pendidikan');
+  static const Q = Sector._(
+    'Q',
+    'Q. Aktivitas Kesehatan Manusia Dan Aktivitas Sosial',
+  );
+  static const R = Sector._('R', 'R. Kesenian, Hiburan Dan Rekreasi');
+  static const S = Sector._('S', 'S. Aktivitas Jasa Lainnya');
+  static const T = Sector._(
+    'T',
+    'T. Aktivitas Rumah Tangga Sebagai Pemberi Kerja; Aktivitas Yang Menghasilkan Barang Dan Jasa Oleh Rumah Tangga yang Digunakan untuk Memenuhi Kebutuhan Sendiri',
+  );
+  static const U = Sector._(
+    'U',
+    'U. Aktivitas Badan Internasional Dan Badan Ekstra Internasional Lainnya',
+  );
+
+  static const values = [
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+    I,
+    J,
+    K,
+    L,
+    M,
+    N,
+    O,
+    P,
+    Q,
+    R,
+    S,
+    T,
+    U,
+  ];
+
+  static Sector? fromKey(String key) {
+    return values.where((item) => item.key == key).firstOrNull;
+  }
 
   static List<Sector> getSectors() {
-    return [
-      Sector(label: 'A', text: 'A. Pertanian, Kehutanan dan Perikanan'),
-      Sector(label: 'B', text: 'B. Pertambangan dan Penggalian'),
-      Sector(label: 'C', text: 'C. Industri Pengolahan'),
-      Sector(label: 'D', text: 'D. Pengadaan Listrik, Gas, Uap/Air Panas Dan Udara Dingin'),
-      Sector(label: 'E', text: 'E. Treatment Air, Treatment Air Limbah, Treatment dan Pemulihan Material Sampah, dan Aktivitas Remediasi'),
-      Sector(label: 'F', text: 'F. Konstruksi'),
-      Sector(label: 'G', text: 'G. Perdagangan Besar Dan Eceran, Reparasi Dan Perawatan Mobil Dan Sepeda Motor'),
-      Sector(label: 'H', text: 'H. Pengangkutan dan Pergudangan'),
-      Sector(label: 'I', text: 'I. Penyediaan Akomodasi Dan Penyediaan Makan Minum'),
-      Sector(label: 'J', text: 'J. Informasi Dan Komunikasi'),
-      Sector(label: 'K', text: 'K. Aktivitas Keuangan dan Asuransi'),
-      Sector(label: 'L', text: 'L. Real Estat'),
-      Sector(label: 'M', text: 'M. Aktivitas Profesional, Ilmiah Dan Teknis'),
-      Sector(label: 'N', text: 'N. Aktivitas Penyewaan dan Sewa Guna Usaha Tanpa Hak Opsi, Ketenagakerjaan, Agen Perjalanan dan Penunjang Usaha Lainnya'),
-      Sector(label: 'O', text: 'O. Administrasi Pemerintahan, Pertahanan Dan Jaminan Sosial Wajib'),
-      Sector(label: 'P', text: 'P. Pendidikan'),
-      Sector(label: 'Q', text: 'Q. Aktivitas Kesehatan Manusia Dan Aktivitas Sosial'),
-      Sector(label: 'R', text: 'R. Kesenian, Hiburan Dan Rekreasi'),
-      Sector(label: 'S', text: 'S. Aktivitas Jasa Lainnya'),
-      Sector(label: 'T', text: 'T. Aktivitas Rumah Tangga Sebagai Pemberi Kerja; Aktivitas Yang Menghasilkan Barang Dan Jasa Oleh Rumah Tangga yang Digunakan untuk Memenuhi Kebutuhan Sendiri'),
-      Sector(label: 'U', text: 'U. Aktivitas Badan Internasional Dan Badan Ekstra Internasional Lainnya'),
-    ];
+    return values;
+  }
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {'key': key, 'text': text};
+  }
+
+  /// Parse from JSON (returns null if key not found)
+  static Sector? fromJson(Map<String, dynamic> json) {
+    return fromKey(json['key']);
   }
 
   @override
-  List<Object?> get props => [label, text];
+  List<Object?> get props => [key, text];
 }
 
 class BuildingStatus extends Equatable {
-  final String label;
+  final String key;
   final String text;
 
-  const BuildingStatus({required this.label, required this.text});
+  const BuildingStatus._(this.key, this.text);
+
+  static const fixed = BuildingStatus._('tetap', 'Tetap');
+  static const notFixed = BuildingStatus._('tidak_tetap', 'Tidak Tetap');
+
+  static const values = [fixed, notFixed];
+
+  static BuildingStatus? fromKey(String key) {
+    return values.where((item) => item.key == key).firstOrNull;
+  }
 
   static List<BuildingStatus> getStatuses() {
-    return [
-      BuildingStatus(label: 'tetap', text: 'Tetap'),
-      BuildingStatus(label: 'tidak tetap', text: 'Tidak Tetap'),
-    ];
+    return values;
+  }
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {'key': key, 'text': text};
+  }
+
+  /// Parse from JSON (returns null if key not found)
+  static BuildingStatus? fromJson(Map<String, dynamic> json) {
+    return fromKey(json['key']);
   }
 
   @override
-  List<Object?> get props => [label, text];
+  List<Object?> get props => [key, text];
 }

@@ -5,17 +5,16 @@ import 'package:geolocator/geolocator.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
-import 'package:kendedes_mobile/models/poligon_data.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
+import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_widget.dart';
 import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/tagging_form_dialog.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
-import 'package:kendedes_mobile/widgets/delete_tagging_confirmation_dialog.dart';
 
 class TaggingPage extends StatefulWidget {
   final Project project;
@@ -32,21 +31,20 @@ class _TaggingPageState extends State<TaggingPage>
   late AnimationController _rippleController;
   late Animation<double> _rippleAnimation;
   late TaggingBloc _taggingBloc;
-  bool _isSidebarOpen = false;
 
   // Example polygon data
-  final List<PoligonData> _polygonData = [
-    PoligonData(
-      id: 'P001',
-      polygonType: 'Area',
-      points: [
-        LatLng(-7.9650, 112.6250),
-        LatLng(-7.9650, 112.6350),
-        LatLng(-7.9720, 112.6350),
-        LatLng(-7.9720, 112.6250),
-      ],
-    ),
-  ];
+  // final List<PoligonData> _polygonData = [
+  //   PoligonData(
+  //     id: 'P001',
+  //     polygonType: 'Area',
+  //     points: [
+  //       LatLng(-7.9650, 112.6250),
+  //       LatLng(-7.9650, 112.6350),
+  //       LatLng(-7.9720, 112.6350),
+  //       LatLng(-7.9720, 112.6250),
+  //     ],
+  //   ),
+  // ];
 
   @override
   void initState() {
@@ -102,14 +100,41 @@ class _TaggingPageState extends State<TaggingPage>
               _taggingBloc.add(DeleteTag(tagData));
             },
             onMove: (tagData) {},
+            onEdit: (tagData) => _showTaggingFormDialog(tagData),
           ),
     );
   }
 
-  void _toggleSidebar() {
-    setState(() {
-      _isSidebarOpen = !_isSidebarOpen;
-    });
+  void _showTaggingFormDialog(TagData? tagData) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => TaggingFormDialog(initialTagData: tagData),
+    );
+  }
+
+  void _toggleSidebar(bool isOpen) {
+    _taggingBloc.add(SetSideBarOpen(isOpen));
+  }
+
+  final Map<String, String> _labelTypes = const {
+    'name_owner': 'Nama Usaha dan Pemilik',
+    'name': 'Nama Usaha',
+    'owner': 'Pemilik',
+    'sector': 'Sektor',
+  };
+
+  void _showLabelTypeDialog(String? selectedLabelType) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => LabelTypeSelectionDialog(
+            labelTypes: _labelTypes,
+            selectedLabelType: selectedLabelType,
+            onLabelTypeSelected:
+                (labelType) => {_taggingBloc.add(SelectLabelType(labelType))},
+          ),
+    );
   }
 
   // Helper: pixel distance between two points
@@ -202,6 +227,7 @@ class _TaggingPageState extends State<TaggingPage>
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               content: Text('Location tagged successfully!'),
               backgroundColor: Colors.green,
             ),
@@ -210,6 +236,7 @@ class _TaggingPageState extends State<TaggingPage>
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               content: Text(state.errorMessage),
               backgroundColor: Colors.red,
             ),
@@ -225,7 +252,7 @@ class _TaggingPageState extends State<TaggingPage>
           if (state.data.selectedTags.isNotEmpty) {
             final selectedTag = state.data.selectedTags.first;
             _mapController.move(selectedTag.position, state.data.currentZoom);
-            _toggleSidebar();
+            _toggleSidebar(false);
           }
         } else if (state is RecordedLocation) {
           _mapController.move(
@@ -233,11 +260,7 @@ class _TaggingPageState extends State<TaggingPage>
                 LatLng(-7.9666, 112.6326),
             state.data.currentZoom,
           );
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => TaggingFormDialog(),
-          );
+          _showTaggingFormDialog(null);
         }
       },
       builder: (context, state) {
@@ -261,20 +284,20 @@ class _TaggingPageState extends State<TaggingPage>
                         userAgentPackageName: 'com.example.kendedes_mobile',
                       ),
 
-                      // Polygon layer
-                      PolygonLayer(
-                        polygons:
-                            _polygonData
-                                .map(
-                                  (polygonData) => Polygon(
-                                    points: polygonData.points,
-                                    color: Colors.orange.withValues(alpha: 0.3),
-                                    borderStrokeWidth: 2,
-                                    borderColor: Colors.orange,
-                                  ),
-                                )
-                                .toList(),
-                      ),
+                      // // Polygon layer
+                      // PolygonLayer(
+                      //   polygons:
+                      //       _polygonData
+                      //           .map(
+                      //             (polygonData) => Polygon(
+                      //               points: polygonData.points,
+                      //               color: Colors.orange.withValues(alpha: 0.3),
+                      //               borderStrokeWidth: 2,
+                      //               borderColor: Colors.orange,
+                      //             ),
+                      //           )
+                      //           .toList(),
+                      // ),
 
                       // Marker layer from bloc state
                       MarkerLayer(
@@ -291,23 +314,25 @@ class _TaggingPageState extends State<TaggingPage>
                             );
                             return Marker(
                               point: tagData.position,
-                              width: isSelected ? 40 : 30,
-                              height: isSelected ? 40 : 30,
+                              alignment: Alignment.center,
+                              width: isSelected ? 130 : 120,
+                              height: isSelected ? 130 : 120,
                               child: MarkerWidget(
                                 tagData: tagData,
                                 isSelected: isSelected,
-                                onTap:
-                                    () => _handleMarkerClick(
-                                      tagData,
-                                      state.data.tags,
-                                      state.data.selectedTags,
-                                      state.data.currentZoom,
-                                      mapSize,
-                                    ),
+                                labelType: state.data.selectedLabelType,
+                                onTap: () {
+                                  _handleMarkerClick(
+                                    tagData,
+                                    state.data.tags,
+                                    state.data.selectedTags,
+                                    state.data.currentZoom,
+                                    mapSize,
+                                  );
+                                },
                               ),
                             );
                           }),
-
                           // Current location marker
                           if (state.data.currentLocation != null)
                             Marker(
@@ -406,7 +431,7 @@ class _TaggingPageState extends State<TaggingPage>
                         children: [
                           const SizedBox(width: 16),
                           const Icon(
-                            Icons.location_on,
+                            Icons.folder,
                             color: Colors.white,
                             size: 24,
                           ),
@@ -428,11 +453,8 @@ class _TaggingPageState extends State<TaggingPage>
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: IconButton(
-                              icon: const Icon(
-                                Icons.list_alt,
-                                color: Colors.white,
-                              ),
-                              onPressed: _toggleSidebar,
+                              icon: const Icon(Icons.list, color: Colors.white),
+                              onPressed: () => _toggleSidebar(true),
                             ),
                           ),
                         ],
@@ -460,7 +482,7 @@ class _TaggingPageState extends State<TaggingPage>
                         angle: state.data.rotation * math.pi / 180,
                         child: IconButton(
                           icon: const Icon(
-                            Icons.navigation_outlined,
+                            Icons.navigation,
                             color: Colors.grey,
                             size: 24,
                           ),
@@ -472,6 +494,64 @@ class _TaggingPageState extends State<TaggingPage>
                       ),
                     ),
                   ),
+
+                  // Marker label view button
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 145,
+                    right: 15,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.label,
+                          color: Colors.deepOrange,
+                          size: 24,
+                        ),
+                        onPressed: () {
+                          _showLabelTypeDialog(state.data.selectedLabelType);
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // Clear selection button
+                  if (state.data.selectedTags.isNotEmpty)
+                    Positioned(
+                      top: MediaQuery.of(context).padding.top + 205,
+                      right: 15,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.clear_all,
+                            color: Colors.red,
+                            size: 24,
+                          ),
+                          onPressed:
+                              () => _taggingBloc.add(ClearTagSelection()),
+                        ),
+                      ),
+                    ),
 
                   // Main tag location button
                   Positioned(
@@ -513,7 +593,8 @@ class _TaggingPageState extends State<TaggingPage>
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  if (state.data.isLoadingTag)
+                                  if (state.data.isLoadingTag ||
+                                      state.data.isLoadingCurrentLocation)
                                     const SizedBox(
                                       width: 28,
                                       height: 28,
@@ -530,9 +611,11 @@ class _TaggingPageState extends State<TaggingPage>
                                     ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    state.data.isLoadingTag
+                                    state.data.isLoadingCurrentLocation
+                                        ? 'Mengambil Lokasi...'
+                                        : state.data.isLoadingTag
                                         ? 'Tagging...'
-                                        : 'Tag Location',
+                                        : 'Tag Usaha',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
@@ -567,7 +650,7 @@ class _TaggingPageState extends State<TaggingPage>
                       child: IconButton(
                         icon: const Icon(
                           Icons.download,
-                          color: Colors.orange,
+                          color: Colors.deepOrange,
                           size: 24,
                         ),
                         onPressed: () {
@@ -600,13 +683,13 @@ class _TaggingPageState extends State<TaggingPage>
                                   width: 24,
                                   height: 24,
                                   child: CircularProgressIndicator(
-                                    color: Colors.orange,
+                                    color: Colors.deepOrange,
                                     strokeWidth: 2,
                                   ),
                                 )
                                 : const Icon(
                                   Icons.my_location,
-                                  color: Colors.orange,
+                                  color: Colors.deepOrange,
                                   size: 24,
                                 ),
                         onPressed:
@@ -620,66 +703,16 @@ class _TaggingPageState extends State<TaggingPage>
                   ),
 
                   // Sidebar overlay
-                  if (_isSidebarOpen)
+                  if (state.data.isSideBarOpen)
                     GestureDetector(
-                      onTap: _toggleSidebar,
+                      onTap: () => _toggleSidebar(false),
                       child: Container(
                         color: Colors.black.withValues(alpha: 0.3),
                       ),
                     ),
 
                   // Right sidebar
-                  SidebarWidget(
-                    tags: state.data.tags,
-                    selectedTags: state.data.selectedTags,
-                    isSidebarOpen: _isSidebarOpen,
-                    isMultiSelectMode: state.data.isMultiSelectMode,
-                    onToggleSidebar: _toggleSidebar,
-                    onTagTap: (tag) {
-                      if (state.data.isMultiSelectMode) {
-                        if (state.data.selectedTags.contains(tag)) {
-                          _taggingBloc.add(RemoveTagFromSelection(tag));
-                        } else {
-                          _taggingBloc.add(AddTagToSelection(tag));
-                        }
-                      } else {
-                        _taggingBloc.add(SelectTag(tag));
-                      }
-                    },
-                    onTagLongPress: (tag) {
-                      if (!state.data.isMultiSelectMode) {
-                        _taggingBloc.add(ToggleMultiSelectMode());
-                        _taggingBloc.add(AddTagToSelection(tag));
-                      }
-                    },
-                    toggleMultiSelectMode:
-                        () => _taggingBloc.add(ToggleMultiSelectMode()),
-                    clearTagSelection:
-                        () => _taggingBloc.add(ClearTagSelection()),
-                    deleteSelectedTags: () {
-                      if (state.data.selectedTags.length == 1) {
-                        // Direct delete for single tag
-                        _taggingBloc.add(DeleteSelectedTags());
-                      } else if (state.data.selectedTags.length > 1) {
-                        // Show confirmation dialog for multiple tags
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return DeleteTaggingConfirmationDialog(
-                              tagCount: state.data.selectedTags.length,
-                              onConfirm: () {
-                                Navigator.of(context).pop();
-                                _taggingBloc.add(DeleteSelectedTags());
-                              },
-                              onCancel: () {
-                                Navigator.of(context).pop();
-                              },
-                            );
-                          },
-                        );
-                      }
-                    },
-                  ),
+                  SidebarWidget(),
                 ],
               );
             },

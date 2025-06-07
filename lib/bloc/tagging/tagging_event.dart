@@ -73,6 +73,11 @@ class ToggleMultiSelectMode extends TaggingEvent {
   const ToggleMultiSelectMode();
 }
 
+class SetSideBarOpen extends TaggingEvent {
+  final bool isOpen;
+  const SetSideBarOpen(this.isOpen);
+}
+
 class ClearTagSelection extends TaggingEvent {
   const ClearTagSelection();
 }
@@ -107,6 +112,29 @@ class SaveForm extends TaggingEvent {
   const SaveForm();
 }
 
-class CancelForm extends TaggingEvent {
-  const CancelForm();
+class SearchTagging extends TaggingEvent {
+  final String? query;
+  final bool? reset;
+  const SearchTagging({this.query, this.reset});
+}
+
+class FilterTaggingBySector extends TaggingEvent {
+  final Sector? sector;
+  final bool? reset;
+  const FilterTaggingBySector({this.sector, this.reset});
+}
+
+class FilterTaggingByProjectType extends TaggingEvent {
+  final ProjectType? projectType;
+  final bool? reset;
+  const FilterTaggingByProjectType({this.projectType, this.reset});
+}
+
+class ResetAllFilter extends TaggingEvent {
+  const ResetAllFilter();
+}
+
+class SelectLabelType extends TaggingEvent {
+  final String? labelTypeKey;
+  const SelectLabelType(this.labelTypeKey);
 }

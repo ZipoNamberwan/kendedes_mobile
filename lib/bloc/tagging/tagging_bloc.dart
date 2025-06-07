@@ -20,6 +20,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               description: '',
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
+              type: ProjectType.supplementMobile,
             ),
             tags: [],
             polygons: [],
@@ -30,7 +31,9 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             rotation: 0.0,
             selectedTags: [],
             isMultiSelectMode: false,
+            isSideBarOpen: false,
             isSubmitting: false,
+            filteredTags: [],
           ),
         ),
       ) {
@@ -100,13 +103,20 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     });
 
     on<AddTagToSelection>((event, emit) {
-      emit(
-        TaggingState(
-          data: state.data.copyWith(
-            selectedTags: [...state.data.selectedTags, event.tagData],
-          ),
-        ),
+      // Check if tag is already selected
+      final isAlreadySelected = state.data.selectedTags.any(
+        (tag) => tag.id == event.tagData.id,
       );
+
+      if (!isAlreadySelected) {
+        emit(
+          TaggingState(
+            data: state.data.copyWith(
+              selectedTags: [...state.data.selectedTags, event.tagData],
+            ),
+          ),
+        );
+      }
     });
 
     on<RemoveTagFromSelection>((event, emit) {
@@ -144,6 +154,10 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 state.data.tags
                     .where((tag) => !state.data.selectedTags.contains(tag))
                     .toList(),
+            filteredTags:
+                state.data.filteredTags
+                    .where((tag) => !state.data.selectedTags.contains(tag))
+                    .toList(),
             selectedTags: [],
           ),
         ),
@@ -162,32 +176,31 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       emit(TaggingState(data: state.data.copyWith(resetForm: true)));
     });
 
-    Map<String, TaggingFormFieldState<dynamic>> updateFieldValue(
-      Map<String, TaggingFormFieldState<dynamic>> fields,
-      String key,
-      dynamic value,
-    ) {
-      final field = fields[key];
+    on<EditForm>((event, emit) {
+      final TagData tagData = event.tagData;
+      final formFields = {
+        'id': TaggingFormFieldState<String?>(value: tagData.id),
+        'name': TaggingFormFieldState<String>(value: tagData.businessName),
+        'owner': TaggingFormFieldState<String?>(value: tagData.businessOwner),
+        'address': TaggingFormFieldState<String?>(
+          value: tagData.businessAddress,
+        ),
+        'building': TaggingFormFieldState<BuildingStatus>(
+          value: tagData.buildingStatus,
+        ),
+        'description': TaggingFormFieldState<String>(
+          value: tagData.description,
+        ),
+        'sector': TaggingFormFieldState<Sector>(value: tagData.sector),
+        'note': TaggingFormFieldState<String?>(value: tagData.note),
+        'position': TaggingFormFieldState<LatLng>(value: tagData.position),
+      };
 
-      if (field == null) return fields;
-
-      if (field is TaggingFormFieldState<String>) {
-        return {...fields, key: field.copyWith(value: value as String)};
-      } else if (field is TaggingFormFieldState<String?>) {
-        return {...fields, key: field.copyWith(value: value as String?)};
-      } else if (field is TaggingFormFieldState<BuildingStatus>) {
-        return {...fields, key: field.copyWith(value: value as BuildingStatus)};
-      } else if (field is TaggingFormFieldState<Sector>) {
-        return {...fields, key: field.copyWith(value: value as Sector)};
-      } else if (field is TaggingFormFieldState<LatLng>) {
-        return {...fields, key: field.copyWith(value: value as LatLng)};
-      }
-
-      return fields;
-    }
+      emit(EditFormShown(data: state.data.copyWith(formFields: formFields)));
+    });
 
     on<SetTaggingFormField>((event, emit) {
-      final updatedFormFields = updateFieldValue(
+      final updatedFormFields = _updateFieldValue(
         state.data.formFields,
         event.key,
         event.value,
@@ -215,9 +228,42 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         return;
       }
 
-      final newTag = _createTagData(formFields);
-      // Add to existing tags
-      final updatedTags = List<TagData>.from(state.data.tags)..add(newTag);
+      final tagDataId = formFields['id']?.value as String?;
+
+      // Find existing tag - if tagDataId is null or tag doesn't exist, create new
+      final existingTag =
+          tagDataId?.isNotEmpty == true
+              ? state.data.tags.where((tag) => tag.id == tagDataId).firstOrNull
+              : null;
+
+      final isNewTag = existingTag == null;
+
+      // Create new/updated tag
+      final newTag = TagData(
+        id: isNewTag ? _uuid.v4() : tagDataId!,
+        position: formFields['position']!.value as LatLng,
+        hasChanged: true,
+        type: TagType.auto,
+        isDeleted: false,
+        businessName: formFields['name']!.value as String,
+        businessOwner: formFields['owner']?.value as String?,
+        businessAddress: formFields['address']?.value as String?,
+        buildingStatus: formFields['building']!.value as BuildingStatus,
+        description: formFields['description']!.value as String,
+        sector: formFields['sector']!.value as Sector,
+        note: formFields['note']?.value as String?,
+        createdAt: existingTag?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+        project: state.data.project,
+      );
+
+      // Update tags list
+      final updatedTags =
+          isNewTag
+              ? [...state.data.tags, newTag]
+              : state.data.tags
+                  .map((tag) => tag.id == tagDataId ? newTag : tag)
+                  .toList();
 
       emit(
         TagSuccess(
@@ -265,6 +311,159 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         );
       }
     });
+
+    on<SetSideBarOpen>((event, emit) {
+      final newDataState = state.data.copyWith(
+        isSideBarOpen: event.isOpen,
+        filteredTags: event.isOpen ? state.data.tags : state.data.filteredTags,
+        resetAllFilter: event.isOpen,
+        isMultiSelectMode: false,
+      );
+      if (event.isOpen) {
+        emit(SideBarOpened(data: newDataState));
+      } else {
+        emit(TaggingState(data: newDataState));
+      }
+    });
+
+    on<ResetAllFilter>((event, emit) {
+      emit(
+        AllFilterCleared(
+          data: state.data.copyWith(
+            resetAllFilter: true,
+            filteredTags: state.data.tags,
+          ),
+        ),
+      );
+    });
+
+    on<SearchTagging>((event, emit) {
+      final newQuery = event.query;
+      final filtered = _applyFilters(
+        allTags: state.data.tags,
+        query: newQuery,
+        sector: state.data.selectedSectorFilter,
+        projectType: state.data.selectedProjectTypeFilter,
+      );
+
+      final newDataState = state.data.copyWith(
+        filteredTags: filtered,
+        searchQuery: newQuery,
+        resetSearchQuery: event.reset ?? false,
+      );
+      if (event.reset ?? false) {
+        emit(SearchQueryCleared(data: newDataState));
+      } else {
+        emit(TaggingState(data: newDataState));
+      }
+    });
+
+    on<FilterTaggingBySector>((event, emit) {
+      final selectedSector = event.sector;
+      final filtered = _applyFilters(
+        allTags: state.data.tags,
+        query: state.data.searchQuery,
+        sector: selectedSector,
+        projectType: state.data.selectedProjectTypeFilter,
+      );
+
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            filteredTags: filtered,
+            selectedSectorFilter: selectedSector,
+            resetSectorFilter: event.reset ?? false,
+          ),
+        ),
+      );
+    });
+
+    on<FilterTaggingByProjectType>((event, emit) {
+      final selectedProjectType = event.projectType;
+      final filtered = _applyFilters(
+        allTags: state.data.tags,
+        query: state.data.searchQuery,
+        sector: state.data.selectedSectorFilter,
+        projectType: selectedProjectType,
+      );
+
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            filteredTags: filtered,
+            selectedProjectTypeFilter: selectedProjectType,
+            resetProjectTypeFilter: event.reset ?? false,
+          ),
+        ),
+      );
+    });
+
+    on<SelectLabelType>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(selectedLabelType: event.labelTypeKey),
+        ),
+      );
+    });
+  }
+
+  List<TagData> _applyFilters({
+    required List<TagData> allTags,
+    required String? query,
+    required Sector? sector,
+    required ProjectType? projectType,
+  }) {
+    final normalizedQuery = query?.trim().toLowerCase();
+
+    // No filters applied → return all
+    if ((normalizedQuery == null || normalizedQuery.isEmpty) &&
+        sector == null &&
+        projectType == null) {
+      return allTags;
+    }
+
+    return allTags.where((tag) {
+      final matchesQuery =
+          normalizedQuery == null ||
+          normalizedQuery.isEmpty ||
+          tag.businessName.toLowerCase().contains(normalizedQuery) ||
+          (tag.businessOwner?.toLowerCase().contains(normalizedQuery) ??
+              false) ||
+          (tag.businessAddress?.toLowerCase().contains(normalizedQuery) ??
+              false) ||
+          tag.description.toLowerCase().contains(normalizedQuery);
+
+      final matchesSector = sector == null || tag.sector.key == sector.key;
+
+      final matchesProjectType =
+          projectType == null || tag.project.type.key == projectType.key;
+
+      return matchesQuery && matchesSector && matchesProjectType;
+    }).toList();
+  }
+
+  Map<String, TaggingFormFieldState<dynamic>> _updateFieldValue(
+    Map<String, TaggingFormFieldState<dynamic>> fields,
+    String key,
+    dynamic value,
+  ) {
+    final field = fields[key];
+
+    if (field == null) return fields;
+
+    if (field is TaggingFormFieldState<String>) {
+      return {...fields, key: field.copyWith(value: value as String)};
+    } else if (field is TaggingFormFieldState<String?>) {
+      return {...fields, key: field.copyWith(value: value as String?)};
+    } else if (field is TaggingFormFieldState<BuildingStatus>) {
+      return {...fields, key: field.copyWith(value: value as BuildingStatus)};
+    } else if (field is TaggingFormFieldState<Sector>) {
+      return {...fields, key: field.copyWith(value: value as Sector)};
+    } else if (field is TaggingFormFieldState<LatLng>) {
+      return {...fields, key: field.copyWith(value: value as LatLng)};
+    }
+
+    return fields;
   }
 
   ValidationResult _validateForm(
@@ -331,37 +530,6 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     }
 
     return ValidationResult(updatedFields, hasErrors);
-  }
-
-  TagData _createTagData(
-    Map<String, TaggingFormFieldState<dynamic>> formFields,
-  ) {
-    final tagDataId = formFields['id']?.value as String?;
-    final name = formFields['name']?.value as String;
-    final owner = formFields['owner']?.value as String?;
-    final address = formFields['address']?.value as String?;
-    final building = formFields['building']?.value as BuildingStatus;
-    final description = formFields['description']?.value as String;
-    final sector = formFields['sector']?.value as Sector;
-    final note = formFields['note']?.value as String?;
-    final position = formFields['position']?.value as LatLng;
-
-    final isNewTag = tagDataId == null || tagDataId.isEmpty;
-
-    return TagData(
-      id: isNewTag ? _uuid.v4() : tagDataId,
-      position: position,
-      hasChanged: true,
-      type: isNewTag ? TagType.auto : TagType.move,
-      isDeleted: false,
-      businessName: name,
-      businessOwner: owner,
-      businessAddress: address,
-      buildingStatus: building,
-      description: description,
-      sector: sector,
-      note: note,
-    );
   }
 
   Future<Position> _getCurrentPosition() async {

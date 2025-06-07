@@ -37,6 +37,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
           description: projectDescription?.trim(),
           createdAt: now,
           updatedAt: now,
+          type: ProjectType.supplementMobile,
         );
 
         emit(
@@ -126,6 +127,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
               description: null,
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
+              type: ProjectType.supplementMobile,
             ),
       );
 

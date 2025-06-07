@@ -5,6 +5,7 @@ class Project {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final ProjectType type;
 
   Project({
     required this.id,
@@ -13,6 +14,7 @@ class Project {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    required this.type,
   });
 
   factory Project.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,7 @@ class Project {
       updatedAt: DateTime.parse(json['updatedAt']),
       deletedAt:
           json['deletedAt'] != null ? DateTime.parse(json['deletedAt']) : null,
+      type: ProjectType.fromJson(json['type']) ?? ProjectType.supplementMobile,
     );
   }
 
@@ -45,6 +48,7 @@ class Project {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    ProjectType? type,
   }) {
     return Project(
       id: id ?? this.id,
@@ -53,6 +57,47 @@ class Project {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      type: type ?? this.type,
     );
+  }
+}
+
+class ProjectType {
+  final String key;
+  final String text;
+
+  const ProjectType._(this.key, this.text);
+
+  static const marketSwmaps = ProjectType._(
+    'market_swmaps',
+    'Sentra Ekonomi SWMaps',
+  );
+  static const supplementSwmaps = ProjectType._(
+    'supplement_swmaps',
+    'Suplemen SWMaps',
+  );
+  static const supplementMobile = ProjectType._(
+    'supplement_mobile',
+    'Suplemen Mobile',
+  );
+
+  static const values = [marketSwmaps, supplementSwmaps, supplementMobile];
+
+  static ProjectType? fromKey(String key) {
+    return values.where((item) => item.key == key).firstOrNull;
+  }
+
+  static List<ProjectType> getProjectTypes() {
+    return values;
+  }
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {'key': key, 'text': text};
+  }
+
+  /// Parse from JSON (returns null if key not found)
+  static ProjectType? fromJson(Map<String, dynamic> json) {
+    return fromKey(json['key']);
   }
 }

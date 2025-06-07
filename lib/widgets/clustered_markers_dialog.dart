@@ -39,7 +39,7 @@ class ClusteredMarkersDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Multiple Tags (${tags.length})',
+                      'Multiple Tagging (${tags.length})',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -67,11 +67,11 @@ class ClusteredMarkersDialog extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           backgroundColor:
-                              isSelected ? Colors.green : Colors.orange,
+                              isSelected ? Colors.green : Colors.grey[700],
                           radius: 16,
                           child: Text(
-                            '${index + 1}',
-                            style: const TextStyle(
+                            tag.sector.key,
+                            style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
@@ -98,16 +98,19 @@ class ClusteredMarkersDialog extends StatelessWidget {
                       ],
                     ),
                     title: Text(
-                      'Tagged Location',
+                      tag.businessName +
+                          (tag.businessOwner != null
+                              ? ' <${tag.businessOwner}>'
+                              : ''),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: isSelected ? Colors.green : null,
                       ),
                     ),
                     subtitle: Text(
-                      'ID: ${tag.id}\n'
-                      'Lat: ${tag.position.latitude.toStringAsFixed(6)}, '
-                      'Lng: ${tag.position.longitude.toStringAsFixed(6)}',
+                      '${tag.description}\n'
+                      'Posisi: ${tag.position.latitude.toStringAsFixed(6)}, '
+                      ', ${tag.position.longitude.toStringAsFixed(6)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: isSelected ? Colors.green : null,

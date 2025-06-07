@@ -7,7 +7,8 @@ import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:latlong2/latlong.dart';
 
 class TaggingFormDialog extends StatefulWidget {
-  const TaggingFormDialog({super.key});
+  final TagData? initialTagData;
+  const TaggingFormDialog({super.key, this.initialTagData});
 
   @override
   State<TaggingFormDialog> createState() => _TaggingFormDialogState();
@@ -26,6 +27,8 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
   late AnimationController _fadeController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
+
+  bool _isCreate = true;
 
   @override
   void initState() {
@@ -54,6 +57,10 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
     _fadeController.forward();
 
     _taggingBloc = context.read<TaggingBloc>();
+    if (widget.initialTagData != null) {
+      _taggingBloc.add(EditForm(tagData: widget.initialTagData!));
+      _isCreate = false;
+    }
   }
 
   @override
@@ -169,9 +176,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                           horizontal: 12,
                           vertical: 8,
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                        ),
+                        decoration: BoxDecoration(color: Colors.white),
                         child: Text(
                           item.child is Text
                               ? (item.child as Text).data ?? ''
@@ -271,6 +276,16 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
       listener: (context, state) {
         if (state is TagSuccess) {
           Navigator.of(context).pop();
+        } else if (state is EditFormShown) {
+          _businessNameController.text =
+              state.data.formFields['name']?.value ?? '';
+          _businessOwnerController.text =
+              state.data.formFields['owner']?.value ?? '';
+          _businessAddressController.text =
+              state.data.formFields['address']?.value ?? '';
+          _descriptionController.text =
+              state.data.formFields['description']?.value ?? '';
+          _noteController.text = state.data.formFields['note']?.value ?? '';
         }
       },
       builder: (context, state) {
@@ -384,21 +399,21 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Add New Tag',
-                                style: TextStyle(
+                                _isCreate ? 'Tambah Tagging' : 'Ubah Tagging',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),
                               ),
-                              Text(
-                                'Fill in the business information',
+                              const Text(
+                                'Isi keterangan usaha',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 14,
@@ -445,7 +460,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                               return Transform.scale(
                                 scale: value,
                                 child: Container(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: const EdgeInsets.all(14),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
@@ -455,7 +470,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: Colors.blue.shade100,
                                       width: 1,
@@ -465,15 +480,15 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                         color: Colors.blue.withValues(
                                           alpha: 0.1,
                                         ),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
                                       ),
                                     ],
                                   ),
                                   child: Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.all(12),
+                                        padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
@@ -482,34 +497,34 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                             ],
                                           ),
                                           borderRadius: BorderRadius.circular(
-                                            16,
+                                            12,
                                           ),
                                         ),
                                         child: const Icon(
                                           Icons.my_location_rounded,
                                           color: Colors.white,
-                                          size: 24,
+                                          size: 18,
                                         ),
                                       ),
-                                      const SizedBox(width: 16),
+                                      const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
                                             const Text(
-                                              'Current Location',
+                                              'Koordinat Lokasi',
                                               style: TextStyle(
-                                                fontSize: 14,
+                                                fontSize: 13,
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.black87,
                                               ),
                                             ),
-                                            const SizedBox(height: 4),
+                                            const SizedBox(height: 2),
                                             Text(
                                               '${(state.data.formFields['position']?.value ?? LatLng(-7.9666, 112.6326)).latitude.toStringAsFixed(6)}, ${(state.data.formFields['position']?.value ?? LatLng(-7.9666, 112.6326)).longitude.toStringAsFixed(6)}',
                                               style: TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 11,
                                                 color: Colors.grey.shade600,
                                                 fontFamily: 'monospace',
                                               ),
@@ -523,7 +538,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                               );
                             },
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 24),
 
                           // Form fields with staggered animations
                           _buildAnimatedTextField(
@@ -534,7 +549,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                             delay: 0,
                             error: state.data.formFields['name']?.error,
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
 
                           _buildAnimatedTextField(
                             fieldKey: 'owner',
@@ -544,7 +559,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                             delay: 1,
                             error: state.data.formFields['owner']?.error,
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
 
                           _buildAnimatedTextField(
                             fieldKey: 'address',
@@ -555,7 +570,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                             delay: 2,
                             error: state.data.formFields['address']?.error,
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
 
                           _buildAnimatedDropdown<BuildingStatus?>(
                             fieldKey: 'building',
@@ -572,7 +587,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                   );
                                 }).toList(),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
 
                           _buildAnimatedTextField(
                             fieldKey: 'description',
@@ -583,7 +598,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                             delay: 4,
                             error: state.data.formFields['description']?.error,
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
 
                           _buildAnimatedDropdown<Sector?>(
                             fieldKey: 'sector',
@@ -600,7 +615,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                   );
                                 }).toList(),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
 
                           _buildAnimatedTextField(
                             fieldKey: 'note',
@@ -621,16 +636,16 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                 // Enhanced Action buttons
                 Container(
                   padding: EdgeInsets.only(
-                    left: 24,
-                    right: 24,
-                    bottom: MediaQuery.of(context).padding.bottom + 24,
-                    top: 20,
+                    left: 20,
+                    right: 20,
+                    bottom: MediaQuery.of(context).padding.bottom + 16,
+                    top: 12,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -651,9 +666,9 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                           children: [
                             Expanded(
                               child: Container(
-                                height: 56,
+                                height: 44,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: Colors.grey.shade300,
                                     width: 2,
@@ -662,13 +677,13 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                 child: Material(
                                   color: Colors.transparent,
                                   child: InkWell(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     onTap: () => Navigator.of(context).pop(),
                                     child: const Center(
                                       child: Text(
-                                        'Cancel',
+                                        'Batal',
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black54,
                                         ),
@@ -678,10 +693,10 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Container(
-                                height: 56,
+                                height: 44,
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
                                     colors: [
@@ -691,21 +706,21 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
                                   ),
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.orange.withValues(
                                         alpha: 0.4,
                                       ),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
                                     ),
                                   ],
                                 ),
                                 child: Material(
                                   color: Colors.transparent,
                                   child: InkWell(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     onTap: () => _taggingBloc.add(SaveForm()),
                                     child: const Center(
                                       child: Row(
@@ -715,14 +730,14 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                           Icon(
                                             Icons.save_rounded,
                                             color: Colors.white,
-                                            size: 20,
+                                            size: 16,
                                           ),
-                                          SizedBox(width: 8),
+                                          SizedBox(width: 6),
                                           Text(
-                                            'Save Tag',
+                                            'Simpan',
                                             style: TextStyle(
                                               color: Colors.white,
-                                              fontSize: 16,
+                                              fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),

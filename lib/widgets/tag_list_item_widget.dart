@@ -70,15 +70,19 @@ class TagListItemWidget extends StatelessWidget {
                   ),
                   child: Center(
                     child:
-                        isSelected
-                            ? Icon(
-                              isMultiSelectMode
-                                  ? Icons.check
-                                  : Icons.location_on,
-                              color: Colors.white,
-                              size: isMultiSelectMode ? 20 : 18,
-                            )
-                            : Icon(Icons.location_on, color: Colors.grey[600]),
+                        isSelected && isMultiSelectMode
+                            ? Icon(Icons.check, color: Colors.white, size: 20)
+                            : Text(
+                              tag.sector.key,
+                              style: TextStyle(
+                                color:
+                                    isSelected
+                                        ? Colors.white
+                                        : Colors.grey[600],
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -90,15 +94,21 @@ class TagListItemWidget extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Tagged Location',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color:
-                                  isSelected
-                                      ? Colors.green.shade700
-                                      : Colors.black,
+                          Expanded(
+                            child: Text(
+                              tag.businessName +
+                                  (tag.businessOwner != null
+                                      ? ' <${tag.businessOwner}>'
+                                      : ''),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color:
+                                    isSelected
+                                        ? Colors.green.shade700
+                                        : Colors.black,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (isSelected && !isMultiSelectMode)
@@ -109,9 +119,22 @@ class TagListItemWidget extends StatelessWidget {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      if (tag.businessAddress != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Alamat: ${tag.businessAddress}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color:
+                                isSelected
+                                    ? Colors.green.shade600
+                                    : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 2),
                       Text(
-                        'ID: ${tag.id.substring(0, 8)}...',
+                        'Posisi: ${tag.position.latitude.toStringAsFixed(6)}, ${tag.position.longitude.toStringAsFixed(6)}',
                         style: TextStyle(
                           fontSize: 12,
                           color:
@@ -120,17 +143,20 @@ class TagListItemWidget extends StatelessWidget {
                                   : Colors.grey[600],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Position: ${tag.position.latitude.toStringAsFixed(6)}, ${tag.position.longitude.toStringAsFixed(6)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color:
-                              isSelected
-                                  ? Colors.green.shade600
-                                  : Colors.grey[600],
+                      if (tag.createdAt != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Di-tagging pada: ${_formatDate(tag.createdAt ?? DateTime.now())}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color:
+                                isSelected
+                                    ? Colors.green.shade500
+                                    : Colors.grey[500],
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -142,5 +168,9 @@ class TagListItemWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }

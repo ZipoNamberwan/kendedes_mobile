@@ -59,20 +59,60 @@ class RecordedLocation extends TaggingState {
   List<Object> get props => [data];
 }
 
+class EditFormShown extends TaggingState {
+  const EditFormShown({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class SideBarOpened extends TaggingState {
+  const SideBarOpened({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class SearchQueryCleared extends TaggingState {
+  const SearchQueryCleared({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class AllFilterCleared extends TaggingState {
+  const AllFilterCleared({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class TaggingStateData {
   final Project project;
   final List<TagData> tags;
   final List<PoligonData> polygons;
-  final LatLng? currentLocation;
   final bool isLoadingTag;
   final bool isLoadingPolygon;
   final bool isLoadingCurrentLocation;
+  final List<TagData> selectedTags;
+
+  // Map attributes
   final double currentZoom;
   final double rotation;
-  final List<TagData> selectedTags;
-  final bool isMultiSelectMode;
+  final LatLng? currentLocation;
 
-//form attribute
+  // UI attributes
+  final bool isMultiSelectMode;
+  final bool isSideBarOpen;
+  final String? selectedLabelType;
+
+  //filter attribute
+  final List<TagData> filteredTags;
+  final String? searchQuery;
+  final Sector? selectedSectorFilter;
+  final ProjectType? selectedProjectTypeFilter;
+
+  //form attribute
   final bool isSubmitting;
   final Map<String, TaggingFormFieldState<dynamic>> formFields;
 
@@ -88,7 +128,13 @@ class TaggingStateData {
     required this.rotation,
     required this.selectedTags,
     required this.isMultiSelectMode,
+    required this.isSideBarOpen,
 
+    required this.filteredTags,
+    this.searchQuery,
+    this.selectedSectorFilter,
+    this.selectedProjectTypeFilter,
+    this.selectedLabelType,
     required this.isSubmitting,
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
   }) : formFields = formFields ?? _generateFormFields();
@@ -121,10 +167,20 @@ class TaggingStateData {
     double? rotation,
     List<TagData>? selectedTags,
     bool? isMultiSelectMode,
+    bool? isSideBarOpen,
 
     bool? isSubmitting,
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
     bool? resetForm,
+    List<TagData>? filteredTags,
+    String? searchQuery,
+    Sector? selectedSectorFilter,
+    ProjectType? selectedProjectTypeFilter,
+    bool? resetAllFilter,
+    bool? resetSearchQuery,
+    bool? resetSectorFilter,
+    bool? resetProjectTypeFilter,
+    String? selectedLabelType,
   }) {
     return TaggingStateData(
       project: project ?? this.project,
@@ -139,12 +195,33 @@ class TaggingStateData {
       rotation: rotation ?? this.rotation,
       selectedTags: selectedTags ?? this.selectedTags,
       isMultiSelectMode: isMultiSelectMode ?? this.isMultiSelectMode,
+      isSideBarOpen: isSideBarOpen ?? this.isSideBarOpen,
 
+      filteredTags: filteredTags ?? this.filteredTags,
+      searchQuery:
+          resetAllFilter ?? false
+              ? null
+              : resetSearchQuery ?? false
+              ? null
+              : searchQuery ?? this.searchQuery,
+      selectedSectorFilter:
+          resetAllFilter ?? false
+              ? null
+              : resetSectorFilter ?? false
+              ? null
+              : selectedSectorFilter ?? this.selectedSectorFilter,
+      selectedProjectTypeFilter:
+          resetAllFilter ?? false
+              ? null
+              : resetProjectTypeFilter ?? false
+              ? null
+              : selectedProjectTypeFilter ?? this.selectedProjectTypeFilter,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       formFields:
           (resetForm ?? false)
               ? _generateFormFields()
               : formFields ?? this.formFields,
+      selectedLabelType: selectedLabelType ?? this.selectedLabelType,
     );
   }
 }

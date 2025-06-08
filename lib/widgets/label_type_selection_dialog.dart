@@ -65,7 +65,7 @@ class _LabelTypeSelectionDialogState extends State<LabelTypeSelectionDialog> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Pilih informasi yang akan ditampilkan pada marker:',
+              'Pilih label yang akan ditampilkan pada marker:',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),

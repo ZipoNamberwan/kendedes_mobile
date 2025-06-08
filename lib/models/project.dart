@@ -1,10 +1,22 @@
+import 'package:hive_ce/hive.dart';
+import 'package:kendedes_mobile/hive/hive_types.dart';
+part 'project.g.dart';
+
+@HiveType(typeId: projectTypeId)
 class Project {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String name;
+  @HiveField(2)
   final String? description;
+  @HiveField(3)
   final DateTime createdAt;
+  @HiveField(4)
   final DateTime updatedAt;
+  @HiveField(5)
   final DateTime? deletedAt;
+  @HiveField(6)
   final ProjectType type;
 
   Project({
@@ -62,9 +74,14 @@ class Project {
   }
 }
 
+@HiveType(typeId: projectTypeTypeId)
 class ProjectType {
+  @HiveField(0)
   final String key;
+  @HiveField(1)
   final String text;
+
+  const ProjectType({required this.key, required this.text});
 
   const ProjectType._(this.key, this.text);
 

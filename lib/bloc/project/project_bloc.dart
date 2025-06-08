@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
+import 'package:kendedes_mobile/hive/hive_boxes.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:uuid/uuid.dart';
 
@@ -8,6 +10,24 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
   final Uuid _uuid = const Uuid();
 
   ProjectBloc() : super(ProjectState(data: ProjectStateData(projects: []))) {
+    on<Initialize>((event, emit) async {
+      emit(InitializingStarted(data: state.data));
+      try {
+        final box = await Hive.openBox<Project>(projectBox);
+        emit(
+          InitializingSuccess(
+            data: state.data.copyWith(
+              projectBox: box,
+              projects: box.values.toList(),
+            ),
+          ),
+        );
+      } catch (e) {
+        emit(InitializingError(data: state.data, errorMessage: e.toString()));
+        return;
+      }
+    });
+
     on<SaveProject>((event, emit) {
       final formFields = state.data.formFields;
       final validationResult = _validateProjectForm(formFields);
@@ -40,8 +60,22 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
           type: ProjectType.supplementMobile,
         );
 
+        try {
+          state.data.projectBox?.put(newProject.id, newProject);
+        } catch (e) {
+          emit(
+            ProjectAddedError(
+              errorMessage: e.toString(),
+              data: state.data.copyWith(
+                formFields: validationResult.updatedFields,
+              ),
+            ),
+          );
+          return;
+        }
+
         emit(
-          ProjectAdded(
+          ProjectAddedSuccess(
             data: state.data.copyWith(
               projects: [...state.data.projects, newProject],
               resetForm: true,
@@ -49,19 +83,37 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
           ),
         );
       } else {
+        final existingProject = state.data.projects.firstWhere(
+          (project) => project.id == projectId,
+        );
+
+        final updatedProject = existingProject.copyWith(
+          name: projectName.trim(),
+          description: projectDescription?.trim(),
+          updatedAt: now,
+        );
+
+        try {
+          state.data.projectBox?.put(projectId, updatedProject);
+        } catch (e) {
+          emit(
+            ProjectUpdatedError(
+              errorMessage: e.toString(),
+              data: state.data.copyWith(
+                formFields: validationResult.updatedFields,
+              ),
+            ),
+          );
+          return;
+        }
+
         final updatedProjects =
             state.data.projects.map((project) {
-              return project.id == projectId
-                  ? project.copyWith(
-                    name: projectName.trim(),
-                    description: projectDescription?.trim(),
-                    updatedAt: now,
-                  )
-                  : project;
+              return project.id == projectId ? updatedProject : project;
             }).toList();
 
         emit(
-          ProjectUpdated(
+          ProjectUpdatedSuccess(
             data: state.data.copyWith(
               projects: updatedProjects,
               resetForm: true,
@@ -72,8 +124,14 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
     });
 
     on<DeleteProject>((event, emit) {
+      try {
+        state.data.projectBox?.delete(event.id);
+      } catch (e) {
+        emit(ProjectDeletedError(errorMessage: e.toString(), data: state.data));
+        return;
+      }
       emit(
-        ProjectDeleted(
+        ProjectDeletedSuccess(
           data: state.data.copyWith(
             projects:
                 state.data.projects

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/models/poligon_data.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -38,11 +39,20 @@ class TagSelected extends TaggingState {
   List<Object> get props => [data];
 }
 
-class TagDeleted extends TaggingState {
-  const TagDeleted({required super.data});
+class TagDeletedSuccess extends TaggingState {
+  final String successMessage;
+  const TagDeletedSuccess({required this.successMessage, required super.data});
 
   @override
-  List<Object> get props => [data];
+  List<Object> get props => [successMessage, data];
+}
+
+class TagDeletedError extends TaggingState {
+  final String errorMessage;
+  const TagDeletedError({required this.errorMessage, required super.data});
+
+  @override
+  List<Object> get props => [errorMessage, data];
 }
 
 class MovedCurrentLocation extends TaggingState {
@@ -53,7 +63,8 @@ class MovedCurrentLocation extends TaggingState {
 }
 
 class RecordedLocation extends TaggingState {
-  const RecordedLocation({required super.data});
+  final LatLng recordedLocation;
+  const RecordedLocation({required this.recordedLocation, required super.data});
 
   @override
   List<Object> get props => [data];
@@ -64,6 +75,27 @@ class EditFormShown extends TaggingState {
 
   @override
   List<Object> get props => [data];
+}
+
+class SaveFormSuccess extends TaggingState {
+  final TagData newTag;
+  final String successMessage;
+  const SaveFormSuccess({
+    required this.newTag,
+    required this.successMessage,
+    required super.data,
+  });
+
+  @override
+  List<Object> get props => [newTag, successMessage, data];
+}
+
+class SaveFormError extends TaggingState {
+  final String errorMessage;
+  const SaveFormError({required this.errorMessage, required super.data});
+
+  @override
+  List<Object> get props => [errorMessage, data];
 }
 
 class SideBarOpened extends TaggingState {
@@ -89,6 +121,28 @@ class SearchQueryCleared extends TaggingState {
 
 class AllFilterCleared extends TaggingState {
   const AllFilterCleared({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class InitializingStarted extends TaggingState {
+  const InitializingStarted({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class InitializingError extends TaggingState {
+  final String errorMessage;
+  const InitializingError({required this.errorMessage, required super.data});
+
+  @override
+  List<Object> get props => [data, errorMessage];
+}
+
+class InitializingSuccess extends TaggingState {
+  const InitializingSuccess({required super.data});
 
   @override
   List<Object> get props => [data];
@@ -123,6 +177,9 @@ class TaggingStateData {
   final bool isSubmitting;
   final Map<String, TaggingFormFieldState<dynamic>> formFields;
 
+  //Hive Box attribute
+  final Box<TagData>? tagDataBox;
+
   TaggingStateData({
     required this.project,
     required this.tags,
@@ -144,6 +201,8 @@ class TaggingStateData {
     this.selectedLabelType,
     required this.isSubmitting,
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
+
+    this.tagDataBox,
   }) : formFields = formFields ?? _generateFormFields();
 
   static Map<String, TaggingFormFieldState<dynamic>> _generateFormFields() {
@@ -157,7 +216,8 @@ class TaggingStateData {
     formFields['description'] = TaggingFormFieldState<String>();
     formFields['sector'] = TaggingFormFieldState<Sector>();
     formFields['note'] = TaggingFormFieldState<String?>();
-    formFields['position'] = TaggingFormFieldState<LatLng>();
+    formFields['positionLat'] = TaggingFormFieldState<double>();
+    formFields['positionLng'] = TaggingFormFieldState<double>();
 
     return formFields;
   }
@@ -188,6 +248,8 @@ class TaggingStateData {
     bool? resetSectorFilter,
     bool? resetProjectTypeFilter,
     String? selectedLabelType,
+
+    Box<TagData>? tagDataBox,
   }) {
     return TaggingStateData(
       project: project ?? this.project,
@@ -229,6 +291,7 @@ class TaggingStateData {
               ? _generateFormFields()
               : formFields ?? this.formFields,
       selectedLabelType: selectedLabelType ?? this.selectedLabelType,
+      tagDataBox: tagDataBox ?? this.tagDataBox,
     );
   }
 }

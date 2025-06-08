@@ -11,6 +11,8 @@ import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_widget.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/tagging_form_dialog.dart';
 import 'package:latlong2/latlong.dart';
@@ -87,6 +89,7 @@ class _TaggingPageState extends State<TaggingPage>
   @override
   void dispose() {
     _rippleController.dispose();
+    _taggingBloc.add(CloseProject());
     super.dispose();
   }
 
@@ -178,8 +181,8 @@ class _TaggingPageState extends State<TaggingPage>
     return allTags.where((tag) {
       if (tag == clickedTag) return true;
       double dist = _distanceInPixels(
-        clickedTag.position,
-        tag.position,
+        LatLng(clickedTag.positionLat, clickedTag.positionLng),
+        LatLng(tag.positionLat, tag.positionLng),
         zoom,
         mapSize,
       );
@@ -269,7 +272,13 @@ class _TaggingPageState extends State<TaggingPage>
   Widget build(BuildContext context) {
     return BlocConsumer<TaggingBloc, TaggingState>(
       listener: (context, state) {
-        if (state is TagSuccess) {
+        if (state is SaveFormSuccess || state is TagDeletedSuccess) {
+          final message = switch (state) {
+            SaveFormSuccess(:final successMessage) => successMessage,
+            TagDeletedSuccess(:final successMessage) => successMessage,
+            _ => '',
+          };
+
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -289,9 +298,12 @@ class _TaggingPageState extends State<TaggingPage>
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Tagging Berhasil!',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -303,7 +315,13 @@ class _TaggingPageState extends State<TaggingPage>
               margin: const EdgeInsets.all(16),
             ),
           );
-        } else if (state is TagError) {
+        } else if (state is TagError || state is TagDeletedError) {
+          final message = switch (state) {
+            TagError(:final errorMessage) => errorMessage,
+            TagDeletedError(:final errorMessage) => errorMessage,
+            _ => '',
+          };
+
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -325,7 +343,7 @@ class _TaggingPageState extends State<TaggingPage>
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      state.errorMessage,
+                      message,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
@@ -352,19 +370,35 @@ class _TaggingPageState extends State<TaggingPage>
         } else if (state is TagSelected) {
           if (state.data.selectedTags.isNotEmpty) {
             final selectedTag = state.data.selectedTags.first;
-            _mapController.move(selectedTag.position, state.data.currentZoom);
+            _mapController.move(
+              LatLng(selectedTag.positionLat, selectedTag.positionLng),
+              state.data.currentZoom,
+            );
             _toggleSidebar(false);
           }
         } else if (state is RecordedLocation) {
-          _mapController.move(
-            state.data.formFields['position']?.value ??
-                LatLng(-7.9666, 112.6326),
-            state.data.currentZoom,
-          );
+          _mapController.move(state.recordedLocation, state.data.currentZoom);
           _showTaggingFormDialog(null);
         }
       },
       builder: (context, state) {
+        if (state is InitializingStarted) {
+          return LoadingScaffold(
+            title: 'Memuat Peta...',
+            subtitle: 'Mohon tunggu sebentar',
+          );
+        } else if (state is InitializingError) {
+          return ErrorScaffold(
+            title: 'Gagal Memuat Peta',
+            errorMessage: state.errorMessage,
+            retryButtonText: 'Coba Lagi',
+            onRetry: () {
+              _taggingBloc
+                ..add(InitTag(project: widget.project))
+                ..add(GetCurrentLocation());
+            },
+          );
+        }
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
           body: LayoutBuilder(
@@ -419,7 +453,10 @@ class _TaggingPageState extends State<TaggingPage>
                               final isSelected = state.data.selectedTags
                                   .contains(tagData);
                               return Marker(
-                                point: tagData.position,
+                                point: LatLng(
+                                  tagData.positionLat,
+                                  tagData.positionLng,
+                                ),
                                 alignment: Alignment.center,
                                 width: isSelected ? 130 : 120,
                                 height: isSelected ? 130 : 120,

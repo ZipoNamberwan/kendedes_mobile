@@ -134,7 +134,7 @@ class TagListItemWidget extends StatelessWidget {
                       ],
                       const SizedBox(height: 2),
                       Text(
-                        'Posisi: ${tag.position.latitude.toStringAsFixed(6)}, ${tag.position.longitude.toStringAsFixed(6)}',
+                        'Posisi: ${tag.positionLat.toStringAsFixed(6)}, ${tag.positionLng.toStringAsFixed(6)}',
                         style: TextStyle(
                           fontSize: 12,
                           color:

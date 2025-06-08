@@ -6,6 +6,13 @@ abstract class ProjectEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class Initialize extends ProjectEvent {
+  const Initialize();
+
+  @override
+  List<Object?> get props => [];
+}
+
 class SaveProject extends ProjectEvent {
   const SaveProject();
 

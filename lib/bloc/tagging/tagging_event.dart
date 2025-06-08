@@ -138,3 +138,7 @@ class SelectLabelType extends TaggingEvent {
   final String? labelTypeKey;
   const SelectLabelType(this.labelTypeKey);
 }
+
+class CloseProject extends TaggingEvent {
+  const CloseProject();
+}

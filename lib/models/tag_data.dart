@@ -1,35 +1,65 @@
 import 'package:equatable/equatable.dart';
+import 'package:hive_ce/hive.dart';
+import 'package:kendedes_mobile/hive/hive_types.dart';
 import 'package:kendedes_mobile/models/project.dart';
-import 'package:latlong2/latlong.dart';
+part 'tag_data.g.dart';
 
-class TagData {
+@HiveType(typeId: tagDataTypeId)
+class TagData extends HiveObject {
+  @HiveField(0)
   final String id;
-  final LatLng position;
+  @HiveField(1)
+  final double positionLat;
+  @HiveField(2)
+  final double positionLng;
+  @HiveField(3)
   final bool hasChanged;
+  @HiveField(4)
+  final bool hasSentToServer;
+  @HiveField(5)
   final TagType type;
-  final LatLng? initialPosition;
+  @HiveField(6)
+  final double initialPositionLat;
+  @HiveField(7)
+  final double initialPositionLng;
+  @HiveField(8)
   final bool isDeleted;
+  @HiveField(9)
   final DateTime? createdAt;
+  @HiveField(10)
   final DateTime? updatedAt;
+  @HiveField(11)
   final DateTime? deletedAt;
+  @HiveField(12)
   final int? incrementalId;
+  @HiveField(13)
   final Project project;
 
   // Attributes for the supplement tag data
+  @HiveField(14)
   final String businessName;
+  @HiveField(15)
   final String? businessOwner;
+  @HiveField(16)
   final String? businessAddress;
+  @HiveField(17)
   final BuildingStatus buildingStatus;
+  @HiveField(18)
   final String description;
+  @HiveField(19)
   final Sector sector;
+  @HiveField(20)
   final String? note;
 
   TagData({
     required this.id,
-    required this.position,
+    required this.positionLat,
+    required this.positionLng,
     required this.hasChanged,
+    required this.hasSentToServer,
     required this.type,
-    this.initialPosition,
+    required this.initialPositionLat,
+    required this.initialPositionLng,
     required this.isDeleted,
     this.createdAt,
     this.updatedAt,
@@ -65,11 +95,24 @@ class TagData {
   }
 }
 
-enum TagType { auto, manual, move }
+@HiveType(typeId: tagTypeTypeId)
+enum TagType {
+  @HiveField(0)
+  auto,
+  @HiveField(1)
+  manual,
+  @HiveField(2)
+  move,
+}
 
+@HiveType(typeId: sectorTypeId)
 class Sector extends Equatable {
+  @HiveField(0)
   final String key;
+  @HiveField(1)
   final String text;
+
+  const Sector({required this.key, required this.text});
 
   const Sector._(this.key, this.text);
 
@@ -168,9 +211,14 @@ class Sector extends Equatable {
   List<Object?> get props => [key, text];
 }
 
+@HiveType(typeId: buildingStatusTypeId)
 class BuildingStatus extends Equatable {
+  @HiveField(0)
   final String key;
+  @HiveField(1)
   final String text;
+
+  const BuildingStatus({required this.key, required this.text});
 
   const BuildingStatus._(this.key, this.text);
 

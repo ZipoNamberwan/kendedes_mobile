@@ -4,7 +4,6 @@ import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
-import 'package:latlong2/latlong.dart';
 
 class TaggingFormDialog extends StatefulWidget {
   final TagData? initialTagData;
@@ -274,7 +273,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
   Widget build(BuildContext context) {
     return BlocConsumer<TaggingBloc, TaggingState>(
       listener: (context, state) {
-        if (state is TagSuccess) {
+        if (state is SaveFormSuccess) {
           Navigator.of(context).pop();
         } else if (state is EditFormShown) {
           _businessNameController.text =
@@ -286,10 +285,50 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
           _descriptionController.text =
               state.data.formFields['description']?.value ?? '';
           _noteController.text = state.data.formFields['note']?.value ?? '';
+        } else if (state is SaveFormError) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              content: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.error_outline,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      state.errorMessage,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFFEF4444),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
         }
       },
       builder: (context, state) {
-        if (state.data.formFields['position']?.value == null) {
+        if (state.data.formFields['positionLat']?.value == null ||
+            state.data.formFields['positionLng']?.value == null) {
           return Scaffold(
             backgroundColor: Colors.grey.shade50,
             body: Center(
@@ -522,7 +561,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
-                                              '${(state.data.formFields['position']?.value ?? LatLng(-7.9666, 112.6326)).latitude.toStringAsFixed(6)}, ${(state.data.formFields['position']?.value ?? LatLng(-7.9666, 112.6326)).longitude.toStringAsFixed(6)}',
+                                              '${(state.data.formFields['positionLat']?.value ?? -7.9666).toStringAsFixed(6)}, ${(state.data.formFields['positionLng']?.value ?? 112.6326).toStringAsFixed(6)}',
                                               style: TextStyle(
                                                 fontSize: 11,
                                                 color: Colors.grey.shade600,
@@ -721,28 +760,60 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                   color: Colors.transparent,
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(12),
-                                    onTap: () => _taggingBloc.add(SaveForm()),
-                                    child: const Center(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.save_rounded,
-                                            color: Colors.white,
-                                            size: 16,
-                                          ),
-                                          SizedBox(width: 6),
-                                          Text(
-                                            'Simpan',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                    onTap:
+                                        state.data.isSubmitting
+                                            ? null
+                                            : () =>
+                                                _taggingBloc.add(SaveForm()),
+                                    child: Center(
+                                      child:
+                                          state.data.isSubmitting
+                                              ? const Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          color: Colors.white,
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Menyimpan...',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                              : const Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons.save_rounded,
+                                                    color: Colors.white,
+                                                    size: 16,
+                                                  ),
+                                                  SizedBox(width: 6),
+                                                  Text(
+                                                    'Simpan',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                     ),
                                   ),
                                 ),

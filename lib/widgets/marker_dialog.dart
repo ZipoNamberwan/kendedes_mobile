@@ -80,7 +80,7 @@ class MarkerDialog extends StatelessWidget {
                       _buildInfoRow('Catatan', tagData.note!),
                     _buildInfoRow(
                       'Posisi',
-                      '${tagData.position.latitude.toStringAsFixed(6)}, ${tagData.position.longitude.toStringAsFixed(6)}',
+                      '${tagData.positionLat.toStringAsFixed(6)}, ${tagData.positionLng.toStringAsFixed(6)}',
                     ),
                     if (tagData.createdAt != null)
                       _buildInfoRow(

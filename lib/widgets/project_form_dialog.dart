@@ -77,7 +77,7 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
   Widget build(BuildContext context) {
     return BlocConsumer<ProjectBloc, ProjectState>(
       listener: (context, state) {
-        if (state is ProjectAdded || state is ProjectUpdated) {
+        if (state is ProjectAddedSuccess || state is ProjectUpdatedSuccess) {
           Navigator.of(context).pop();
         } else if (state is ProjectLoaded) {
           final formFields = state.data.formFields;

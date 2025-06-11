@@ -721,12 +721,12 @@ class _TaggingPageState extends State<TaggingPage>
                     right: 16,
                     child: Column(
                       children: [
-                        // Download button
+                        // Refresh tagging button
                         _buildActionButton(
-                          icon: Icons.download_rounded,
+                          icon: Icons.restart_alt_sharp,
                           iconColor: Colors.deepOrange,
                           onPressed: () {
-                            // Download polygon functionality
+                            // Refresh tagging polygon functionality
                           },
                         ),
 

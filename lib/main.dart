@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
+import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
+import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/hive/hive_registrar.g.dart';
 import 'package:path_provider/path_provider.dart';
 import 'pages/login_page.dart';
@@ -17,6 +19,8 @@ void main() async {
     ..init(appDir.path)
     ..registerAdapters();
 
+  await AuthRepository().init();
+
   runApp(MyApp());
 }
 
@@ -28,10 +32,11 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<LoginBloc>(
-          create: (context) => LoginBloc()..add(MockupLogin()),
+          create: (context) => LoginBloc()..add(InitLogin()),
         ),
         BlocProvider<ProjectBloc>(create: (context) => ProjectBloc()),
         BlocProvider<TaggingBloc>(create: (context) => TaggingBloc()),
+        BlocProvider<LogoutBloc>(create: (context) => LogoutBloc()),
       ],
       child: MaterialApp(
         title: 'Kendedes Mobile',

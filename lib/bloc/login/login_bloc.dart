@@ -1,11 +1,14 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/services/dio_service.dart';
 import 'login_event.dart';
 import 'login_state.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   LoginBloc()
     : super(
-        LoginState(
+        Initializing(
           data: LoginStateData(
             isSubmitting: false,
             isSuccess: false,
@@ -13,9 +16,25 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
             obscurePassword: true,
             email: LoginFormFieldState<String>(),
             password: LoginFormFieldState<String>(),
+            isLogoutLoading: false,
+            isLogoutSuccess: false,
+            isLogoutFailure: false,
           ),
         ),
       ) {
+    on<InitLogin>((event, emit) async {
+      emit(Initializing(data: state.data.copyWith(isSubmitting: true)));
+      if (AuthRepository().isTokenExists()) {
+        emit(
+          LoginSuccess(
+            data: state.data.copyWith(isSuccess: true, isSubmitting: false),
+          ),
+        );
+      } else {
+        emit(LoginState(data: state.data.copyWith(isSubmitting: false)));
+      }
+    });
+
     on<LoginEmailChanged>((event, emit) {
       emit(
         LoginState(
@@ -25,6 +44,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         ),
       );
     });
+
     on<LoginPasswordChanged>((event, emit) {
       emit(
         LoginState(
@@ -46,21 +66,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           ),
         ),
       );
-    });
-
-    on<MockupLogin>((event, emit) async {
-      emit(
-        LoginState(
-          data: state.data.copyWith(
-            isSubmitting: true,
-            resetAllErrorMessages: true,
-            isSuccess: false,
-            isFailure: false,
-          ),
-        ),
-      );
-      await Future.delayed(const Duration(seconds: 2));
-      emit(LoginSuccess(data: state.data.copyWith(isSuccess: true)));
     });
 
     on<LoginSubmitted>((event, emit) async {
@@ -106,24 +111,56 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         );
         return;
       }
-      // Simulate login delay and logic
-      await Future.delayed(const Duration(seconds: 1));
-      if (state.data.email.value == 'a@bps.go.id' &&
-          state.data.password.value == '123456') {
-        emit(LoginSuccess(data: state.data.copyWith(isSuccess: true)));
+
+      await _safeExecute(emit, () async {
+        emit(LoginState(data: state.data.copyWith(isSubmitting: true)));
+        await AuthRepository().login(email: email!, password: password!);
+        emit(
+          LoginSuccess(
+            data: state.data.copyWith(isSuccess: true, isSubmitting: false),
+          ),
+        );
+      });
+    });
+  }
+
+  Future<void> _safeExecute(
+    Emitter<LoginState> emit,
+    Future<void> Function() action,
+  ) async {
+    try {
+      await action();
+    } on DioException catch (dioError) {
+      final err = dioError.error;
+
+      if (err is LoginExpiredException) {
+        emit(
+          TokenExpired(
+            data: state.data.copyWith(isFailure: true, isSubmitting: false),
+          ),
+        );
+      } else if (err is DataProviderException) {
+        emit(
+          LoginFailed(
+            errorMessage: err.message,
+            data: state.data.copyWith(isFailure: true, isSubmitting: false),
+          ),
+        );
       } else {
         emit(
           LoginFailed(
-            data: state.data.copyWith(
-              isFailure: true,
-              isSubmitting: false,
-              password: state.data.password.copyWith(
-                error: 'Email atau password salah',
-              ),
-            ),
+            errorMessage: 'Something went wrong: ${dioError.message}',
+            data: state.data.copyWith(isFailure: true, isSubmitting: false),
           ),
         );
       }
-    });
+    } catch (e) {
+      emit(
+        LoginFailed(
+          errorMessage: e.toString(),
+          data: state.data.copyWith(isFailure: true, isSubmitting: false),
+        ),
+      );
+    }
   }
 }

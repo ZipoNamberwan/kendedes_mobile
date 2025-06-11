@@ -34,10 +34,6 @@ class InitLogin extends LoginEvent {
   const InitLogin();
 }
 
-class Logout extends LoginEvent {
-  const Logout();
-}
-
-class MockupLogin extends LoginEvent {
-  const MockupLogin();
-}
+// class MockupLogin extends LoginEvent {
+//   const MockupLogin();
+// }

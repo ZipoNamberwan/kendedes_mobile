@@ -9,6 +9,7 @@ import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/project_form_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_project_confirmation_dialog.dart';
+import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 
 class ProjectListPage extends StatefulWidget {
   const ProjectListPage({super.key});
@@ -62,6 +63,13 @@ class _ProjectListPageState extends State<ProjectListPage>
             },
             onCancel: () => Navigator.of(context).pop(),
           ),
+    );
+  }
+
+  void _showLogoutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => LogoutConfirmationDialog(),
     );
   }
 
@@ -185,7 +193,7 @@ class _ProjectListPageState extends State<ProjectListPage>
                           child: const Icon(
                             Icons.folder_special_rounded,
                             color: Colors.white,
-                            size: 28,
+                            size: 20,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -213,23 +221,43 @@ class _ProjectListPageState extends State<ProjectListPage>
                             ],
                           ),
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 1,
+                        InkWell(
+                          onTap: _showLogoutConfirmation,
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.logout_rounded,
+                              color: Colors.white,
+                              size: 20,
                             ),
                           ),
-                          child: IconButton(
-                            icon: const Icon(
+                        ),
+                        const SizedBox(width: 12),
+                        InkWell(
+                          onTap: () => _showProjectForm(),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
                               Icons.add_rounded,
                               color: Colors.white,
-                              size: 24,
+                              size: 20,
                             ),
-                            onPressed: () => _showProjectForm(),
-                            tooltip: 'Add Project',
                           ),
                         ),
                       ],

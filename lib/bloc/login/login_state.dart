@@ -9,12 +9,21 @@ class LoginState extends Equatable {
   List<Object> get props => [data];
 }
 
+class Initializing extends LoginState {
+  const Initializing({required super.data});
+}
+
 class LoginFailed extends LoginState {
-  const LoginFailed({required super.data});
+  final String errorMessage;
+  const LoginFailed({required this.errorMessage, required super.data});
 }
 
 class LoginSuccess extends LoginState {
   const LoginSuccess({required super.data});
+}
+
+class TokenExpired extends LoginState {
+  const TokenExpired({required super.data});
 }
 
 class LoginStateData {
@@ -25,6 +34,11 @@ class LoginStateData {
   final bool isFailure;
   final bool obscurePassword;
 
+  /// State for logout process
+  final bool isLogoutLoading;
+  final bool isLogoutSuccess;
+  final bool isLogoutFailure;
+
   LoginStateData({
     required this.email,
     required this.password,
@@ -32,6 +46,9 @@ class LoginStateData {
     required this.isSuccess,
     required this.isFailure,
     required this.obscurePassword,
+    required this.isLogoutLoading,
+    required this.isLogoutSuccess,
+    required this.isLogoutFailure,
   });
 
   LoginStateData copyWith({
@@ -42,6 +59,9 @@ class LoginStateData {
     bool? isFailure,
     bool? obscurePassword,
     bool resetAllErrorMessages = false,
+    bool? isLogoutLoading,
+    bool? isLogoutSuccess,
+    bool? isLogoutFailure,
   }) {
     return LoginStateData(
       email:
@@ -56,6 +76,9 @@ class LoginStateData {
       isSuccess: isSuccess ?? this.isSuccess,
       isFailure: isFailure ?? this.isFailure,
       obscurePassword: obscurePassword ?? this.obscurePassword,
+      isLogoutLoading: isLogoutLoading ?? this.isLogoutLoading,
+      isLogoutSuccess: isLogoutSuccess ?? this.isLogoutSuccess,
+      isLogoutFailure: isLogoutFailure ?? this.isLogoutFailure,
     );
   }
 }

@@ -4,12 +4,14 @@ import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/pages/tagging_page.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/project_form_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_project_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 
 class ProjectListPage extends StatefulWidget {
   const ProjectListPage({super.key});
@@ -58,7 +60,6 @@ class _ProjectListPageState extends State<ProjectListPage>
           (context) => DeleteProjectConfirmationDialog(
             projectName: project.name,
             onConfirm: () {
-              Navigator.of(context).pop();
               _projectBloc.add(DeleteProject(project.id));
             },
             onCancel: () => Navigator.of(context).pop(),
@@ -77,65 +78,34 @@ class _ProjectListPageState extends State<ProjectListPage>
   Widget build(BuildContext context) {
     return BlocConsumer<ProjectBloc, ProjectState>(
       listener: (context, state) {
-        if (state is ProjectAddedError ||
-            state is ProjectUpdatedError ||
-            state is ProjectDeletedError) {
-          final message = switch (state) {
-            ProjectAddedError(:final errorMessage) => errorMessage,
-            ProjectUpdatedError(:final errorMessage) => errorMessage,
-            ProjectDeletedError(:final errorMessage) => errorMessage,
-            _ => '',
-          };
-
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              content: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.error_outline,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      message,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: const Color(0xFFEF4444),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: const EdgeInsets.all(16),
-            ),
+        if (state is TokenExpired) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+            (route) => false,
+          );
+        } else if (state is ProjectLoadError) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => MessageDialog(
+                  title: 'Gagal Memuat Project',
+                  message: state.errorMessage,
+                  type: MessageType.error,
+                  buttonText: 'Tutup',
+                ),
           );
         }
       },
       builder: (context, state) {
         if (state is InitializingStarted) {
           return LoadingScaffold(
-            title: 'Menyiapkan aplikasi...',
+            title: 'Menyiapkan halaman project...',
             subtitle: 'Mohon tunggu sebentar',
           );
         } else if (state is InitializingError) {
           return ErrorScaffold(
-            title: 'Gagal Memuat Aplikasi, Mengirim Log ke Server...',
+            title: 'Gagal Memuat Halaman Project, Mengirim Log ke Server...',
             errorMessage: state.errorMessage,
             retryButtonText: 'Coba Lagi',
             onRetry: () {

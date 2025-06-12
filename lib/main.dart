@@ -7,21 +7,25 @@ import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
 import 'package:kendedes_mobile/hive/hive_registrar.g.dart';
 import 'package:path_provider/path_provider.dart';
 import 'pages/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _initializeApp();
+  runApp(MyApp());
+}
 
+Future<void> _initializeApp() async {
   final appDir = await getApplicationDocumentsDirectory();
   Hive
     ..init(appDir.path)
     ..registerAdapters();
 
   await AuthRepository().init();
-
-  runApp(MyApp());
+  await ProjectRepository().init();
 }
 
 class MyApp extends StatelessWidget {

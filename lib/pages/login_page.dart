@@ -5,6 +5,7 @@ import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/login_state.dart';
 import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -38,51 +39,11 @@ class _LoginPageState extends State<LoginPage> {
           showDialog(
             context: context,
             builder:
-                (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  title: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.red.shade400,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Login Gagal',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  content: Text(
-                    state.errorMessage,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey.shade700,
-                      height: 1.4,
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.orange,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                      ),
-                      child: const Text(
-                        'OK',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
+                (context) => MessageDialog(
+                  title: 'Login Gagal',
+                  message: state.errorMessage,
+                  type: MessageType.error,
+                  buttonText: 'Ok',
                 ),
           );
         }

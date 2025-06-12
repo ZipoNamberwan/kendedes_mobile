@@ -1,4 +1,5 @@
 import 'package:hive_ce/hive.dart';
+import 'package:kendedes_mobile/classes/helpers.dart';
 import 'package:kendedes_mobile/hive/hive_types.dart';
 part 'project.g.dart';
 
@@ -34,11 +35,13 @@ class Project {
       id: json['id'],
       name: json['name'],
       description: json['description'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
       deletedAt:
-          json['deletedAt'] != null ? DateTime.parse(json['deletedAt']) : null,
-      type: ProjectType.fromJson(json['type']) ?? ProjectType.supplementMobile,
+          json['deleted_at'] != null
+              ? DateTime.parse(json['deleted_at'])
+              : null,
+      type: ProjectType.fromKey(json['type']) ?? ProjectType.supplementMobile,
     );
   }
 
@@ -47,9 +50,10 @@ class Project {
       'id': id,
       'name': name,
       'description': description,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-      'deletedAt': deletedAt?.toIso8601String(),
+      'type': type.key,
+      'created_at': DateHelper.format(createdAt),
+      'updated_at': DateHelper.format(updatedAt),
+      'deleted_at': DateHelper.format(deletedAt),
     };
   }
 
@@ -86,15 +90,15 @@ class ProjectType {
   const ProjectType._(this.key, this.text);
 
   static const marketSwmaps = ProjectType._(
-    'market_swmaps',
+    'swmaps market',
     'Sentra Ekonomi SWMaps',
   );
   static const supplementSwmaps = ProjectType._(
-    'supplement_swmaps',
+    'swmaps supplement',
     'Suplemen SWMaps',
   );
   static const supplementMobile = ProjectType._(
-    'supplement_mobile',
+    'kendedes mobile',
     'Suplemen Mobile',
   );
 

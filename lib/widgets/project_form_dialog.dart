@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
+import 'package:kendedes_mobile/pages/login_page.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 
 class ProjectFormDialog extends StatefulWidget {
   final String? id;
@@ -77,12 +79,24 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
   Widget build(BuildContext context) {
     return BlocConsumer<ProjectBloc, ProjectState>(
       listener: (context, state) {
-        if (state is ProjectAddedSuccess || state is ProjectUpdatedSuccess) {
-          Navigator.of(context).pop();
-        } else if (state is ProjectLoaded) {
+        if (state is ProjectLoaded) {
           final formFields = state.data.formFields;
           nameController.text = formFields['name']?.value ?? '';
           descriptionController.text = formFields['description']?.value ?? '';
+        } else if (state is TokenExpired) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+            (route) => false,
+          );
+        } else if (state is ProjectAddedSuccess ||
+            state is ProjectUpdatedSuccess) {
+          Navigator.pop(context);
+          CustomSnackBar.showSuccess(
+            context,
+            message:
+                'Projek berhasil ${state is ProjectAddedSuccess ? 'ditambahkan' : 'diubah'}',
+          );
         }
       },
       builder: (context, state) {
@@ -334,6 +348,46 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
 
                           const SizedBox(height: 24),
 
+                          // Error Box
+                          if (state is ProjectAddedError ||
+                              state is ProjectUpdatedError)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.red.shade200,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red.shade600,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      state is ProjectAddedError
+                                          ? state.errorMessage
+                                          : (state as ProjectUpdatedError)
+                                              .errorMessage,
+                                      style: TextStyle(
+                                        color: Colors.red.shade700,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
                           // Compact Action Buttons
                           Row(
                             children: [
@@ -373,7 +427,10 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
                                   ),
                                   child: ElevatedButton(
                                     onPressed:
-                                        () => _projectBloc.add(SaveProject()),
+                                        state.data.saveLoading
+                                            ? null
+                                            : () =>
+                                                _projectBloc.add(SaveProject()),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.transparent,
                                       foregroundColor: Colors.white,
@@ -386,13 +443,43 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
-                                    child: Text(
-                                      widget.id != null ? 'Ubah' : 'Buat',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
-                                      ),
-                                    ),
+                                    child:
+                                        state.data.saveLoading
+                                            ? Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        color: Colors.white,
+                                                        strokeWidth: 2,
+                                                      ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  widget.id != null
+                                                      ? 'Mengubah...'
+                                                      : 'Membuat...',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 15,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                            : Text(
+                                              widget.id != null
+                                                  ? 'Ubah'
+                                                  : 'Buat',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 15,
+                                              ),
+                                            ),
                                   ),
                                 ),
                               ),

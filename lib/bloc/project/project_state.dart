@@ -55,6 +55,15 @@ class ProjectDeletedError extends ProjectState {
   const ProjectDeletedError({required this.errorMessage, required super.data});
 }
 
+class TokenExpired extends ProjectState {
+  const TokenExpired({required super.data});
+}
+
+class ProjectLoadError extends ProjectState {
+  final String errorMessage;
+  const ProjectLoadError({required this.errorMessage, required super.data});
+}
+
 class ProjectFormFieldState<T> {
   final T? value;
   final String? error;
@@ -73,9 +82,16 @@ class ProjectStateData {
   final List<Project> projects;
   final Map<String, ProjectFormFieldState<dynamic>> formFields;
 
+  final bool saveLoading;
+  final bool initLoading;
+  final bool deleteLoading;
+
   ProjectStateData({
     required this.projects,
     this.projectBox,
+    required this.saveLoading,
+    required this.initLoading,
+    required this.deleteLoading,
     Map<String, ProjectFormFieldState<dynamic>>? formFields,
   }) : formFields = formFields ?? _generateFormFields();
 
@@ -95,6 +111,9 @@ class ProjectStateData {
     Box<Project>? projectBox,
     Map<String, ProjectFormFieldState<dynamic>>? formFields,
     bool? resetForm,
+    bool? saveLoading,
+    bool? initLoading,
+    bool? deleteLoading,
   }) {
     return ProjectStateData(
       projects: projects ?? this.projects,
@@ -103,6 +122,9 @@ class ProjectStateData {
           (resetForm ?? false)
               ? _generateFormFields()
               : formFields ?? this.formFields,
+      saveLoading: saveLoading ?? this.saveLoading,
+      initLoading: initLoading ?? this.initLoading,
+      deleteLoading: deleteLoading ?? this.deleteLoading,
     );
   }
 }

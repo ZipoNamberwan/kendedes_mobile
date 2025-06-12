@@ -2,6 +2,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
+import 'package:kendedes_mobile/classes/exception_handler.dart';
+import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
 import 'package:kendedes_mobile/hive/hive_boxes.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:uuid/uuid.dart';
@@ -9,26 +12,79 @@ import 'package:uuid/uuid.dart';
 class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
   final Uuid _uuid = const Uuid();
 
-  ProjectBloc() : super(ProjectState(data: ProjectStateData(projects: []))) {
-    on<Initialize>((event, emit) async {
-      emit(InitializingStarted(data: state.data));
-      try {
-        final box = await Hive.openBox<Project>(projectBox);
-        emit(
-          InitializingSuccess(
-            data: state.data.copyWith(
-              projectBox: box,
-              projects: box.values.toList(),
-            ),
+  ProjectBloc()
+    : super(
+        ProjectState(
+          data: ProjectStateData(
+            projects: [],
+            saveLoading: false,
+            initLoading: false,
+            deleteLoading: false,
           ),
-        );
+        ),
+      ) {
+    on<Initialize>((event, emit) async {
+      try {
+        emit(InitializingStarted(data: state.data.copyWith(initLoading: true)));
+
+        final box = await Hive.openBox<Project>(projectBox);
+
+        if (box.isEmpty) {
+          await ApiServerHandler.run(
+            action: () async {
+              final userId = AuthRepository().getUser()?.id;
+              if (userId != null) {
+                final projects = await ProjectRepository().getProjects(userId);
+                await box.addAll(projects);
+                emit(
+                  InitializingSuccess(
+                    data: state.data.copyWith(
+                      projectBox: box,
+                      projects: projects,
+                      initLoading: false,
+                    ),
+                  ),
+                );
+              }
+            },
+            onLoginExpired: (e) {
+              emit(TokenExpired(data: state.data.copyWith(initLoading: false)));
+            },
+            onDataProviderError: (e) {
+              emit(
+                ProjectLoadError(
+                  errorMessage: e.message,
+                  data: state.data.copyWith(initLoading: false),
+                ),
+              );
+            },
+            onOtherError: (e) {
+              emit(
+                ProjectLoadError(
+                  errorMessage: e.toString(),
+                  data: state.data.copyWith(initLoading: false),
+                ),
+              );
+            },
+          );
+        } else {
+          emit(
+            InitializingSuccess(
+              data: state.data.copyWith(
+                projectBox: box,
+                projects: box.values.toList(),
+                initLoading: false,
+              ),
+            ),
+          );
+        }
       } catch (e) {
         emit(InitializingError(data: state.data, errorMessage: e.toString()));
         return;
       }
     });
 
-    on<SaveProject>((event, emit) {
+    on<SaveProject>((event, emit) async {
       final formFields = state.data.formFields;
       final validationResult = _validateProjectForm(formFields);
 
@@ -61,27 +117,53 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         );
 
         try {
-          state.data.projectBox?.put(newProject.id, newProject);
+          await ApiServerHandler.run(
+            action: () async {
+              emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
+              await ProjectRepository().createProject(newProject.toJson());
+              state.data.projectBox?.put(newProject.id, newProject);
+              emit(
+                ProjectAddedSuccess(
+                  data: state.data.copyWith(
+                    projects: [...state.data.projects, newProject],
+                    resetForm: true,
+                    saveLoading: false,
+                  ),
+                ),
+              );
+            },
+            onLoginExpired: (e) {
+              emit(TokenExpired(data: state.data.copyWith(saveLoading: false)));
+            },
+            onDataProviderError: (e) {
+              emit(
+                ProjectAddedError(
+                  errorMessage: e.message,
+                  data: state.data.copyWith(saveLoading: false),
+                ),
+              );
+            },
+            onOtherError: (e) {
+              emit(
+                ProjectAddedError(
+                  errorMessage: e.toString(),
+                  data: state.data.copyWith(saveLoading: false),
+                ),
+              );
+            },
+          );
         } catch (e) {
           emit(
             ProjectAddedError(
               errorMessage: e.toString(),
               data: state.data.copyWith(
                 formFields: validationResult.updatedFields,
+                saveLoading: false,
               ),
             ),
           );
           return;
         }
-
-        emit(
-          ProjectAddedSuccess(
-            data: state.data.copyWith(
-              projects: [...state.data.projects, newProject],
-              resetForm: true,
-            ),
-          ),
-        );
       } else {
         final existingProject = state.data.projects.firstWhere(
           (project) => project.id == projectId,
@@ -94,52 +176,113 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         );
 
         try {
-          state.data.projectBox?.put(projectId, updatedProject);
+          await ApiServerHandler.run(
+            action: () async {
+              emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
+              await ProjectRepository().updateProject(
+                projectId,
+                updatedProject.toJson(),
+              );
+              final updatedProjects =
+                  state.data.projects.map((project) {
+                    return project.id == projectId ? updatedProject : project;
+                  }).toList();
+
+              state.data.projectBox?.put(projectId, updatedProject);
+
+              emit(
+                ProjectUpdatedSuccess(
+                  data: state.data.copyWith(
+                    projects: updatedProjects,
+                    resetForm: true,
+                    saveLoading: false,
+                  ),
+                ),
+              );
+            },
+            onLoginExpired: (e) {
+              emit(TokenExpired(data: state.data.copyWith(saveLoading: false)));
+            },
+            onDataProviderError: (e) {
+              emit(
+                ProjectUpdatedError(
+                  errorMessage: e.message,
+                  data: state.data.copyWith(saveLoading: false),
+                ),
+              );
+            },
+            onOtherError: (e) {
+              emit(
+                ProjectUpdatedError(
+                  errorMessage: e.toString(),
+                  data: state.data.copyWith(saveLoading: false),
+                ),
+              );
+            },
+          );
         } catch (e) {
           emit(
             ProjectUpdatedError(
               errorMessage: e.toString(),
               data: state.data.copyWith(
                 formFields: validationResult.updatedFields,
+                saveLoading: false,
               ),
             ),
           );
           return;
         }
-
-        final updatedProjects =
-            state.data.projects.map((project) {
-              return project.id == projectId ? updatedProject : project;
-            }).toList();
-
-        emit(
-          ProjectUpdatedSuccess(
-            data: state.data.copyWith(
-              projects: updatedProjects,
-              resetForm: true,
-            ),
-          ),
-        );
       }
     });
 
-    on<DeleteProject>((event, emit) {
+    on<DeleteProject>((event, emit) async {
       try {
-        state.data.projectBox?.delete(event.id);
+        await ApiServerHandler.run(
+          action: () async {
+            emit(ProjectState(data: state.data.copyWith(deleteLoading: true)));
+            await ProjectRepository().deleteProject(event.id);
+            state.data.projectBox?.delete(event.id);
+            emit(
+              ProjectDeletedSuccess(
+                data: state.data.copyWith(
+                  deleteLoading: false,
+                  projects:
+                      state.data.projects
+                          .where((project) => project.id != event.id)
+                          .toList(),
+                ),
+              ),
+            );
+          },
+          onLoginExpired: (e) {
+            emit(TokenExpired(data: state.data.copyWith(deleteLoading: false)));
+          },
+          onDataProviderError: (e) {
+            emit(
+              ProjectDeletedError(
+                errorMessage: e.message,
+                data: state.data.copyWith(deleteLoading: false),
+              ),
+            );
+          },
+          onOtherError: (e) {
+            emit(
+              ProjectDeletedError(
+                errorMessage: e.toString(),
+                data: state.data.copyWith(deleteLoading: false),
+              ),
+            );
+          },
+        );
       } catch (e) {
-        emit(ProjectDeletedError(errorMessage: e.toString(), data: state.data));
+        emit(
+          ProjectDeletedError(
+            errorMessage: e.toString(),
+            data: state.data.copyWith(deleteLoading: false),
+          ),
+        );
         return;
       }
-      emit(
-        ProjectDeletedSuccess(
-          data: state.data.copyWith(
-            projects:
-                state.data.projects
-                    .where((project) => project.id != event.id)
-                    .toList(),
-          ),
-        ),
-      );
     });
 
     Map<String, ProjectFormFieldState<dynamic>> updateFieldValue(

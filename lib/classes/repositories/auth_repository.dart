@@ -10,6 +10,13 @@ class AuthRepository {
   late AuthProvider _authProvider;
   bool _initialized = false;
 
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
+    _authProvider = AuthProvider();
+    await _authProvider.init();
+  }
+
   bool isTokenExists() {
     return _authProvider.isTokenExists();
   }
@@ -28,13 +35,6 @@ class AuthRepository {
 
   Future<void> clearToken() async {
     await _authProvider.clearToken();
-  }
-
-  Future<void> init() async {
-    if (_initialized) return;
-    _initialized = true;
-    _authProvider = AuthProvider();
-    await _authProvider.init();
   }
 
   Future<User> login({required String email, required String password}) async {

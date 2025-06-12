@@ -11,6 +11,15 @@ class AuthProvider {
   late DioService _dioService;
   bool _initialized = false;
 
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
+    _sharedPreferenceService = SharedPreferenceService();
+    await _sharedPreferenceService.init();
+    _dioService = DioService();
+    await _dioService.init();
+  }
+
   bool isTokenExists() {
     return _sharedPreferenceService.getToken() != null &&
         _sharedPreferenceService.getUser() != null;
@@ -26,15 +35,6 @@ class AuthProvider {
 
   Future<void> clearToken() async {
     await _sharedPreferenceService.clearToken();
-  }
-
-  Future<void> init() async {
-    if (_initialized) return;
-    _initialized = true;
-    _sharedPreferenceService = SharedPreferenceService();
-    await _sharedPreferenceService.init();
-    _dioService = DioService();
-    await _dioService.init();
   }
 
   Future<Map<String, dynamic>> login({

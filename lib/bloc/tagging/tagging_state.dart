@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:kendedes_mobile/models/label_type.dart';
+import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/poligon_data.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -127,7 +129,35 @@ class AllFilterCleared extends TaggingState {
 }
 
 class InitializingStarted extends TaggingState {
-  const InitializingStarted({required super.data});
+  InitializingStarted()
+    : super(
+        data: TaggingStateData(
+          project: Project(
+            id: '',
+            name: '',
+            description: '',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            type: ProjectType.supplementMobile,
+          ),
+          tags: [],
+          otherTags: [],
+          polygons: [],
+          isLoadingTag: false,
+          isLoadingPolygon: false,
+          isLoadingCurrentLocation: false,
+          currentZoom: 16.0,
+          rotation: 0.0,
+          selectedTags: [],
+          isMultiSelectMode: false,
+          isSideBarOpen: false,
+          isSubmitting: false,
+          filteredTags: [],
+          isTaggingInsideBoundsError: false,
+          isTaggingInsideBoundsLoading: false,
+          isFirstTimeMapLoading: true,
+        ),
+      );
 
   @override
   List<Object> get props => [data];
@@ -148,9 +178,28 @@ class InitializingSuccess extends TaggingState {
   List<Object> get props => [data];
 }
 
+class TaggingInsideBoundsFailed extends TaggingState {
+  final String errorMessage;
+  const TaggingInsideBoundsFailed({
+    required this.errorMessage,
+    required super.data,
+  });
+
+  @override
+  List<Object> get props => [data, errorMessage];
+}
+
+class TokenExpired extends TaggingState {
+  const TokenExpired({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class TaggingStateData {
   final Project project;
   final List<TagData> tags;
+  final List<TagData> otherTags;
   final List<PoligonData> polygons;
   final bool isLoadingTag;
   final bool isLoadingPolygon;
@@ -161,11 +210,17 @@ class TaggingStateData {
   final double currentZoom;
   final double rotation;
   final LatLng? currentLocation;
+  final LatLng? northEastCorner;
+  final LatLng? southWestCorner;
 
   // UI attributes
   final bool isMultiSelectMode;
   final bool isSideBarOpen;
-  final String? selectedLabelType;
+  final LabelType? selectedLabelType;
+  final MapType? selectedMapType;
+  final bool isTaggingInsideBoundsLoading;
+  final bool isTaggingInsideBoundsError;
+  final bool isFirstTimeMapLoading;
 
   //filter attribute
   final List<TagData> filteredTags;
@@ -183,22 +238,29 @@ class TaggingStateData {
   TaggingStateData({
     required this.project,
     required this.tags,
+    required this.otherTags,
     required this.polygons,
     required this.isLoadingTag,
     required this.isLoadingPolygon,
     required this.isLoadingCurrentLocation,
     this.currentLocation,
     required this.currentZoom,
+    this.northEastCorner,
+    this.southWestCorner,
     required this.rotation,
     required this.selectedTags,
     required this.isMultiSelectMode,
     required this.isSideBarOpen,
+    required this.isTaggingInsideBoundsLoading,
+    required this.isTaggingInsideBoundsError,
+    required this.isFirstTimeMapLoading,
 
     required this.filteredTags,
     this.searchQuery,
     this.selectedSectorFilter,
     this.selectedProjectTypeFilter,
     this.selectedLabelType,
+    this.selectedMapType,
     required this.isSubmitting,
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
 
@@ -225,16 +287,22 @@ class TaggingStateData {
   TaggingStateData copyWith({
     Project? project,
     List<TagData>? tags,
+    List<TagData>? otherTags,
     List<PoligonData>? polygons,
     bool? isLoadingTag,
     bool? isLoadingPolygon,
     bool? isLoadingCurrentLocation,
     LatLng? currentLocation,
+    LatLng? northEastCorner,
+    LatLng? southWestCorner,
     double? currentZoom,
     double? rotation,
     List<TagData>? selectedTags,
     bool? isMultiSelectMode,
     bool? isSideBarOpen,
+    bool? isTaggingInsideBoundsLoading,
+    bool? isTaggingInsideBoundsError,
+    bool? isFirstTimeMapLoading,
 
     bool? isSubmitting,
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
@@ -247,13 +315,15 @@ class TaggingStateData {
     bool? resetSearchQuery,
     bool? resetSectorFilter,
     bool? resetProjectTypeFilter,
-    String? selectedLabelType,
+    LabelType? selectedLabelType,
+    MapType? selectedMapType,
 
     Box<TagData>? tagDataBox,
   }) {
     return TaggingStateData(
       project: project ?? this.project,
       tags: tags ?? this.tags,
+      otherTags: otherTags ?? this.otherTags,
       polygons: polygons ?? this.polygons,
       isLoadingTag: isLoadingTag ?? this.isLoadingTag,
       isLoadingPolygon: isLoadingPolygon ?? this.isLoadingPolygon,
@@ -265,6 +335,8 @@ class TaggingStateData {
       selectedTags: selectedTags ?? this.selectedTags,
       isMultiSelectMode: isMultiSelectMode ?? this.isMultiSelectMode,
       isSideBarOpen: isSideBarOpen ?? this.isSideBarOpen,
+      isFirstTimeMapLoading:
+          isFirstTimeMapLoading ?? this.isFirstTimeMapLoading,
 
       filteredTags: filteredTags ?? this.filteredTags,
       searchQuery:
@@ -291,7 +363,14 @@ class TaggingStateData {
               ? _generateFormFields()
               : formFields ?? this.formFields,
       selectedLabelType: selectedLabelType ?? this.selectedLabelType,
+      selectedMapType: selectedMapType ?? this.selectedMapType,
       tagDataBox: tagDataBox ?? this.tagDataBox,
+      northEastCorner: northEastCorner ?? this.northEastCorner,
+      southWestCorner: southWestCorner ?? this.southWestCorner,
+      isTaggingInsideBoundsLoading:
+          isTaggingInsideBoundsLoading ?? this.isTaggingInsideBoundsLoading,
+      isTaggingInsideBoundsError:
+          isTaggingInsideBoundsError ?? this.isTaggingInsideBoundsError,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/models/project.dart';
 
 class TagListItemWidget extends StatelessWidget {
   final TagData tag;
@@ -17,12 +18,30 @@ class TagListItemWidget extends StatelessWidget {
     this.isMultiSelectMode = false,
   });
 
+  Color _getProjectColor() {
+    switch (tag.project.type) {
+      case ProjectType.marketSwmaps:
+        return Colors.purple;
+      case ProjectType.supplementSwmaps:
+        return Colors.indigo;
+      case ProjectType.supplementMobile:
+        return Colors.orange;
+      default:
+        return Colors.orange;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final projectColor = _getProjectColor();
+
     return Card(
       elevation: isSelected ? 6 : 1,
       margin: const EdgeInsets.only(bottom: 12),
-      color: isSelected && !isMultiSelectMode ? Colors.green.shade50 : null,
+      color:
+          isSelected && !isMultiSelectMode
+              ? Colors.green.shade50
+              : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -45,6 +64,7 @@ class TagListItemWidget extends StatelessWidget {
                       end: Alignment.centerRight,
                     )
                     : null,
+            border: Border(left: BorderSide(color: projectColor, width: 4)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -55,7 +75,10 @@ class TagListItemWidget extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.green : Colors.grey[200],
+                    color:
+                        isSelected
+                            ? Colors.green
+                            : projectColor.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                     boxShadow:
                         isSelected && !isMultiSelectMode
@@ -75,10 +98,7 @@ class TagListItemWidget extends StatelessWidget {
                             : Text(
                               tag.sector.key,
                               style: TextStyle(
-                                color:
-                                    isSelected
-                                        ? Colors.white
-                                        : Colors.grey[600],
+                                color: isSelected ? Colors.white : projectColor,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),

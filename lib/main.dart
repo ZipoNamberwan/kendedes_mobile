@@ -8,6 +8,7 @@ import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/hive/hive_registrar.g.dart';
 import 'package:path_provider/path_provider.dart';
 import 'pages/login_page.dart';
@@ -26,6 +27,7 @@ Future<void> _initializeApp() async {
 
   await AuthRepository().init();
   await ProjectRepository().init();
+  await TaggingRepository().init();
 }
 
 class MyApp extends StatelessWidget {

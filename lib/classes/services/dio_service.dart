@@ -10,7 +10,7 @@ class DioService {
   DioService._internal();
 
   // static const String _baseUrl = 'https://kendedes.cathajatim.id/api';
-  static const String _baseUrl = 'http://10.35.0.142:8000/api';
+  static const String _baseUrl = 'http://192.168.1.7:8000/api';
 
   late Dio dio;
   late SharedPreferenceService _sharedPreferenceService;
@@ -88,16 +88,20 @@ class DioService {
           }
           throw DataProviderException('Data tidak valid');
         }
-        throw DataProviderException('Server error ($statusCode)');
+        throw DataProviderException('Server error ($statusCode), mengirim log ke server...');
       case DioExceptionType.cancel:
         throw DataProviderException('Request dibatalkan');
       case DioExceptionType.unknown:
         if (error.error is SocketException) {
           throw DataProviderException('Tidak ada koneksi internet');
         }
-        throw DataProviderException('Terjadi kesalahan: ${error.message}');
+        final message =
+            error.message != null
+                ? 'Terjadi kesalahan: ${error.message}, mengirim log ke server...'
+                : 'Terjadi kesalahan jaringan, mengirim log ke server...';
+        throw DataProviderException(message);
       default:
-        throw DataProviderException('Terjadi kesalahan jaringan');
+        throw DataProviderException('Terjadi kesalahan jaringan, mengirim log ke server...');
     }
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 
 class MarkerDialog extends StatelessWidget {
   final TagData tagData;
+  final Project project;
   final void Function(TagData tag) onDelete;
   final void Function(TagData tag) onMove;
   final void Function(TagData tag) onEdit;
@@ -13,10 +15,26 @@ class MarkerDialog extends StatelessWidget {
     required this.onDelete,
     required this.onMove,
     required this.onEdit,
+    required this.project,
   });
+
+  Color _getHeaderColor() {
+    switch (tagData.project.type) {
+      case ProjectType.marketSwmaps:
+        return Colors.purple;
+      case ProjectType.supplementSwmaps:
+        return Colors.indigo;
+      case ProjectType.supplementMobile:
+        return Colors.deepOrange;
+      default:
+        return Colors.deepOrange;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final headerColor = _getHeaderColor();
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
@@ -27,9 +45,9 @@ class MarkerDialog extends StatelessWidget {
             // Simple header
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: headerColor,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
                 ),
@@ -76,70 +94,73 @@ class MarkerDialog extends StatelessWidget {
                       tagData.buildingStatus.text,
                     ),
                     _buildInfoRow('Sektor', tagData.sector.text),
+                    _buildInfoRow('Tipe Projek', tagData.project.type.text),
                     if (tagData.note != null && tagData.note!.isNotEmpty)
                       _buildInfoRow('Catatan', tagData.note!),
                     _buildInfoRow(
                       'Posisi',
                       '${tagData.positionLat.toStringAsFixed(6)}, ${tagData.positionLng.toStringAsFixed(6)}',
                     ),
-                    if (tagData.createdAt != null)
-                      _buildInfoRow(
-                        'Dibuat pada',
-                        _formatDate(tagData.createdAt!),
-                      ),
-                    if (tagData.updatedAt != null)
-                      _buildInfoRow(
-                        'Diperbarui pada',
-                        _formatDate(tagData.updatedAt!),
-                      ),
-                    _buildInfoRow('ID', tagData.id),
+                    // if (tagData.createdAt != null)
+                    //   _buildInfoRow(
+                    //     'Dibuat pada',
+                    //     _formatDate(tagData.createdAt!),
+                    //   ),
+                    // if (tagData.updatedAt != null)
+                    //   _buildInfoRow(
+                    //     'Diperbarui pada',
+                    //     _formatDate(tagData.updatedAt!),
+                    //   ),
+                    // _buildInfoRow('ID', tagData.id),
                   ],
                 ),
               ),
             ),
             // Simple action buttons
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildActionButton(
-                    icon: Icons.edit,
-                    label: 'Ubah',
-                    color: Colors.green,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      onEdit(tagData);
-                    },
+            tagData.project.id == project.id
+                ? Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
                   ),
-                  _buildActionButton(
-                    icon: Icons.open_with,
-                    label: 'Pindah',
-                    color: Colors.blue,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      onMove(tagData);
-                    },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildActionButton(
+                        icon: Icons.edit,
+                        label: 'Ubah',
+                        color: Colors.green,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          onEdit(tagData);
+                        },
+                      ),
+                      _buildActionButton(
+                        icon: Icons.open_with,
+                        label: 'Pindah',
+                        color: Colors.blue,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          onMove(tagData);
+                        },
+                      ),
+                      _buildActionButton(
+                        icon: Icons.delete,
+                        label: 'Hapus',
+                        color: Colors.red,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          onDelete(tagData);
+                        },
+                      ),
+                    ],
                   ),
-                  _buildActionButton(
-                    icon: Icons.delete,
-                    label: 'Hapus',
-                    color: Colors.red,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      onDelete(tagData);
-                    },
-                  ),
-                ],
-              ),
-            ),
+                )
+                : SizedBox.shrink(),
           ],
         ),
       ),
@@ -208,7 +229,7 @@ class MarkerDialog extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-  }
+  // String _formatDate(DateTime date) {
+  //   return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  // }
 }

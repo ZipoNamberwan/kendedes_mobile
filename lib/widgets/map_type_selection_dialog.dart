@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:kendedes_mobile/models/label_type.dart';
+import 'package:kendedes_mobile/models/map_type.dart';
 
-class LabelTypeSelectionDialog extends StatefulWidget {
-  final LabelType? selectedLabelType;
-  final void Function(LabelType labelType) onLabelTypeSelected;
-  final List<LabelType> labelTypes;
+class MapTypeSelectionDialog extends StatefulWidget {
+  final MapType? selectedMapType;
+  final void Function(MapType mapType) onMapTypeSelected;
+  final List<MapType> mapTypes;
 
-  const LabelTypeSelectionDialog({
+  const MapTypeSelectionDialog({
     super.key,
-    this.selectedLabelType,
-    required this.onLabelTypeSelected,
-    required this.labelTypes,
+    this.selectedMapType,
+    required this.onMapTypeSelected,
+    required this.mapTypes,
   });
 
   @override
-  State<LabelTypeSelectionDialog> createState() =>
-      _LabelTypeSelectionDialogState();
+  State<MapTypeSelectionDialog> createState() => _MapTypeSelectionDialogState();
 }
 
-class _LabelTypeSelectionDialogState extends State<LabelTypeSelectionDialog> {
-  LabelType? _selectedLabelType;
+class _MapTypeSelectionDialogState extends State<MapTypeSelectionDialog> {
+  MapType? _selectedMapType;
 
   @override
   void initState() {
     super.initState();
-    _selectedLabelType = widget.selectedLabelType;
+    _selectedMapType = widget.selectedMapType;
   }
 
   @override
@@ -42,19 +41,19 @@ class _LabelTypeSelectionDialogState extends State<LabelTypeSelectionDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    Icons.label,
-                    color: Colors.green.shade600,
+                    Icons.layers_rounded,
+                    color: Colors.blue.shade600,
                     size: 24,
                   ),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
-                    'Pilih Jenis Label',
+                    'Pilih Jenis Peta',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -66,14 +65,14 @@ class _LabelTypeSelectionDialogState extends State<LabelTypeSelectionDialog> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Pilih label yang akan ditampilkan pada marker:',
+              'Pilih tampilan peta yang ingin digunakan:',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),
             Column(
               children:
-                  widget.labelTypes.map((labelType) {
-                    final isSelected = _selectedLabelType?.key == labelType.key;
+                  widget.mapTypes.map((mapType) {
+                    final isSelected = _selectedMapType?.key == mapType.key;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
@@ -81,37 +80,52 @@ class _LabelTypeSelectionDialogState extends State<LabelTypeSelectionDialog> {
                         border: Border.all(
                           color:
                               isSelected
-                                  ? Colors.green.shade300
+                                  ? Colors.blue.shade300
                                   : Colors.grey.shade300,
                         ),
                         color:
                             isSelected
-                                ? Colors.green.shade50
+                                ? Colors.blue.shade50
                                 : Colors.transparent,
                       ),
-                      child: RadioListTile<LabelType>(
-                        value: labelType,
-                        groupValue: _selectedLabelType,
+                      child: RadioListTile<MapType>(
+                        value: mapType,
+                        groupValue: _selectedMapType,
                         onChanged: (value) {
                           setState(() {
-                            _selectedLabelType = value;
+                            _selectedMapType = value;
                           });
                         },
-                        title: Text(
-                          labelType.label,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight:
-                                isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                            color:
-                                isSelected
-                                    ? Colors.green.shade700
-                                    : Colors.black87,
-                          ),
+                        title: Row(
+                          children: [
+                            Icon(
+                              mapType.icon,
+                              size: 20,
+                              color:
+                                  isSelected
+                                      ? Colors.blue.shade600
+                                      : Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                mapType.name,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight:
+                                      isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                  color:
+                                      isSelected
+                                          ? Colors.blue.shade700
+                                          : Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        activeColor: Colors.green,
+                        activeColor: Colors.blue,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 8,
                         ),
@@ -139,14 +153,14 @@ class _LabelTypeSelectionDialogState extends State<LabelTypeSelectionDialog> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed:
-                        _selectedLabelType != null
+                        _selectedMapType != null
                             ? () {
-                              widget.onLabelTypeSelected(_selectedLabelType!);
+                              widget.onMapTypeSelected(_selectedMapType!);
                               Navigator.of(context).pop();
                             }
                             : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),

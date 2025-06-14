@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 
 class MarkerWidget extends StatelessWidget {
@@ -15,8 +16,25 @@ class MarkerWidget extends StatelessWidget {
     this.labelType,
   });
 
+  Color _getMarkerColor() {
+    if (isSelected) return Colors.green;
+
+    switch (tagData.project.type) {
+      case ProjectType.marketSwmaps:
+        return Colors.purple;
+      case ProjectType.supplementSwmaps:
+        return Colors.indigo;
+      case ProjectType.supplementMobile:
+        return Colors.deepOrange;
+      default:
+        return Colors.deepOrange;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final markerColor = _getMarkerColor();
+
     return Center(
       child: Stack(
         alignment: Alignment.center,
@@ -28,7 +46,9 @@ class MarkerWidget extends StatelessWidget {
                 maxWidth: 120,
               ), // Adjust width as needed
               child: Text(
-                tagData.getTagLabel(labelType), // Replace with your text property
+                tagData.getTagLabel(
+                  labelType,
+                ), // Replace with your text property
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -50,22 +70,12 @@ class MarkerWidget extends StatelessWidget {
               width: isSelected ? 40 : 30,
               height: isSelected ? 40 : 30,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.green : Colors.deepOrange,
+                color: markerColor,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: Colors.white,
                   width: isSelected ? 4 : 3,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        isSelected
-                            ? Colors.green.withValues(alpha: 0.6)
-                            : Colors.black.withValues(alpha: 0.4),
-                    blurRadius: isSelected ? 10 : 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Icon(
                 Icons.location_on,

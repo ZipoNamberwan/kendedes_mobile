@@ -25,7 +25,11 @@ class ApiServerHandler {
         onDataProviderError(err);
       }
     } catch (e) {
-      onOtherError(e as Exception);
+      if (e is Exception) {
+        onOtherError(e);
+      } else {
+        onOtherError(Exception('Unknow Error, mengirim log ke server...'));
+      }
     }
   }
 

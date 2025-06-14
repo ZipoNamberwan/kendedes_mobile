@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'package:kendedes_mobile/models/label_type.dart';
+import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:latlong2/latlong.dart';
@@ -135,10 +137,25 @@ class ResetAllFilter extends TaggingEvent {
 }
 
 class SelectLabelType extends TaggingEvent {
-  final String? labelTypeKey;
+  final LabelType? labelTypeKey;
   const SelectLabelType(this.labelTypeKey);
+}
+
+class SelectMapType extends TaggingEvent {
+  final MapType? mapTypeKey;
+  const SelectMapType(this.mapTypeKey);
 }
 
 class CloseProject extends TaggingEvent {
   const CloseProject();
+}
+
+class UpdateVisibleMapBounds extends TaggingEvent {
+  final LatLng sw;
+  final LatLng ne;
+  const UpdateVisibleMapBounds({required this.sw, required this.ne});
+}
+
+class GetTaggingInsideBounds extends TaggingEvent {
+  const GetTaggingInsideBounds();
 }

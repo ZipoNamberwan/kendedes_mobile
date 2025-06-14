@@ -5,16 +5,21 @@ import 'package:geolocator/geolocator.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
+import 'package:kendedes_mobile/models/label_type.dart';
+import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_widget.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/tagging_form_dialog.dart';
+import 'package:kendedes_mobile/widgets/map_type_selection_dialog.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
@@ -29,7 +34,7 @@ class TaggingPage extends StatefulWidget {
 
 class _TaggingPageState extends State<TaggingPage>
     with TickerProviderStateMixin {
-  final MapController _mapController = MapController();
+  late final MapController _mapController;
   late AnimationController _rippleController;
   late Animation<double> _rippleAnimation;
   late TaggingBloc _taggingBloc;
@@ -51,10 +56,9 @@ class _TaggingPageState extends State<TaggingPage>
   @override
   void initState() {
     super.initState();
-    _taggingBloc =
-        context.read<TaggingBloc>()
-          ..add(InitTag(project: widget.project))
-          ..add(GetCurrentLocation());
+    _mapController = MapController();
+
+    _taggingBloc = context.read<TaggingBloc>();
 
     _rippleController = AnimationController(
       duration: const Duration(seconds: 2),
@@ -83,22 +87,37 @@ class _TaggingPageState extends State<TaggingPage>
       if (event is MapEventRotate) {
         _taggingBloc.add(UpdateRotation(rotation: event.camera.rotation));
       }
+
+      _logCurrentBounds();
     });
+  }
+
+  void _logCurrentBounds() {
+    final bounds = _mapController.camera.visibleBounds;
+    _taggingBloc.add(
+      UpdateVisibleMapBounds(sw: bounds.southWest, ne: bounds.northEast),
+    );
+  }
+
+  void _onMapReady() {
+    _taggingBloc.add(InitTag(project: widget.project));
   }
 
   @override
   void dispose() {
     _rippleController.dispose();
     _taggingBloc.add(CloseProject());
+    _mapController.dispose();
     super.dispose();
   }
 
-  void _showMarkerDialog(TagData tagData) {
+  void _showMarkerDialog(TagData tagData, Project project) {
     showDialog(
       context: context,
       builder:
           (context) => MarkerDialog(
             tagData: tagData,
+            project: project,
             onDelete: (tagData) {
               _taggingBloc.add(DeleteTag(tagData));
             },
@@ -120,22 +139,29 @@ class _TaggingPageState extends State<TaggingPage>
     _taggingBloc.add(SetSideBarOpen(isOpen));
   }
 
-  final Map<String, String> _labelTypes = const {
-    'name_owner': 'Nama Usaha dan Pemilik',
-    'name': 'Nama Usaha',
-    'owner': 'Pemilik',
-    'sector': 'Sektor',
-  };
-
-  void _showLabelTypeDialog(String? selectedLabelType) {
+  void _showLabelTypeDialog(LabelType? selectedLabelType) {
     showDialog(
       context: context,
       builder:
           (context) => LabelTypeSelectionDialog(
-            labelTypes: _labelTypes,
+            labelTypes: LabelType.values,
             selectedLabelType: selectedLabelType,
             onLabelTypeSelected:
                 (labelType) => {_taggingBloc.add(SelectLabelType(labelType))},
+          ),
+    );
+  }
+
+  void _showMapTypeDialog(MapType? selectedMapType) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => MapTypeSelectionDialog(
+            mapTypes: MapType.getMapTypes(),
+            selectedMapType: selectedMapType,
+            onMapTypeSelected: (mapType) {
+              _taggingBloc.add(SelectMapType(mapType));
+            },
           ),
     );
   }
@@ -192,6 +218,7 @@ class _TaggingPageState extends State<TaggingPage>
 
   void _handleMarkerClick(
     TagData clickedTag,
+    Project project,
     List<TagData> allTags,
     List<TagData> selectedTags,
     double zoom,
@@ -213,12 +240,12 @@ class _TaggingPageState extends State<TaggingPage>
               selectedTags: selectedTags,
               onClose: () => Navigator.of(context).pop(),
               onTagSelected: (tag) {
-                _showMarkerDialog(tag);
+                _showMarkerDialog(tag, project);
               },
             ),
       );
     } else {
-      _showMarkerDialog(clickedTag);
+      _showMarkerDialog(clickedTag, project);
     }
   }
 
@@ -226,6 +253,7 @@ class _TaggingPageState extends State<TaggingPage>
     required IconData icon,
     required VoidCallback onPressed,
     Color? iconColor,
+    Color? backgroundColor,
     Widget? child,
     bool isEnabled = true,
   }) {
@@ -233,7 +261,7 @@ class _TaggingPageState extends State<TaggingPage>
       width: 52,
       height: 52,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: backgroundColor ?? Colors.white,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
@@ -279,42 +307,7 @@ class _TaggingPageState extends State<TaggingPage>
             _ => '',
           };
 
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              content: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    message,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: const Color(0xFF10B981),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: const EdgeInsets.all(16),
-            ),
-          );
+          CustomSnackBar.showSuccess(context, message: message);
         } else if (state is TagError || state is TagDeletedError) {
           final message = switch (state) {
             TagError(:final errorMessage) => errorMessage,
@@ -322,44 +315,7 @@ class _TaggingPageState extends State<TaggingPage>
             _ => '',
           };
 
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              content: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.error_outline,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      message,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: const Color(0xFFEF4444),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: const EdgeInsets.all(16),
-            ),
-          );
+          CustomSnackBar.showError(context, message: message);
         } else if (state is MovedCurrentLocation) {
           if (state.data.currentLocation != null) {
             _mapController.move(
@@ -379,6 +335,18 @@ class _TaggingPageState extends State<TaggingPage>
         } else if (state is RecordedLocation) {
           _mapController.move(state.recordedLocation, state.data.currentZoom);
           _showTaggingFormDialog(null);
+        } else if (state is TaggingInsideBoundsFailed) {
+          CustomSnackBar.showError(
+            context,
+            message:
+                'Gagal mengambil data tagging di area ini. ${state.errorMessage}',
+          );
+        } else if (state is TokenExpired) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+            (route) => false,
+          );
         }
       },
       builder: (context, state) {
@@ -393,9 +361,7 @@ class _TaggingPageState extends State<TaggingPage>
             errorMessage: state.errorMessage,
             retryButtonText: 'Coba Lagi',
             onRetry: () {
-              _taggingBloc
-                ..add(InitTag(project: widget.project))
-                ..add(GetCurrentLocation());
+              _taggingBloc.add(InitTag(project: widget.project));
             },
           );
         }
@@ -417,11 +383,15 @@ class _TaggingPageState extends State<TaggingPage>
                         initialCenter: LatLng(-7.9666, 112.6326),
                         initialZoom: state.data.currentZoom,
                         onLongPress: (tapPosition, point) => {},
+                        onMapReady: () {
+                          _onMapReady();
+                        },
                       ),
                       children: [
                         TileLayer(
                           urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              state.data.selectedMapType?.url ??
+                              MapType.openStreetMapDefault.url,
                           userAgentPackageName: 'com.example.kendedes_mobile',
                         ),
 
@@ -463,10 +433,11 @@ class _TaggingPageState extends State<TaggingPage>
                                 child: MarkerWidget(
                                   tagData: tagData,
                                   isSelected: isSelected,
-                                  labelType: state.data.selectedLabelType,
+                                  labelType: state.data.selectedLabelType?.key,
                                   onTap: () {
                                     _handleMarkerClick(
                                       tagData,
+                                      state.data.project,
                                       state.data.tags,
                                       state.data.selectedTags,
                                       state.data.currentZoom,
@@ -476,6 +447,35 @@ class _TaggingPageState extends State<TaggingPage>
                                 ),
                               );
                             }),
+
+                            // add otherTags here
+                            ...state.data.otherTags.map((tagData) {
+                              return Marker(
+                                point: LatLng(
+                                  tagData.positionLat,
+                                  tagData.positionLng,
+                                ),
+                                alignment: Alignment.center,
+                                width: 120,
+                                height: 120,
+                                child: MarkerWidget(
+                                  tagData: tagData,
+                                  isSelected: false,
+                                  labelType: state.data.selectedLabelType?.key,
+                                  onTap: () {
+                                    _handleMarkerClick(
+                                      tagData,
+                                      state.data.project,
+                                      state.data.tags,
+                                      state.data.selectedTags,
+                                      state.data.currentZoom,
+                                      mapSize,
+                                    );
+                                  },
+                                ),
+                              );
+                            }),
+
                             // Current location marker
                             if (state.data.currentLocation != null)
                               Marker(
@@ -543,7 +543,6 @@ class _TaggingPageState extends State<TaggingPage>
                               ),
                           ],
                         ),
-
                         Scalebar(
                           textStyle: TextStyle(
                             color: Colors.grey.shade700,
@@ -675,7 +674,7 @@ class _TaggingPageState extends State<TaggingPage>
                         // Compass button
                         _buildActionButton(
                           icon: Icons.navigation_rounded,
-                          iconColor: Colors.grey.shade600,
+                          iconColor: Colors.red,
                           onPressed: () {
                             _mapController.rotate(0.0);
                           },
@@ -683,7 +682,7 @@ class _TaggingPageState extends State<TaggingPage>
                             angle: state.data.rotation * math.pi / 180,
                             child: Icon(
                               Icons.navigation_rounded,
-                              color: Colors.grey.shade600,
+                              color: Colors.red,
                               size: 22,
                             ),
                           ),
@@ -694,9 +693,20 @@ class _TaggingPageState extends State<TaggingPage>
                         // Label type button
                         _buildActionButton(
                           icon: Icons.label,
-                          iconColor: Colors.deepOrange,
+                          iconColor: Colors.green,
                           onPressed: () {
                             _showLabelTypeDialog(state.data.selectedLabelType);
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Map type button
+                        _buildActionButton(
+                          icon: Icons.layers_rounded,
+                          iconColor: Colors.blue.shade600,
+                          onPressed: () {
+                            _showMapTypeDialog(state.data.selectedMapType);
                           },
                         ),
 
@@ -723,11 +733,34 @@ class _TaggingPageState extends State<TaggingPage>
                       children: [
                         // Refresh tagging button
                         _buildActionButton(
-                          icon: Icons.restart_alt_sharp,
+                          icon: Icons.sync,
                           iconColor: Colors.deepOrange,
                           onPressed: () {
-                            // Refresh tagging polygon functionality
+                            _taggingBloc.add(GetTaggingInsideBounds());
                           },
+                          child:
+                              state.data.isTaggingInsideBoundsLoading
+                                  ? Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      const SizedBox(
+                                        child: CircularProgressIndicator(
+                                          color: Colors.deepOrange,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.sync,
+                                        color: Colors.deepOrange,
+                                        size: 14,
+                                      ),
+                                    ],
+                                  )
+                                  : const Icon(
+                                    Icons.sync,
+                                    color: Colors.deepOrange,
+                                    size: 22,
+                                  ),
                         ),
 
                         const SizedBox(height: 12),
@@ -742,13 +775,21 @@ class _TaggingPageState extends State<TaggingPage>
                                   _taggingBloc.add(const GetCurrentLocation()),
                           child:
                               state.data.isLoadingCurrentLocation
-                                  ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.deepOrange,
-                                      strokeWidth: 2.5,
-                                    ),
+                                  ? Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      const SizedBox(
+                                        child: CircularProgressIndicator(
+                                          color: Colors.deepOrange,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.my_location_rounded,
+                                        color: Colors.deepOrange,
+                                        size: 14,
+                                      ),
+                                    ],
                                   )
                                   : const Icon(
                                     Icons.my_location_rounded,

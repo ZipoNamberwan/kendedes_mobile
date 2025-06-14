@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:kendedes_mobile/classes/api_server_handler.dart';
+import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/hive/hive_boxes.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -12,35 +14,9 @@ import 'tagging_state.dart';
 class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
   final Uuid _uuid = const Uuid();
 
-  TaggingBloc()
-    : super(
-        TaggingState(
-          data: TaggingStateData(
-            project: Project(
-              id: '',
-              name: '',
-              description: '',
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              type: ProjectType.supplementMobile,
-            ),
-            tags: [],
-            polygons: [],
-            isLoadingTag: false,
-            isLoadingPolygon: false,
-            isLoadingCurrentLocation: false,
-            currentZoom: 16.0,
-            rotation: 0.0,
-            selectedTags: [],
-            isMultiSelectMode: false,
-            isSideBarOpen: false,
-            isSubmitting: false,
-            filteredTags: [],
-          ),
-        ),
-      ) {
+  TaggingBloc() : super(InitializingStarted()) {
     on<InitTag>((event, emit) async {
-      emit(InitializingStarted(data: state.data));
+      emit(InitializingStarted());
       try {
         // Open the Hive box for tag data
         final box = await Hive.openBox<TagData>(tagDataBox);
@@ -56,20 +32,11 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               project: event.project,
               tagDataBox: box,
               tags: tags,
-              polygons: [],
-              isLoadingTag: false,
-              isLoadingPolygon: false,
-              isLoadingCurrentLocation: false,
-              currentZoom: 16.0,
-              rotation: 0.0,
-              selectedTags: [],
-              isMultiSelectMode: false,
-              isSideBarOpen: false,
-              isSubmitting: false,
-              filteredTags: [],
             ),
           ),
         );
+
+        add(GetCurrentLocation());
       } catch (e) {
         emit(
           InitializingError(
@@ -499,8 +466,106 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       );
     });
 
+    on<SelectMapType>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(selectedMapType: event.mapTypeKey),
+        ),
+      );
+    });
+
     on<CloseProject>((event, emit) {
       state.data.tagDataBox?.close();
+    });
+
+    on<UpdateVisibleMapBounds>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            northEastCorner: event.ne,
+            southWestCorner: event.sw,
+          ),
+        ),
+      );
+      if (state.data.isFirstTimeMapLoading &&
+          state.data.currentLocation != null) {
+        add(GetTaggingInsideBounds());
+      }
+    });
+
+    on<GetTaggingInsideBounds>((event, emit) async {
+      await ApiServerHandler.run(
+        action: () async {
+          emit(
+            TaggingState(
+              data: state.data.copyWith(
+                isTaggingInsideBoundsLoading: true,
+                isFirstTimeMapLoading: false,
+              ),
+            ),
+          );
+
+          final ne = state.data.northEastCorner;
+          final sw = state.data.southWestCorner;
+
+          final tags = await TaggingRepository().getTaggingInBox(
+            minLat: sw?.latitude ?? 0.0,
+            minLng: sw?.longitude ?? 0.0,
+            maxLat: ne?.latitude ?? 0.0,
+            maxLng: ne?.longitude ?? 0.0,
+          );
+
+          final updatedOtherTags = state.data.otherTags;
+          final existingIds = updatedOtherTags.map((e) => e.id).toSet();
+
+          for (final tag in tags) {
+            if (!existingIds.contains(tag.id)) {
+              updatedOtherTags.add(tag);
+            }
+          }
+
+          emit(
+            TaggingState(
+              data: state.data.copyWith(
+                isTaggingInsideBoundsLoading: false,
+                otherTags: updatedOtherTags,
+              ),
+            ),
+          );
+        },
+        onLoginExpired: (e) {
+          emit(
+            TokenExpired(
+              data: state.data.copyWith(
+                isTaggingInsideBoundsLoading: false,
+                isTaggingInsideBoundsError: true,
+              ),
+            ),
+          );
+        },
+        onDataProviderError: (e) {
+          emit(
+            TaggingInsideBoundsFailed(
+              errorMessage: e.message,
+              data: state.data.copyWith(
+                isTaggingInsideBoundsLoading: false,
+                isTaggingInsideBoundsError: true,
+              ),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          emit(
+            TaggingInsideBoundsFailed(
+              errorMessage: e.toString(),
+              data: state.data.copyWith(
+                isTaggingInsideBoundsLoading: false,
+                isTaggingInsideBoundsError: true,
+              ),
+            ),
+          );
+        },
+      );
     });
   }
 

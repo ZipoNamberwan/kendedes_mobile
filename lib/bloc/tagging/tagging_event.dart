@@ -110,8 +110,13 @@ class SetTaggingFormField extends TaggingEvent {
   List<Object?> get props => [key, value];
 }
 
-class SaveForm extends TaggingEvent {
-  const SaveForm();
+class SaveCreateForm extends TaggingEvent {
+  const SaveCreateForm();
+}
+
+class SaveEditForm extends TaggingEvent {
+  final TagData tagData;
+  const SaveEditForm({required this.tagData});
 }
 
 class SearchTagging extends TaggingEvent {

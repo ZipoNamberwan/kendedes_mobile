@@ -84,7 +84,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       }
     });
 
-    on<SaveProject>((event, emit) async {
+    on<StoreProject>((event, emit) async {
       final formFields = state.data.formFields;
       final validationResult = _validateProjectForm(formFields);
 
@@ -99,139 +99,150 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         return;
       }
 
-      final projectId = formFields['id']?.value as String?;
-      final projectName = formFields['name']?.value as String;
-      final projectDescription = formFields['description']?.value as String?;
+      final now = DateTime.now();
+
+      final newProject = Project(
+        id: _uuid.v4(),
+        name: formFields['name']?.value as String,
+        description: formFields['description']?.value as String?,
+        createdAt: now,
+        updatedAt: now,
+        type: ProjectType.supplementMobile,
+      );
+
+      try {
+        await ApiServerHandler.run(
+          action: () async {
+            emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
+            await ProjectRepository().createProject(newProject.toJson());
+            state.data.projectBox?.put(newProject.id, newProject);
+            emit(
+              ProjectAddedSuccess(
+                data: state.data.copyWith(
+                  projects: [...state.data.projects, newProject],
+                  resetForm: true,
+                  saveLoading: false,
+                ),
+              ),
+            );
+          },
+          onLoginExpired: (e) {
+            emit(TokenExpired(data: state.data.copyWith(saveLoading: false)));
+          },
+          onDataProviderError: (e) {
+            emit(
+              ProjectAddedError(
+                errorMessage: e.message,
+                data: state.data.copyWith(saveLoading: false),
+              ),
+            );
+          },
+          onOtherError: (e) {
+            emit(
+              ProjectAddedError(
+                errorMessage: e.toString(),
+                data: state.data.copyWith(saveLoading: false),
+              ),
+            );
+          },
+        );
+      } catch (e) {
+        emit(
+          ProjectAddedError(
+            errorMessage: e.toString(),
+            data: state.data.copyWith(
+              formFields: validationResult.updatedFields,
+              saveLoading: false,
+            ),
+          ),
+        );
+        return;
+      }
+    });
+
+    on<UpdateProject>((event, emit) async {
+      final formFields = state.data.formFields;
+      final validationResult = _validateProjectForm(formFields);
+
+      if (validationResult.hasErrors) {
+        emit(
+          ProjectState(
+            data: state.data.copyWith(
+              formFields: validationResult.updatedFields,
+            ),
+          ),
+        );
+        return;
+      }
 
       final now = DateTime.now();
-      final isNewProject = projectId == null || projectId.isEmpty;
 
-      if (isNewProject) {
-        final newProject = Project(
-          id: _uuid.v4(),
-          name: projectName.trim(),
-          description: projectDescription?.trim(),
-          createdAt: now,
-          updatedAt: now,
-          type: ProjectType.supplementMobile,
-        );
+      final updatedProject = Project(
+        id: event.project.id,
+        name: formFields['name']?.value as String,
+        description: formFields['description']?.value as String?,
+        createdAt: event.project.createdAt,
+        updatedAt: now,
+        type: ProjectType.supplementMobile,
+      );
 
-        try {
-          await ApiServerHandler.run(
-            action: () async {
-              emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
-              await ProjectRepository().createProject(newProject.toJson());
-              state.data.projectBox?.put(newProject.id, newProject);
-              emit(
-                ProjectAddedSuccess(
-                  data: state.data.copyWith(
-                    projects: [...state.data.projects, newProject],
-                    resetForm: true,
-                    saveLoading: false,
-                  ),
+      try {
+        await ApiServerHandler.run(
+          action: () async {
+            emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
+            await ProjectRepository().updateProject(
+              updatedProject.id,
+              updatedProject.toJson(),
+            );
+            final updatedProjects =
+                state.data.projects.map((project) {
+                  return project.id == updatedProject.id
+                      ? updatedProject
+                      : project;
+                }).toList();
+
+            state.data.projectBox?.put(updatedProject.id, updatedProject);
+            emit(
+              ProjectUpdatedSuccess(
+                data: state.data.copyWith(
+                  projects: updatedProjects,
+                  resetForm: true,
+                  saveLoading: false,
                 ),
-              );
-            },
-            onLoginExpired: (e) {
-              emit(TokenExpired(data: state.data.copyWith(saveLoading: false)));
-            },
-            onDataProviderError: (e) {
-              emit(
-                ProjectAddedError(
-                  errorMessage: e.message,
-                  data: state.data.copyWith(saveLoading: false),
-                ),
-              );
-            },
-            onOtherError: (e) {
-              emit(
-                ProjectAddedError(
-                  errorMessage: e.toString(),
-                  data: state.data.copyWith(saveLoading: false),
-                ),
-              );
-            },
-          );
-        } catch (e) {
-          emit(
-            ProjectAddedError(
-              errorMessage: e.toString(),
-              data: state.data.copyWith(
-                formFields: validationResult.updatedFields,
-                saveLoading: false,
               ),
-            ),
-          );
-          return;
-        }
-      } else {
-        final existingProject = state.data.projects.firstWhere(
-          (project) => project.id == projectId,
-        );
-
-        final updatedProject = existingProject.copyWith(
-          name: projectName.trim(),
-          description: projectDescription?.trim(),
-          updatedAt: now,
-        );
-
-        try {
-          await ApiServerHandler.run(
-            action: () async {
-              emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
-              await ProjectRepository().updateProject(
-                projectId,
-                updatedProject.toJson(),
-              );
-              final updatedProjects =
-                  state.data.projects.map((project) {
-                    return project.id == projectId ? updatedProject : project;
-                  }).toList();
-
-              state.data.projectBox?.put(projectId, updatedProject);
-
-              emit(
-                ProjectUpdatedSuccess(
-                  data: state.data.copyWith(
-                    projects: updatedProjects,
-                    resetForm: true,
-                    saveLoading: false,
-                  ),
-                ),
-              );
-            },
-            onLoginExpired: (e) {
-              emit(TokenExpired(data: state.data.copyWith(saveLoading: false)));
-            },
-            onDataProviderError: (e) {
-              emit(
-                ProjectUpdatedError(
-                  errorMessage: e.message,
-                  data: state.data.copyWith(saveLoading: false),
-                ),
-              );
-            },
-            onOtherError: (e) {
-              emit(
-                ProjectUpdatedError(
-                  errorMessage: e.toString(),
-                  data: state.data.copyWith(saveLoading: false),
-                ),
-              );
-            },
-          );
-        } catch (e) {
-          emit(
-            ProjectUpdatedError(
-              errorMessage: e.toString(),
-              data: state.data.copyWith(
-                formFields: validationResult.updatedFields,
-                saveLoading: false,
+            );
+          },
+          onLoginExpired: (e) {
+            emit(TokenExpired(data: state.data.copyWith(saveLoading: false)));
+          },
+          onDataProviderError: (e) {
+            emit(
+              ProjectAddedError(
+                errorMessage: e.message,
+                data: state.data.copyWith(saveLoading: false),
               ),
+            );
+          },
+          onOtherError: (e) {
+            emit(
+              ProjectAddedError(
+                errorMessage: e.toString(),
+                data: state.data.copyWith(saveLoading: false),
+              ),
+            );
+          },
+        );
+      } catch (e) {
+        emit(
+          ProjectAddedError(
+            errorMessage: e.toString(),
+            data: state.data.copyWith(
+              formFields: validationResult.updatedFields,
+              saveLoading: false,
             ),
-          );
-          return;
-        }
+          ),
+        );
+        return;
       }
     });
 

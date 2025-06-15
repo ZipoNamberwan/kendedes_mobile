@@ -103,8 +103,8 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                       Expanded(
                         child: Text(
                           state.data.isMultiSelectMode
-                              ? 'Select (${state.data.selectedTags.length})'
-                              : 'Total (${state.data.filteredTags.length})',
+                              ? 'Pilih (${state.data.selectedTags.length})'
+                              : 'Cari dan Filter Tagging',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -461,40 +461,72 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                               ],
                             ),
                           )
-                          : ListView.builder(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            itemCount: state.data.filteredTags.length,
-                            itemBuilder: (context, index) {
-                              final tag = state.data.filteredTags[index];
-                              final isSelected = state.data.selectedTags
-                                  .contains(tag);
+                          : Builder(
+                            builder: (context) {
+                              // Sort tags by last modified/created date (newest first)
+                              final sortedTags = List<TagData>.from(
+                                state.data.filteredTags,
+                              )..sort((a, b) {
+                                final aDate =
+                                    a.updatedAt ??
+                                    a.createdAt ??
+                                    DateTime(1970);
+                                final bDate =
+                                    b.updatedAt ??
+                                    b.createdAt ??
+                                    DateTime(1970);
+                                return bDate.compareTo(
+                                  aDate,
+                                ); // Descending order (newest first)
+                              });
 
-                              return TagListItemWidget(
-                                tag: tag,
-                                isSelected: isSelected,
-                                onTap: () {
-                                  if (state.data.isMultiSelectMode) {
-                                    if (state.data.selectedTags.contains(tag)) {
-                                      _taggingBloc.add(
-                                        RemoveTagFromSelection(tag),
-                                      );
-                                    } else {
-                                      _taggingBloc.add(AddTagToSelection(tag));
-                                    }
-                                  } else {
-                                    _taggingBloc.add(SelectTag(tag));
-                                  }
+                              return ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                itemCount: sortedTags.length,
+                                itemBuilder: (context, index) {
+                                  final tag = sortedTags[index];
+                                  final isSelected = state.data.selectedTags
+                                      .contains(tag);
+
+                                  return TagListItemWidget(
+                                    tag: tag,
+                                    isSelected: isSelected,
+                                    project: state.data.project,
+                                    user: state.data.currentUser,
+                                    onTap: () {
+                                      if (state.data.isMultiSelectMode) {
+                                        if (state.data.selectedTags.contains(
+                                          tag,
+                                        )) {
+                                          _taggingBloc.add(
+                                            RemoveTagFromSelection(tag),
+                                          );
+                                        } else {
+                                          _taggingBloc.add(
+                                            AddTagToSelection(tag),
+                                          );
+                                        }
+                                      } else {
+                                        _taggingBloc.add(SelectTag(tag));
+                                      }
+                                    },
+                                    onLongPress: () {
+                                      if (!state.data.isMultiSelectMode) {
+                                        _taggingBloc.add(
+                                          ToggleMultiSelectMode(),
+                                        );
+                                        _taggingBloc.add(
+                                          AddTagToSelection(tag),
+                                        );
+                                      }
+                                    },
+                                    isMultiSelectMode:
+                                        state.data.isMultiSelectMode,
+                                  );
                                 },
-                                onLongPress: () {
-                                  if (!state.data.isMultiSelectMode) {
-                                    _taggingBloc.add(ToggleMultiSelectMode());
-                                    _taggingBloc.add(AddTagToSelection(tag));
-                                  }
-                                },
-                                isMultiSelectMode: state.data.isMultiSelectMode,
                               );
                             },
                           ),
@@ -529,35 +561,144 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              if (state.data.selectedTags.length == 1) {
-                                // Direct delete for single tag
-                                _taggingBloc.add(DeleteSelectedTags());
-                              } else if (state.data.selectedTags.length > 1) {
-                                // Show confirmation dialog for multiple tags
-                                _showDeleteConfirmationDialog(
-                                  state.data.selectedTags.length,
-                                );
-                              }
+                          child: Builder(
+                            builder: (context) {
+                              // Check if any selected tags are unsynced
+                              final shouldSentToServerSelectedTags = state
+                                  .data
+                                  .selectedTags
+                                  .where((tag) {
+                                    return tag.shouldSentToServer(
+                                      state.data.project.id,
+                                    );
+                                  });
+
+                              return ElevatedButton.icon(
+                                onPressed:
+                                    shouldSentToServerSelectedTags.isNotEmpty
+                                        ? () {
+                                          // TODO: Implement upload functionality for selected tags
+                                          // _taggingBloc.add(UploadSelectedTags());
+                                        }
+                                        : null,
+                                icon: const Icon(Icons.cloud_upload, size: 16),
+                                label: const Text(
+                                  'Upload',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      shouldSentToServerSelectedTags.isNotEmpty
+                                          ? Colors.blue.shade600
+                                          : Colors.grey.shade400,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: const Size(0, 32),
+                                ),
+                              );
                             },
-                            icon: const Icon(Icons.delete, size: 16),
-                            label: const Text(
-                              'Hapus',
-                              style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              final canBeDeletedSelectedTags = state
+                                  .data
+                                  .selectedTags
+                                  .where((tag) {
+                                    return tag.canBeDeleted(
+                                      state.data.project.id,
+                                    );
+                                  });
+                              return ElevatedButton.icon(
+                                onPressed: () {
+                                  if (canBeDeletedSelectedTags.length == 1) {
+                                    // Direct delete for single tag
+                                    _taggingBloc.add(DeleteSelectedTags());
+                                  } else if (canBeDeletedSelectedTags.length >
+                                      1) {
+                                    // Show confirmation dialog for multiple tags
+                                    _showDeleteConfirmationDialog(
+                                      canBeDeletedSelectedTags.length,
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.delete, size: 16),
+                                label: const Text(
+                                  'Hapus',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      canBeDeletedSelectedTags.isNotEmpty
+                                          ? Colors.red
+                                          : Colors.grey.shade400,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: const Size(0, 32),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  // Upload button - visible when no tags are selected
+                  Builder(
+                    builder: (context) {
+                      final shouldSentToServerTags = state.data.tags.where((
+                        tag,
+                      ) {
+                        return tag.shouldSentToServer(state.data.project.id);
+                      });
+
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border(
+                            top: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed:
+                                shouldSentToServerTags.isNotEmpty
+                                    ? () {
+                                      // TODO: Implement upload functionality for all unsynced tags
+                                      // _taggingBloc.add(UploadUnsyncedTags());
+                                    }
+                                    : null,
+                            icon: const Icon(Icons.cloud_upload, size: 16),
+                            label: Text(
+                              shouldSentToServerTags.isNotEmpty
+                                  ? 'Upload Semua (${shouldSentToServerTags.length})'
+                                  : 'Semua Telah Tersinkron',
+                              style: const TextStyle(fontSize: 12),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                              backgroundColor:
+                                  shouldSentToServerTags.isNotEmpty
+                                      ? Colors.blue.shade600
+                                      : Colors.grey.shade400,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               minimumSize: const Size(0, 32),
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
               ],
             ),

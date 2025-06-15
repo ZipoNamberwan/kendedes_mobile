@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/user.dart';
 
 class TagListItemWidget extends StatelessWidget {
   final TagData tag;
@@ -8,6 +9,8 @@ class TagListItemWidget extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final bool isMultiSelectMode;
+  final Project? project;
+  final User? user;
 
   const TagListItemWidget({
     super.key,
@@ -16,24 +19,13 @@ class TagListItemWidget extends StatelessWidget {
     required this.onTap,
     this.onLongPress,
     this.isMultiSelectMode = false,
+    this.project,
+    this.user,
   });
-
-  Color _getProjectColor() {
-    switch (tag.project.type) {
-      case ProjectType.marketSwmaps:
-        return Colors.purple;
-      case ProjectType.supplementSwmaps:
-        return Colors.indigo;
-      case ProjectType.supplementMobile:
-        return Colors.orange;
-      default:
-        return Colors.orange;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    final projectColor = _getProjectColor();
+    final projectColor = tag.getColorScheme(project?.id ?? '', user?.id ?? '');
 
     return Card(
       elevation: isSelected ? 6 : 1,
@@ -131,13 +123,45 @@ class TagListItemWidget extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (isSelected && !isMultiSelectMode)
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 20,
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Server sync status icon
+                              if (tag.showCloudIcon(project?.id ?? '')) ...[
+                                Icon(
+                                  tag.hasSentToServer
+                                      ? Icons.cloud_done_rounded
+                                      : Icons.cloud_off_rounded,
+                                  size: 16,
+                                  color:
+                                      tag.hasSentToServer
+                                          ? Colors.green.shade600
+                                          : Colors.orange.shade600,
+                                ),
+                              ],
+                              if (isSelected && !isMultiSelectMode) ...[
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                  size: 20,
+                                ),
+                              ],
+                            ],
+                          ),
                         ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Deskripsi: ${tag.description}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              isSelected
+                                  ? Colors.green.shade600
+                                  : Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if (tag.businessAddress != null) ...[
                         const SizedBox(height: 2),
@@ -150,33 +174,34 @@ class TagListItemWidget extends StatelessWidget {
                                     ? Colors.green.shade600
                                     : Colors.grey[600],
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                      const SizedBox(height: 2),
-                      Text(
-                        'Posisi: ${tag.positionLat.toStringAsFixed(6)}, ${tag.positionLng.toStringAsFixed(6)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color:
-                              isSelected
-                                  ? Colors.green.shade600
-                                  : Colors.grey[600],
-                        ),
-                      ),
-                      if (tag.createdAt != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          'Di-tagging pada: ${_formatDate(tag.createdAt ?? DateTime.now())}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color:
-                                isSelected
-                                    ? Colors.green.shade500
-                                    : Colors.grey[500],
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
+                      // const SizedBox(height: 2),
+                      // Text(
+                      //   'Posisi: ${tag.positionLat.toStringAsFixed(6)}, ${tag.positionLng.toStringAsFixed(6)}',
+                      //   style: TextStyle(
+                      //     fontSize: 12,
+                      //     color:
+                      //         isSelected
+                      //             ? Colors.green.shade600
+                      //             : Colors.grey[600],
+                      //   ),
+                      // ),
+                      // if (tag.createdAt != null) ...[
+                      //   const SizedBox(height: 2),
+                      //   Text(
+                      //     'Di-tagging pada: ${_formatDate(tag.createdAt ?? DateTime.now())}',
+                      //     style: TextStyle(
+                      //       fontSize: 11,
+                      //       color:
+                      //           isSelected
+                      //               ? Colors.green.shade500
+                      //               : Colors.grey[500],
+                      //       fontStyle: FontStyle.italic,
+                      //     ),
+                      //   ),
+                      // ],
                     ],
                   ),
                 ),
@@ -190,7 +215,7 @@ class TagListItemWidget extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-  }
+  // String _formatDate(DateTime date) {
+  //   return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  // }
 }

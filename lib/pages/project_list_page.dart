@@ -46,10 +46,10 @@ class _ProjectListPageState extends State<ProjectListPage>
     super.dispose();
   }
 
-  void _showProjectForm({String? id}) {
+  void _showProjectForm({Project? project}) {
     showDialog(
       context: context,
-      builder: (context) => ProjectFormDialog(id: id),
+      builder: (context) => ProjectFormDialog(project: project),
     );
   }
 
@@ -604,7 +604,7 @@ class _ProjectListPageState extends State<ProjectListPage>
                                                   switch (value) {
                                                     case 'edit':
                                                       _showProjectForm(
-                                                        id: project.id,
+                                                        project: project,
                                                       );
                                                       break;
                                                     case 'delete':

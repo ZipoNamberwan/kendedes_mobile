@@ -1,7 +1,17 @@
-class Organization {
+import 'package:hive_ce/hive.dart';
+import 'package:kendedes_mobile/hive/hive_types.dart';
+
+part 'organization.g.dart';
+
+@HiveType(typeId: organizationTypeId)
+class Organization extends HiveObject {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String shortCode;
+  @HiveField(2)
   final String longCode;
+  @HiveField(3)
   final String name;
 
   Organization({

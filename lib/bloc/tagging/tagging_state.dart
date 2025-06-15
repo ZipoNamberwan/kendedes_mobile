@@ -5,12 +5,65 @@ import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/poligon_data.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/models/user.dart';
 import 'package:latlong2/latlong.dart';
 
 class TaggingState extends Equatable {
   final TaggingStateData data;
 
   const TaggingState({required this.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class InitializingStarted extends TaggingState {
+  InitializingStarted()
+    : super(
+        data: TaggingStateData(
+          project: Project(
+            id: '',
+            name: '',
+            description: '',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            type: ProjectType.supplementMobile,
+          ),
+          tags: [],
+          polygons: [],
+          isLoadingTag: false,
+          isLoadingPolygon: false,
+          isLoadingCurrentLocation: false,
+          currentZoom: 16.0,
+          rotation: 0.0,
+          selectedTags: [],
+          isMultiSelectMode: false,
+          isSideBarOpen: false,
+          isSubmitting: false,
+          filteredTags: [],
+          isTaggingInsideBoundsError: false,
+          isTaggingInsideBoundsLoading: false,
+          isFirstTimeMapLoading: true,
+          currentLocation: null,
+          currentUser: null,
+          isDeletingTag: false,
+        ),
+      );
+
+  @override
+  List<Object> get props => [data];
+}
+
+class InitializingError extends TaggingState {
+  final String errorMessage;
+  const InitializingError({required this.errorMessage, required super.data});
+
+  @override
+  List<Object> get props => [data, errorMessage];
+}
+
+class InitializingSuccess extends TaggingState {
+  const InitializingSuccess({required super.data});
 
   @override
   List<Object> get props => [data];
@@ -36,6 +89,13 @@ class TagError extends TaggingState {
 
 class TagSelected extends TaggingState {
   const TagSelected({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class TagDeletedLoading extends TaggingState {
+  const TagDeletedLoading({required super.data});
 
   @override
   List<Object> get props => [data];
@@ -128,56 +188,6 @@ class AllFilterCleared extends TaggingState {
   List<Object> get props => [data];
 }
 
-class InitializingStarted extends TaggingState {
-  InitializingStarted()
-    : super(
-        data: TaggingStateData(
-          project: Project(
-            id: '',
-            name: '',
-            description: '',
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            type: ProjectType.supplementMobile,
-          ),
-          tags: [],
-          otherTags: [],
-          polygons: [],
-          isLoadingTag: false,
-          isLoadingPolygon: false,
-          isLoadingCurrentLocation: false,
-          currentZoom: 16.0,
-          rotation: 0.0,
-          selectedTags: [],
-          isMultiSelectMode: false,
-          isSideBarOpen: false,
-          isSubmitting: false,
-          filteredTags: [],
-          isTaggingInsideBoundsError: false,
-          isTaggingInsideBoundsLoading: false,
-          isFirstTimeMapLoading: true,
-        ),
-      );
-
-  @override
-  List<Object> get props => [data];
-}
-
-class InitializingError extends TaggingState {
-  final String errorMessage;
-  const InitializingError({required this.errorMessage, required super.data});
-
-  @override
-  List<Object> get props => [data, errorMessage];
-}
-
-class InitializingSuccess extends TaggingState {
-  const InitializingSuccess({required super.data});
-
-  @override
-  List<Object> get props => [data];
-}
-
 class TaggingInsideBoundsFailed extends TaggingState {
   final String errorMessage;
   const TaggingInsideBoundsFailed({
@@ -199,7 +209,6 @@ class TokenExpired extends TaggingState {
 class TaggingStateData {
   final Project project;
   final List<TagData> tags;
-  final List<TagData> otherTags;
   final List<PoligonData> polygons;
   final bool isLoadingTag;
   final bool isLoadingPolygon;
@@ -235,10 +244,15 @@ class TaggingStateData {
   //Hive Box attribute
   final Box<TagData>? tagDataBox;
 
+  //User attribute
+  final User? currentUser;
+
+  //Delete confirmation attribute
+  final bool isDeletingTag;
+
   TaggingStateData({
     required this.project,
     required this.tags,
-    required this.otherTags,
     required this.polygons,
     required this.isLoadingTag,
     required this.isLoadingPolygon,
@@ -262,7 +276,9 @@ class TaggingStateData {
     this.selectedLabelType,
     this.selectedMapType,
     required this.isSubmitting,
+    this.currentUser,
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
+    required this.isDeletingTag,
 
     this.tagDataBox,
   }) : formFields = formFields ?? _generateFormFields();
@@ -287,7 +303,6 @@ class TaggingStateData {
   TaggingStateData copyWith({
     Project? project,
     List<TagData>? tags,
-    List<TagData>? otherTags,
     List<PoligonData>? polygons,
     bool? isLoadingTag,
     bool? isLoadingPolygon,
@@ -306,6 +321,7 @@ class TaggingStateData {
 
     bool? isSubmitting,
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
+    bool? isDeletingTag,
     bool? resetForm,
     List<TagData>? filteredTags,
     String? searchQuery,
@@ -317,13 +333,13 @@ class TaggingStateData {
     bool? resetProjectTypeFilter,
     LabelType? selectedLabelType,
     MapType? selectedMapType,
+    User? currentUser,
 
     Box<TagData>? tagDataBox,
   }) {
     return TaggingStateData(
       project: project ?? this.project,
       tags: tags ?? this.tags,
-      otherTags: otherTags ?? this.otherTags,
       polygons: polygons ?? this.polygons,
       isLoadingTag: isLoadingTag ?? this.isLoadingTag,
       isLoadingPolygon: isLoadingPolygon ?? this.isLoadingPolygon,
@@ -371,6 +387,8 @@ class TaggingStateData {
           isTaggingInsideBoundsLoading ?? this.isTaggingInsideBoundsLoading,
       isTaggingInsideBoundsError:
           isTaggingInsideBoundsError ?? this.isTaggingInsideBoundsError,
+      currentUser: currentUser ?? this.currentUser,
+      isDeletingTag: isDeletingTag ?? this.isDeletingTag,
     );
   }
 }

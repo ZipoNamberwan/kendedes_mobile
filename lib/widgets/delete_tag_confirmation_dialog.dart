@@ -1,38 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
-import 'package:kendedes_mobile/bloc/project/project_state.dart';
-import 'package:kendedes_mobile/pages/login_page.dart';
-import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
+import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
+import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 
-class DeleteProjectConfirmationDialog extends StatelessWidget {
-  final String projectName;
+class DeleteTagConfirmationDialog extends StatelessWidget {
+  final TagData tagData;
   final VoidCallback onConfirm;
   final VoidCallback onCancel;
 
-  const DeleteProjectConfirmationDialog({
+  const DeleteTagConfirmationDialog({
     super.key,
-    required this.projectName,
+    required this.tagData,
     required this.onConfirm,
     required this.onCancel,
   });
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ProjectBloc, ProjectState>(
+    return BlocConsumer<TaggingBloc, TaggingState>(
       listener: (context, state) {
-        if (state is TokenExpired) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginPage()),
-            (route) => false,
-          );
-        } else if (state is ProjectDeletedSuccess) {
-          Navigator.pop(context);
-          CustomSnackBar.showSuccess(
-            context,
-            message: 'Projek berhasil dihapus',
-          );
+        if (state is TagDeletedSuccess) {
+          Navigator.of(context).pop(); // Close dialog on success
         }
       },
       builder: (context, state) {
@@ -56,6 +45,7 @@ class DeleteProjectConfirmationDialog extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Header with gradient
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
                   decoration: BoxDecoration(
@@ -85,17 +75,29 @@ class DeleteProjectConfirmationDialog extends StatelessWidget {
                             width: 1,
                           ),
                         ),
-                        child: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
+                        child:
+                            state.data.isDeletingTag
+                                ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Hapus Projek',
-                          style: TextStyle(
+                          state.data.isDeletingTag
+                              ? 'Menghapus Tagging...'
+                              : 'Hapus Tagging',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -106,30 +108,29 @@ class DeleteProjectConfirmationDialog extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                // Content
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      // Error Box for ProjectDeletedError
-                      if (state is ProjectDeletedError)
+                      // Error message (if any)
+                      if (state is TagDeletedError) ...[
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 12),
+                          margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
-                            color: Colors.red.shade100,
+                            color: Colors.red.shade50,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.red.shade300,
-                              width: 1,
-                            ),
+                            border: Border.all(color: Colors.red.shade200),
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.error_outline,
                                 color: Colors.red.shade600,
-                                size: 20,
+                                size: 16,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -137,86 +138,118 @@ class DeleteProjectConfirmationDialog extends StatelessWidget {
                                   state.errorMessage,
                                   style: TextStyle(
                                     color: Colors.red.shade700,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
+                      ],
 
-                      RichText(
-                        text: TextSpan(
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                            height: 1.4,
-                          ),
+                      // Tag info card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const TextSpan(
-                              text: 'Apakah Anda yakin ingin menghapus projek ',
-                            ),
-                            TextSpan(
-                              text: '"$projectName"',
+                            Text(
+                              tagData.businessName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 15,
                                 color: Colors.black87,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const TextSpan(
-                              text: '? Tindakan ini tidak dapat di-undo.',
+                            if (tagData.businessOwner != null) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.person_outline,
+                                    size: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      tagData.businessOwner!,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.business_outlined,
+                                  size: 14,
+                                  color: Colors.grey.shade500,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    tagData.sector.text,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
+
                       const SizedBox(height: 16),
 
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.red.shade200,
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.warning_rounded,
-                              color: Colors.red.shade600,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Semua data tagging akan ikut terhapus!',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.red.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
+                      // Confirmation text
+                      Text(
+                        state.data.isDeletingTag
+                            ? 'Sedang menghapus tagging, mohon tunggu...'
+                            : 'Apakah Anda yakin ingin menghapus tagging ini? Data yang dihapus tidak dapat dikembalikan.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 20),
+
+                      const SizedBox(height: 16),
+
+                      // Action buttons
                       Row(
                         children: [
                           Expanded(
                             child: TextButton(
                               onPressed:
-                                  state.data.deleteLoading ? null : onCancel,
+                                  state.data.isDeletingTag
+                                      ? null
+                                      : () {
+                                        Navigator.of(context).pop();
+                                      },
                               style: TextButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
                                 ),
                                 backgroundColor:
-                                    state.data.deleteLoading
-                                        ? Colors.grey[50]
+                                    state.data.isDeletingTag
+                                        ? Colors.grey[200]
                                         : Colors.grey[100],
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -226,7 +259,7 @@ class DeleteProjectConfirmationDialog extends StatelessWidget {
                                 'Batal',
                                 style: TextStyle(
                                   color:
-                                      state.data.deleteLoading
+                                      state.data.isDeletingTag
                                           ? Colors.grey[400]
                                           : Colors.grey[700],
                                   fontWeight: FontWeight.w500,
@@ -238,11 +271,11 @@ class DeleteProjectConfirmationDialog extends StatelessWidget {
                           Expanded(
                             child: ElevatedButton(
                               onPressed:
-                                  state.data.deleteLoading ? null : onConfirm,
+                                  state.data.isDeletingTag ? null : onConfirm,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
-                                    state.data.deleteLoading
-                                        ? Colors.grey[400]
+                                    state.data.isDeletingTag
+                                        ? Colors.grey.shade400
                                         : Colors.red,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
@@ -254,7 +287,7 @@ class DeleteProjectConfirmationDialog extends StatelessWidget {
                                 ),
                               ),
                               child:
-                                  state.data.deleteLoading
+                                  state.data.isDeletingTag
                                       ? Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,

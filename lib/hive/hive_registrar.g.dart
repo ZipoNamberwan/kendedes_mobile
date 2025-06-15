@@ -3,27 +3,32 @@
 // Check in to version control
 
 import 'package:hive_ce/hive.dart';
-import 'package:kendedes_mobile/models/project.dart';
-import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/hive/hive_adapters.dart';
 
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
     registerAdapter(BuildingStatusAdapter());
+    registerAdapter(OrganizationAdapter());
     registerAdapter(ProjectAdapter());
     registerAdapter(ProjectTypeAdapter());
     registerAdapter(SectorAdapter());
     registerAdapter(TagDataAdapter());
     registerAdapter(TagTypeAdapter());
+    registerAdapter(UserAdapter());
+    registerAdapter(UserRoleAdapter());
   }
 }
 
 extension IsolatedHiveRegistrar on IsolatedHiveInterface {
   void registerAdapters() {
     registerAdapter(BuildingStatusAdapter());
+    registerAdapter(OrganizationAdapter());
     registerAdapter(ProjectAdapter());
     registerAdapter(ProjectTypeAdapter());
     registerAdapter(SectorAdapter());
     registerAdapter(TagDataAdapter());
     registerAdapter(TagTypeAdapter());
+    registerAdapter(UserAdapter());
+    registerAdapter(UserRoleAdapter());
   }
 }

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:kendedes_mobile/models/project.dart';
 
 abstract class ProjectEvent extends Equatable {
   const ProjectEvent();
@@ -13,11 +14,19 @@ class Initialize extends ProjectEvent {
   List<Object?> get props => [];
 }
 
-class SaveProject extends ProjectEvent {
-  const SaveProject();
+class StoreProject extends ProjectEvent {
+  const StoreProject();
 
   @override
   List<Object?> get props => [];
+}
+
+class UpdateProject extends ProjectEvent {
+  final Project project;
+  const UpdateProject({required this.project});
+
+  @override
+  List<Object?> get props => [project];
 }
 
 class DeleteProject extends ProjectEvent {

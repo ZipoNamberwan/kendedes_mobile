@@ -31,6 +31,7 @@ class TagDataAdapter extends TypeAdapter<TagData> {
       deletedAt: fields[11] as DateTime?,
       incrementalId: (fields[12] as num?)?.toInt(),
       project: fields[13] as Project,
+      user: fields[21] as User,
       businessName: fields[14] as String,
       businessOwner: fields[15] as String?,
       businessAddress: fields[16] as String?,
@@ -44,7 +45,7 @@ class TagDataAdapter extends TypeAdapter<TagData> {
   @override
   void write(BinaryWriter writer, TagData obj) {
     writer
-      ..writeByte(21)
+      ..writeByte(22)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -86,7 +87,9 @@ class TagDataAdapter extends TypeAdapter<TagData> {
       ..writeByte(19)
       ..write(obj.sector)
       ..writeByte(20)
-      ..write(obj.note);
+      ..write(obj.note)
+      ..writeByte(21)
+      ..write(obj.user);
   }
 
   @override
@@ -291,6 +294,129 @@ class TagTypeAdapter extends TypeAdapter<TagType> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is TagTypeAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class UserAdapter extends TypeAdapter<User> {
+  @override
+  final typeId = 6;
+
+  @override
+  User read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return User(
+      id: fields[0] as String,
+      email: fields[1] as String,
+      name: fields[2] as String,
+      organization: fields[3] as Organization?,
+      role: fields[4] as UserRole?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, User obj) {
+    writer
+      ..writeByte(5)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.email)
+      ..writeByte(2)
+      ..write(obj.name)
+      ..writeByte(3)
+      ..write(obj.organization)
+      ..writeByte(4)
+      ..write(obj.role);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class OrganizationAdapter extends TypeAdapter<Organization> {
+  @override
+  final typeId = 7;
+
+  @override
+  Organization read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return Organization(
+      id: fields[0] as String,
+      name: fields[3] as String,
+      shortCode: fields[1] as String,
+      longCode: fields[2] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Organization obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.shortCode)
+      ..writeByte(2)
+      ..write(obj.longCode)
+      ..writeByte(3)
+      ..write(obj.name);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is OrganizationAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class UserRoleAdapter extends TypeAdapter<UserRole> {
+  @override
+  final typeId = 8;
+
+  @override
+  UserRole read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return UserRole(id: fields[0] as String, name: fields[1] as String);
+  }
+
+  @override
+  void write(BinaryWriter writer, UserRole obj) {
+    writer
+      ..writeByte(2)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserRoleAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

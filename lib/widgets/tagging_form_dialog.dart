@@ -763,8 +763,21 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                     onTap:
                                         state.data.isSubmitting
                                             ? null
-                                            : () =>
-                                                _taggingBloc.add(SaveForm()),
+                                            : () {
+                                              if (widget.initialTagData !=
+                                                  null) {
+                                                _taggingBloc.add(
+                                                  SaveEditForm(
+                                                    tagData:
+                                                        widget.initialTagData!,
+                                                  ),
+                                                );
+                                              } else {
+                                                _taggingBloc.add(
+                                                  SaveCreateForm(),
+                                                );
+                                              }
+                                            },
                                     child: Center(
                                       child:
                                           state.data.isSubmitting

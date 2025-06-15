@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/models/user.dart';
 
 class MarkerWidget extends StatelessWidget {
   final TagData tagData;
   final bool isSelected;
   final VoidCallback onTap;
   final String? labelType;
+  final User? currentUser;
+  final Project? currentProject;
 
   const MarkerWidget({
     super.key,
@@ -14,26 +17,19 @@ class MarkerWidget extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     this.labelType,
+    this.currentUser,
+    this.currentProject,
   });
-
-  Color _getMarkerColor() {
-    if (isSelected) return Colors.green;
-
-    switch (tagData.project.type) {
-      case ProjectType.marketSwmaps:
-        return Colors.purple;
-      case ProjectType.supplementSwmaps:
-        return Colors.indigo;
-      case ProjectType.supplementMobile:
-        return Colors.deepOrange;
-      default:
-        return Colors.deepOrange;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    final markerColor = _getMarkerColor();
+    final markerColor =
+        isSelected
+            ? Colors.green
+            : tagData.getColorScheme(
+              currentProject?.id ?? '',
+              currentUser?.id ?? '',
+            );
 
     return Center(
       child: Stack(

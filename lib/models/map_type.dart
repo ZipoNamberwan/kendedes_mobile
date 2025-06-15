@@ -27,7 +27,7 @@ class MapType {
   static const openStreetMapDefault = MapType._(
     'openstreetmap_default',
     'OpenStreetMap',
-    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     'OpenStreetMap',
     Icons.map,
   );

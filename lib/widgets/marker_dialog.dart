@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/models/user.dart';
 
 class MarkerDialog extends StatelessWidget {
   final TagData tagData;
   final Project project;
+  final User? currentUser;
   final void Function(TagData tag) onDelete;
   final void Function(TagData tag) onMove;
   final void Function(TagData tag) onEdit;
@@ -16,24 +18,15 @@ class MarkerDialog extends StatelessWidget {
     required this.onMove,
     required this.onEdit,
     required this.project,
+    this.currentUser,
   });
-
-  Color _getHeaderColor() {
-    switch (tagData.project.type) {
-      case ProjectType.marketSwmaps:
-        return Colors.purple;
-      case ProjectType.supplementSwmaps:
-        return Colors.indigo;
-      case ProjectType.supplementMobile:
-        return Colors.deepOrange;
-      default:
-        return Colors.deepOrange;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    final headerColor = _getHeaderColor();
+    final headerColor = tagData.getColorScheme(
+      project.id,
+      currentUser?.id ?? '',
+    );
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -101,6 +94,7 @@ class MarkerDialog extends StatelessWidget {
                       'Posisi',
                       '${tagData.positionLat.toStringAsFixed(6)}, ${tagData.positionLng.toStringAsFixed(6)}',
                     ),
+                    _buildInfoRow('Ditagging oleh', tagData.user.name),
                     // if (tagData.createdAt != null)
                     //   _buildInfoRow(
                     //     'Dibuat pada',

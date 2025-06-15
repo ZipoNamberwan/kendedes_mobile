@@ -32,15 +32,15 @@ class TaggingRepository {
     return response.map((data) => TagData.fromJson(data)).toList();
   }
 
-  Future<TagData> storeTagging(TagData taggingData) async {
-    final response = await _taggingProvider.storeTagging(taggingData.toJson());
+  Future<TagData> storeTagging(TagData tagData) async {
+    final response = await _taggingProvider.storeTagging(tagData.toJson());
     return TagData.fromJson(response);
   }
 
-  Future<TagData> updateTagging(String taggingId, TagData taggingData) async {
+  Future<TagData> updateTagging(TagData tagData) async {
     final response = await _taggingProvider.updateTagging(
-      taggingId,
-      taggingData.toJson(),
+      tagData.id,
+      tagData.toJson(),
     );
     return TagData.fromJson(response);
   }

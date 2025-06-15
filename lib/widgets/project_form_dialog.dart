@@ -3,13 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 
 class ProjectFormDialog extends StatefulWidget {
-  final String? id;
+  final Project? project;
 
-  const ProjectFormDialog({super.key, this.id});
+  const ProjectFormDialog({super.key, this.project});
 
   @override
   State<ProjectFormDialog> createState() => _ProjectFormDialogState();
@@ -29,8 +30,8 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
   void initState() {
     super.initState();
     _projectBloc = context.read<ProjectBloc>();
-    if (widget.id?.isNotEmpty == true) {
-      _projectBloc.add(LoadProject(widget.id!));
+    if (widget.project != null) {
+      _projectBloc.add(LoadProject(widget.project!.id));
     } else {
       _projectBloc.add(ResetProjectForm());
     }
@@ -150,7 +151,7 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
-                              widget.id != null
+                              widget.project != null
                                   ? Icons.edit_rounded
                                   : Icons.add_rounded,
                               color: Colors.white,
@@ -160,7 +161,9 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              widget.id != null ? 'Ubah Projek' : 'Buat Projek',
+                              widget.project != null
+                                  ? 'Ubah Projek'
+                                  : 'Buat Projek',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -429,8 +432,36 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
                                     onPressed:
                                         state.data.saveLoading
                                             ? null
-                                            : () =>
-                                                _projectBloc.add(SaveProject()),
+                                            : () {
+                                              if (widget.project != null) {
+                                                _projectBloc.add(
+                                                  UpdateProject(
+                                                    project:
+                                                        widget.project ??
+                                                        Project(
+                                                          id: '',
+                                                          name:
+                                                              nameController
+                                                                  .text,
+                                                          description:
+                                                              descriptionController
+                                                                  .text,
+                                                          createdAt:
+                                                              DateTime.now(),
+                                                          updatedAt:
+                                                              DateTime.now(),
+                                                          type:
+                                                              ProjectType
+                                                                  .supplementMobile,
+                                                        ),
+                                                  ),
+                                                );
+                                              } else {
+                                                _projectBloc.add(
+                                                  StoreProject(),
+                                                );
+                                              }
+                                            },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.transparent,
                                       foregroundColor: Colors.white,
@@ -460,7 +491,7 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
-                                                  widget.id != null
+                                                  widget.project != null
                                                       ? 'Mengubah...'
                                                       : 'Membuat...',
                                                   style: const TextStyle(
@@ -472,7 +503,7 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
                                               ],
                                             )
                                             : Text(
-                                              widget.id != null
+                                              widget.project != null
                                                   ? 'Ubah'
                                                   : 'Buat',
                                               style: const TextStyle(

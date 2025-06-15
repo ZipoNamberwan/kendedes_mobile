@@ -31,6 +31,7 @@ class TagDataAdapter extends TypeAdapter<TagData> {
       deletedAt: fields[11] as DateTime?,
       incrementalId: (fields[12] as num?)?.toInt(),
       project: fields[13] as Project,
+      user: fields[21] as User,
       businessName: fields[14] as String,
       businessOwner: fields[15] as String?,
       businessAddress: fields[16] as String?,
@@ -44,7 +45,7 @@ class TagDataAdapter extends TypeAdapter<TagData> {
   @override
   void write(BinaryWriter writer, TagData obj) {
     writer
-      ..writeByte(21)
+      ..writeByte(22)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -86,7 +87,9 @@ class TagDataAdapter extends TypeAdapter<TagData> {
       ..writeByte(19)
       ..write(obj.sector)
       ..writeByte(20)
-      ..write(obj.note);
+      ..write(obj.note)
+      ..writeByte(21)
+      ..write(obj.user);
   }
 
   @override

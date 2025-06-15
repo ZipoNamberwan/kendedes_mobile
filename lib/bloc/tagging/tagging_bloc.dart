@@ -2,10 +2,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
+import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/hive/hive_boxes.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/models/user.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 import 'tagging_event.dart';
@@ -25,6 +27,8 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 .where((tag) => tag.project.id == event.project.id)
                 .toList();
 
+        final User? currentUser = AuthRepository().getUser();
+
         // Emit success state with initial data
         emit(
           InitializingSuccess(
@@ -32,11 +36,12 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               project: event.project,
               tagDataBox: box,
               tags: tags,
+              currentUser: currentUser,
             ),
           ),
         );
 
-        add(GetCurrentLocation());
+        // add(GetCurrentLocation());
       } catch (e) {
         emit(
           InitializingError(
@@ -85,29 +90,88 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     });
 
     on<DeleteTag>((event, emit) async {
+      emit(TagDeletedLoading(data: state.data.copyWith(isDeletingTag: true)));
+
       try {
-        await state.data.tagDataBox?.delete(event.tagData.id);
+        if (event.tagData.hasSentToServer == false) {
+          await state.data.tagDataBox?.delete(event.tagData.id);
+          final updatedTags = List<TagData>.from(state.data.tags)
+            ..removeWhere((tag) => tag.id == event.tagData.id);
+
+          // Also remove from selectedTags if present
+          final updatedSelectedTags = List<TagData>.from(
+            state.data.selectedTags,
+          )..removeWhere((tag) => tag.id == event.tagData.id);
+
+          emit(
+            TagDeletedSuccess(
+              successMessage: 'Tagging berhasil dihapus',
+              data: state.data.copyWith(
+                tags: updatedTags,
+                selectedTags: updatedSelectedTags,
+                isDeletingTag: false,
+              ),
+            ),
+          );
+        } else {
+          await ApiServerHandler.run(
+            action: () async {
+              await TaggingRepository().deleteTagging(event.tagData.id);
+              await state.data.tagDataBox?.delete(event.tagData.id);
+              final updatedTags = List<TagData>.from(state.data.tags)
+                ..removeWhere((tag) => tag.id == event.tagData.id);
+
+              // Also remove from selectedTags if present
+              final updatedSelectedTags = List<TagData>.from(
+                state.data.selectedTags,
+              )..removeWhere((tag) => tag.id == event.tagData.id);
+
+              emit(
+                TagDeletedSuccess(
+                  successMessage: 'Tagging berhasil dihapus',
+                  data: state.data.copyWith(
+                    tags: updatedTags,
+                    selectedTags: updatedSelectedTags,
+                    isDeletingTag: false,
+                  ),
+                ),
+              );
+            },
+            onLoginExpired: (e) {
+              emit(
+                TokenExpired(data: state.data.copyWith(isDeletingTag: false)),
+              );
+              return;
+            },
+            onDataProviderError: (e) {
+              emit(
+                TagDeletedError(
+                  errorMessage: e.message,
+                  data: state.data.copyWith(isDeletingTag: false),
+                ),
+              );
+              return;
+            },
+            onOtherError: (e) {
+              emit(
+                TagDeletedError(
+                  errorMessage: e.toString(),
+                  data: state.data.copyWith(isDeletingTag: false),
+                ),
+              );
+              return;
+            },
+          );
+        }
       } catch (e) {
-        emit(TagDeletedError(errorMessage: e.toString(), data: state.data));
+        emit(
+          TagDeletedError(
+            errorMessage: e.toString(),
+            data: state.data.copyWith(isDeletingTag: false),
+          ),
+        );
         return;
       }
-
-      final updatedTags = List<TagData>.from(state.data.tags)
-        ..removeWhere((tag) => tag.id == event.tagData.id);
-
-      // Also remove from selectedTags if present
-      final updatedSelectedTags = List<TagData>.from(state.data.selectedTags)
-        ..removeWhere((tag) => tag.id == event.tagData.id);
-
-      emit(
-        TagDeletedSuccess(
-          successMessage: 'Tagging berhasil dihapus',
-          data: state.data.copyWith(
-            tags: updatedTags,
-            selectedTags: updatedSelectedTags,
-          ),
-        ),
-      );
     });
 
     on<SelectTag>((event, emit) {
@@ -240,7 +304,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       );
     });
 
-    on<SaveForm>((event, emit) async {
+    on<SaveCreateForm>((event, emit) async {
       emit(TaggingState(data: state.data.copyWith(isSubmitting: true)));
 
       final formFields = state.data.formFields;
@@ -259,58 +323,37 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       }
 
       try {
-        final tagDataId = formFields['id']?.value as String?;
+        final User user =
+            AuthRepository().getUser() ?? User(id: '', email: '', name: '');
 
-        // Find existing tag - if tagDataId is null or tag doesn't exist, create new
-        final existingTag =
-            tagDataId?.isNotEmpty == true
-                ? state.data.tags
-                    .where((tag) => tag.id == tagDataId)
-                    .firstOrNull
-                : null;
-
-        final isNewTag = existingTag == null;
-
-        // Create new/updated tag
         final newTag = TagData(
-          id: isNewTag ? _uuid.v4() : tagDataId!,
-          positionLat: formFields['positionLat']!.value as double,
-          positionLng: formFields['positionLng']!.value as double,
-          initialPositionLat:
-              isNewTag
-                  ? formFields['positionLat']!.value as double
-                  : existingTag.initialPositionLat,
-          initialPositionLng:
-              isNewTag
-                  ? formFields['positionLng']!.value as double
-                  : existingTag.initialPositionLng,
+          id: _uuid.v4(),
+          positionLat: formFields['positionLat']?.value as double,
+          positionLng: formFields['positionLng']?.value as double,
+          initialPositionLat: formFields['positionLat']?.value as double,
+          initialPositionLng: formFields['positionLng']?.value as double,
           hasChanged: true,
           hasSentToServer: false,
           type: TagType.auto,
           isDeleted: false,
-          businessName: formFields['name']!.value as String,
+          businessName: formFields['name']?.value as String,
           businessOwner: formFields['owner']?.value as String?,
           businessAddress: formFields['address']?.value as String?,
-          buildingStatus: formFields['building']!.value as BuildingStatus,
-          description: formFields['description']!.value as String,
-          sector: formFields['sector']!.value as Sector,
+          buildingStatus: formFields['building']?.value as BuildingStatus,
+          description: formFields['description']?.value as String,
+          sector: formFields['sector']?.value as Sector,
           note: formFields['note']?.value as String?,
-          createdAt: existingTag?.createdAt ?? DateTime.now(),
+          createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
           project: state.data.project,
+          user: user,
         );
 
         // 🔐 Save to Hive
         final tagBox = state.data.tagDataBox;
         await tagBox?.put(newTag.id, newTag);
 
-        // Update tags list
-        final updatedTags =
-            isNewTag
-                ? [...state.data.tags, newTag]
-                : state.data.tags
-                    .map((tag) => tag.id == tagDataId ? newTag : tag)
-                    .toList();
+        final updatedTags = [...state.data.tags, newTag];
 
         emit(
           SaveFormSuccess(
@@ -322,6 +365,133 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               formFields: validationResult.updatedFields,
             ),
           ),
+        );
+
+        await ApiServerHandler.run(
+          action: () async {
+            await TaggingRepository().storeTagging(newTag);
+            final savedTag = newTag.copyWith(
+              hasChanged: false,
+              hasSentToServer: true,
+            );
+            await tagBox?.put(savedTag.id, savedTag);
+
+            final updatedTags =
+                state.data.tags
+                    .map((tag) => tag.id == savedTag.id ? savedTag : tag)
+                    .toList();
+            emit(
+              TaggingState(
+                data: state.data.copyWith(
+                  tags: updatedTags,
+                  filteredTags: updatedTags,
+                ),
+              ),
+            );
+          },
+          onLoginExpired: (e) {},
+          onDataProviderError: (e) {},
+          onOtherError: (e) {},
+        );
+      } catch (e) {
+        emit(
+          SaveFormError(
+            errorMessage: e.toString(),
+            data: state.data.copyWith(isSubmitting: false),
+          ),
+        );
+      }
+    });
+
+    on<SaveEditForm>((event, emit) async {
+      emit(TaggingState(data: state.data.copyWith(isSubmitting: true)));
+
+      final formFields = state.data.formFields;
+      final validationResult = _validateForm(formFields);
+
+      if (validationResult.hasErrors) {
+        emit(
+          TaggingState(
+            data: state.data.copyWith(
+              formFields: validationResult.updatedFields,
+              isSubmitting: false,
+            ),
+          ),
+        );
+        return;
+      }
+
+      try {
+        final updatedTag = TagData(
+          id: event.tagData.id,
+          positionLat: formFields['positionLat']!.value as double,
+          positionLng: formFields['positionLng']!.value as double,
+          initialPositionLat: event.tagData.initialPositionLat,
+          initialPositionLng: event.tagData.initialPositionLng,
+          hasChanged: true,
+          hasSentToServer: false,
+          type: TagType.auto,
+          isDeleted: false,
+          businessName: formFields['name']?.value as String,
+          businessOwner: formFields['owner']?.value as String?,
+          businessAddress: formFields['address']?.value as String?,
+          buildingStatus: formFields['building']?.value as BuildingStatus,
+          description: formFields['description']?.value as String,
+          sector: formFields['sector']?.value as Sector,
+          note: formFields['note']?.value as String?,
+          createdAt: event.tagData.createdAt,
+          updatedAt: DateTime.now(),
+          project: state.data.project,
+          user: event.tagData.user,
+        );
+
+        // 🔐 Save to Hive
+        final tagBox = state.data.tagDataBox;
+        await tagBox?.put(updatedTag.id, updatedTag);
+
+        // Update tags list
+        final updatedTags =
+            state.data.tags
+                .map((tag) => tag.id == event.tagData.id ? updatedTag : tag)
+                .toList();
+
+        emit(
+          SaveFormSuccess(
+            newTag: updatedTag,
+            successMessage: 'Tagging berhasil disimpan',
+            data: state.data.copyWith(
+              tags: updatedTags,
+              isSubmitting: false,
+              formFields: validationResult.updatedFields,
+            ),
+          ),
+        );
+
+        await ApiServerHandler.run(
+          action: () async {
+            await TaggingRepository().updateTagging(updatedTag);
+            final savedTag = updatedTag.copyWith(
+              hasChanged: false,
+              hasSentToServer: true,
+            );
+            await tagBox?.put(savedTag.id, savedTag);
+
+            final updatedTags =
+                state.data.tags
+                    .map((tag) => tag.id == savedTag.id ? savedTag : tag)
+                    .toList();
+            emit(
+              TaggingState(
+                data: state.data.copyWith(
+                  tags: updatedTags,
+                  filteredTags: updatedTags,
+                ),
+              ),
+            );
+          },
+          onLoginExpired: (e) {},
+          onDataProviderError: (e) {},
+          onOtherError: (e) {},
         );
       } catch (e) {
         emit(
@@ -515,12 +685,12 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             maxLng: ne?.longitude ?? 0.0,
           );
 
-          final updatedOtherTags = state.data.otherTags;
-          final existingIds = updatedOtherTags.map((e) => e.id).toSet();
+          final updatedNearByTags = state.data.tags;
+          final existingIds = updatedNearByTags.map((e) => e.id).toSet();
 
           for (final tag in tags) {
             if (!existingIds.contains(tag.id)) {
-              updatedOtherTags.add(tag);
+              updatedNearByTags.add(tag);
             }
           }
 
@@ -528,7 +698,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             TaggingState(
               data: state.data.copyWith(
                 isTaggingInsideBoundsLoading: false,
-                otherTags: updatedOtherTags,
+                tags: updatedNearByTags,
               ),
             ),
           );

@@ -9,8 +9,11 @@ import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
+import 'package:kendedes_mobile/widgets/color_legend_dialog.dart';
+import 'package:kendedes_mobile/widgets/delete_tag_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_widget.dart';
@@ -20,6 +23,7 @@ import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/tagging_form_dialog.dart';
 import 'package:kendedes_mobile/widgets/map_type_selection_dialog.dart';
+import 'package:kendedes_mobile/widgets/project_info_dialog.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
@@ -58,7 +62,8 @@ class _TaggingPageState extends State<TaggingPage>
     super.initState();
     _mapController = MapController();
 
-    _taggingBloc = context.read<TaggingBloc>();
+    _taggingBloc =
+        context.read<TaggingBloc>()..add(InitTag(project: widget.project));
 
     _rippleController = AnimationController(
       duration: const Duration(seconds: 2),
@@ -69,15 +74,22 @@ class _TaggingPageState extends State<TaggingPage>
     );
     _rippleController.repeat();
 
-    Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
-    ).listen((Position position) {
-      final newLocation = LatLng(position.latitude, position.longitude);
-      _taggingBloc.add(UpdateCurrentLocation(newPosition: newLocation));
-    });
+    try {
+      Geolocator.getPositionStream(
+        locationSettings: LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10,
+        ),
+      ).listen((Position position) {
+        final newLocation = LatLng(position.latitude, position.longitude);
+        _taggingBloc.add(UpdateCurrentLocation(newPosition: newLocation));
+      });
+    } catch (e) {
+      CustomSnackBar.showError(
+        context,
+        message: 'Gagal mendapatkan lokasi: ${e.toString()}',
+      );
+    }
 
     _mapController.mapEventStream.listen((event) {
       if (event is MapEventMove) {
@@ -100,7 +112,7 @@ class _TaggingPageState extends State<TaggingPage>
   }
 
   void _onMapReady() {
-    _taggingBloc.add(InitTag(project: widget.project));
+    _taggingBloc.add(GetCurrentLocation());
   }
 
   @override
@@ -111,19 +123,40 @@ class _TaggingPageState extends State<TaggingPage>
     super.dispose();
   }
 
-  void _showMarkerDialog(TagData tagData, Project project) {
+  void _showMarkerDialog(TagData tagData, Project project, User? currentUser) {
     showDialog(
       context: context,
       builder:
           (context) => MarkerDialog(
             tagData: tagData,
             project: project,
+            currentUser: currentUser,
             onDelete: (tagData) {
-              _taggingBloc.add(DeleteTag(tagData));
+              _showDeleteConfirmationDialog(tagData);
             },
-            onMove: (tagData) {},
+            onMove: (tagData) {
+              CustomSnackBar.showInfo(
+                context,
+                message: 'Fitur pemindahan marker belum tersedia.',
+              );
+            },
             onEdit: (tagData) => _showTaggingFormDialog(tagData),
           ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(TagData tagData) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return DeleteTagConfirmationDialog(
+          tagData: tagData,
+          onConfirm: () {
+            _taggingBloc.add(DeleteTag(tagData));
+          },
+          onCancel: () => Navigator.of(context).pop(),
+        );
+      },
     );
   }
 
@@ -163,6 +196,27 @@ class _TaggingPageState extends State<TaggingPage>
               _taggingBloc.add(SelectMapType(mapType));
             },
           ),
+    );
+  }
+
+  void _showColorLegendDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return ColorLegendDialog(
+          currentProject: widget.project,
+          currentUserId: _taggingBloc.state.data.currentUser?.id,
+        );
+      },
+    );
+  }
+
+  void _showProjectInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return ProjectInfoDialog();
+      },
     );
   }
 
@@ -219,6 +273,7 @@ class _TaggingPageState extends State<TaggingPage>
   void _handleMarkerClick(
     TagData clickedTag,
     Project project,
+    User? currentUser,
     List<TagData> allTags,
     List<TagData> selectedTags,
     double zoom,
@@ -240,12 +295,12 @@ class _TaggingPageState extends State<TaggingPage>
               selectedTags: selectedTags,
               onClose: () => Navigator.of(context).pop(),
               onTagSelected: (tag) {
-                _showMarkerDialog(tag, project);
+                _showMarkerDialog(tag, project, currentUser);
               },
             ),
       );
     } else {
-      _showMarkerDialog(clickedTag, project);
+      _showMarkerDialog(clickedTag, project, currentUser);
     }
   }
 
@@ -434,38 +489,13 @@ class _TaggingPageState extends State<TaggingPage>
                                   tagData: tagData,
                                   isSelected: isSelected,
                                   labelType: state.data.selectedLabelType?.key,
+                                  currentUser: state.data.currentUser,
+                                  currentProject: state.data.project,
                                   onTap: () {
                                     _handleMarkerClick(
                                       tagData,
                                       state.data.project,
-                                      state.data.tags,
-                                      state.data.selectedTags,
-                                      state.data.currentZoom,
-                                      mapSize,
-                                    );
-                                  },
-                                ),
-                              );
-                            }),
-
-                            // add otherTags here
-                            ...state.data.otherTags.map((tagData) {
-                              return Marker(
-                                point: LatLng(
-                                  tagData.positionLat,
-                                  tagData.positionLng,
-                                ),
-                                alignment: Alignment.center,
-                                width: 120,
-                                height: 120,
-                                child: MarkerWidget(
-                                  tagData: tagData,
-                                  isSelected: false,
-                                  labelType: state.data.selectedLabelType?.key,
-                                  onTap: () {
-                                    _handleMarkerClick(
-                                      tagData,
-                                      state.data.project,
+                                      state.data.currentUser,
                                       state.data.tags,
                                       state.data.selectedTags,
                                       state.data.currentZoom,
@@ -562,6 +592,143 @@ class _TaggingPageState extends State<TaggingPage>
                     ),
                   ),
 
+                  // Zoom level indicator
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 100,
+                    left: 16,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 12,
+                                    color: Colors.orange.shade600,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Total tagging:',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade800,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16),
+                                child: Text(
+                                  '${state.data.tags.length}',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade800,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            'Zoom Level: ${state.data.currentZoom.toStringAsFixed(1)}',
+                            style: TextStyle(
+                              color: Colors.grey.shade800,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Color Legend Button
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: _showColorLegendDialog,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.palette,
+                                      size: 12,
+                                      color: Colors.purple.shade600,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Legenda',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey.shade800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   // Floating title bar
                   Positioned(
                     top: MediaQuery.of(context).padding.top + 12,
@@ -614,17 +781,6 @@ class _TaggingPageState extends State<TaggingPage>
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      'Projek',
-                                      style: TextStyle(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.8,
-                                        ),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
                                       state.data.project.name,
                                       style: const TextStyle(
                                         color: Colors.white,
@@ -634,9 +790,126 @@ class _TaggingPageState extends State<TaggingPage>
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
+                                    const SizedBox(height: 2),
+
+                                    Builder(
+                                      builder: (context) {
+                                        final syncedCount =
+                                            state.data.tags.where((tag) {
+                                              return tag.hasSentToServer &&
+                                                  tag.project.id ==
+                                                      state.data.project.id;
+                                            }).length;
+                                        final unsyncedCount =
+                                            state.data.tags.where((tag) {
+                                              return !tag.hasSentToServer &&
+                                                  tag.project.id ==
+                                                      state.data.project.id;
+                                            }).length;
+
+                                        return Row(
+                                          children: [
+                                            // Synced tags counter
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.withValues(
+                                                  alpha: 0.8,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.cloud_done_rounded,
+                                                    color: Colors.white,
+                                                    size: 10,
+                                                  ),
+                                                  const SizedBox(width: 2),
+                                                  Text(
+                                                    '$syncedCount',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 9,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            // Unsynced tags counter
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.2,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.cloud_off_rounded,
+                                                    color: Colors.white,
+                                                    size: 10,
+                                                  ),
+                                                  const SizedBox(width: 2),
+                                                  Text(
+                                                    '$unsyncedCount',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 9,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
                                   ],
                                 ),
                               ),
+                              // Project detail button
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(14),
+                                    onTap: _showProjectInfoDialog,
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: Icon(
+                                        Icons.info_outline,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.15),

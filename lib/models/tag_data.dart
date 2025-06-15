@@ -1,7 +1,9 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/hive/hive_types.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/user.dart';
 part 'tag_data.g.dart';
 
 @HiveType(typeId: tagDataTypeId)
@@ -50,6 +52,8 @@ class TagData extends HiveObject {
   final Sector sector;
   @HiveField(20)
   final String? note;
+  @HiveField(21)
+  final User user;
 
   TagData({
     required this.id,
@@ -66,6 +70,7 @@ class TagData extends HiveObject {
     this.deletedAt,
     this.incrementalId,
     required this.project,
+    required this.user,
 
     // Supplement tag data
     required this.businessName,
@@ -76,6 +81,56 @@ class TagData extends HiveObject {
     required this.sector,
     this.note,
   });
+
+  TagData copyWith({
+    String? id,
+    double? positionLat,
+    double? positionLng,
+    bool? hasChanged,
+    bool? hasSentToServer,
+    TagType? type,
+    double? initialPositionLat,
+    double? initialPositionLng,
+    bool? isDeleted,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    int? incrementalId,
+    Project? project,
+    User? user,
+    String? businessName,
+    String? businessOwner,
+    String? businessAddress,
+    BuildingStatus? buildingStatus,
+    String? description,
+    Sector? sector,
+    String? note,
+  }) {
+    return TagData(
+      id: id ?? this.id,
+      positionLat: positionLat ?? this.positionLat,
+      positionLng: positionLng ?? this.positionLng,
+      hasChanged: hasChanged ?? this.hasChanged,
+      hasSentToServer: hasSentToServer ?? this.hasSentToServer,
+      type: type ?? this.type,
+      initialPositionLat: initialPositionLat ?? this.initialPositionLat,
+      initialPositionLng: initialPositionLng ?? this.initialPositionLng,
+      isDeleted: isDeleted ?? this.isDeleted,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      incrementalId: incrementalId ?? this.incrementalId,
+      project: project ?? this.project,
+      user: user ?? this.user,
+      businessName: businessName ?? this.businessName,
+      businessOwner: businessOwner ?? this.businessOwner,
+      businessAddress: businessAddress ?? this.businessAddress,
+      buildingStatus: buildingStatus ?? this.buildingStatus,
+      description: description ?? this.description,
+      sector: sector ?? this.sector,
+      note: note ?? this.note,
+    );
+  }
 
   String getTagLabel(String? selectedField) {
     switch (selectedField) {
@@ -94,70 +149,111 @@ class TagData extends HiveObject {
     }
   }
 
+  Color getColorScheme(String currentProjectId, String currentUserId) {
+    if (project.type.key == ProjectType.marketSwmaps.key) {
+      return Colors.purple;
+    } else if (project.type.key == ProjectType.supplementSwmaps.key) {
+      return Colors.indigo;
+    } else if (project.type.key == ProjectType.supplementMobile.key) {
+      if (currentProjectId == project.id) {
+        return Colors.deepOrange;
+      } else if (currentUserId == user.id) {
+        return Colors.amber;
+      }
+
+      return Colors.cyan;
+    } else {
+      return Colors.grey;
+    }
+  }
+
+  bool shouldSentToServer(String currentProjectId) {
+    if (currentProjectId == project.id) {
+      return !hasSentToServer;
+    }
+    return false;
+  }
+
+  bool canBeDeleted(String currentProjectId) {
+    if (currentProjectId == project.id) {
+      return true;
+    }
+    return false;
+  }
+
+  bool showCloudIcon(String currentProjectId) {
+    if (currentProjectId == project.id) {
+      return true;
+    }
+    return false;
+  }
+
   /// Convert to JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'position_lat': positionLat,
-      'position_lng': positionLng,
-      'has_changed': hasChanged,
-      'has_sent_to_server': hasSentToServer,
-      'type': type.name,
-      'initial_position_lat': initialPositionLat,
-      'initial_position_lng': initialPositionLng,
-      'is_deleted': isDeleted,
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
-      'deleted_at': deletedAt?.toIso8601String(),
-      'incremental_id': incrementalId,
-      'project': project.toJson(),
-      'business_name': businessName,
-      'business_owner': businessOwner,
-      'business_address': businessAddress,
-      'building_status': buildingStatus.toJson(),
+      'latitude': positionLat,
+      'longitude': positionLng,
+      'name': businessName,
+      'owner': businessOwner,
+      'address': businessAddress,
+      'building': buildingStatus.text,
       'description': description,
-      'sector': sector.toJson(),
+      'sector': sector.text,
       'note': note,
+      'project': {
+        'id': project.id,
+        'name': project.name,
+        'description': project.description,
+      },
+      'user': user.id,
+      'organization': user.organization?.id,
     };
   }
 
   /// Parse from JSON
   factory TagData.fromJson(Map<String, dynamic> json) {
-    return TagData(
-      id: json['id'] as String,
-      positionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
-      positionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
-      hasChanged: false,
-      hasSentToServer: true,
-      type: TagType.auto,
-      initialPositionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
-      initialPositionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
-      isDeleted: json['deleted_at'] != null,
-      createdAt:
-          json['created_at'] != null
-              ? DateTime.parse(json['created_at'] as String)
-              : null,
-      updatedAt:
-          json['updated_at'] != null
-              ? DateTime.parse(json['updated_at'] as String)
-              : null,
-      deletedAt:
-          json['deleted_at'] != null
-              ? DateTime.parse(json['deleted_at'] as String)
-              : null,
-      incrementalId: 1,
-      project: Project.fromJson(json['project'] as Map<String, dynamic>),
-      businessName: json['name'] as String,
-      businessOwner: json['owner'] as String?,
-      businessAddress: json['address'] as String?,
-      buildingStatus:
-          BuildingStatus.fromKey(json['status']) ?? BuildingStatus.fixed,
-      description: json['description'] as String,
-      sector:
-          Sector.fromKey((json['sector'] as String)[0].toUpperCase()) ??
-          Sector.G,
-      note: json['note'] as String?,
-    );
+    try {
+      return TagData(
+        id: json['id'] as String,
+        positionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
+        positionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
+        hasChanged: false,
+        hasSentToServer: true,
+        type: TagType.auto,
+        initialPositionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
+        initialPositionLng:
+            double.tryParse(json['longitude'].toString()) ?? 0.0,
+        isDeleted: json['deleted_at'] != null,
+        createdAt:
+            json['created_at'] != null
+                ? DateTime.parse(json['created_at'] as String)
+                : null,
+        updatedAt:
+            json['updated_at'] != null
+                ? DateTime.parse(json['updated_at'] as String)
+                : null,
+        deletedAt:
+            json['deleted_at'] != null
+                ? DateTime.parse(json['deleted_at'] as String)
+                : null,
+        incrementalId: 1,
+        project: Project.fromJson(json['project'] as Map<String, dynamic>),
+        businessName: json['name'] as String,
+        businessOwner: json['owner'] as String?,
+        businessAddress: json['address'] as String?,
+        buildingStatus:
+            BuildingStatus.fromKey(json['status']) ?? BuildingStatus.fixed,
+        description: json['description'] as String,
+        sector:
+            Sector.fromKey((json['sector'] as String)[0].toUpperCase()) ??
+            Sector.G,
+        note: json['note'] as String?,
+        user: User.fromJson(json['user'] as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw Exception('Failed to parse TagData: $e');
+    }
   }
 
   @override

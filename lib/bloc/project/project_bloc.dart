@@ -71,12 +71,17 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             },
           );
         } else {
+          final user = AuthRepository().getUser();
+          final projects =
+              pBox.values
+                  .where((project) => project.user?.id == user?.id)
+                  .toList();
           emit(
             InitializingSuccess(
               data: state.data.copyWith(
                 projectBox: pBox,
                 tagBox: tBox,
-                projects: pBox.values.toList(),
+                projects: projects,
                 initLoading: false,
               ),
             ),
@@ -104,7 +109,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       }
 
       final now = DateTime.now();
-
+      final user = AuthRepository().getUser();
       final newProject = Project(
         id: _uuid.v4(),
         name: formFields['name']?.value as String,
@@ -112,6 +117,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         createdAt: now,
         updatedAt: now,
         type: ProjectType.supplementMobile,
+        user: user,
       );
 
       try {
@@ -180,7 +186,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       }
 
       final now = DateTime.now();
-
+      final user = AuthRepository().getUser();
       final updatedProject = Project(
         id: event.project.id,
         name: formFields['name']?.value as String,
@@ -188,6 +194,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         createdAt: event.project.createdAt,
         updatedAt: now,
         type: ProjectType.supplementMobile,
+        user: user,
       );
 
       try {
@@ -259,11 +266,10 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             state.data.projectBox?.delete(event.id);
 
             //delete tagging data associated with the project
-            final keysToDelete =
-                state.data.tagBox?.keys.where((key) {
-                  final tag = state.data.tagBox?.get(key);
-                  return tag?.project.id == event.id;
-                });
+            final keysToDelete = state.data.tagBox?.keys.where((key) {
+              final tag = state.data.tagBox?.get(key);
+              return tag?.project.id == event.id;
+            });
 
             state.data.tagBox?.deleteAll(keysToDelete ?? []);
 

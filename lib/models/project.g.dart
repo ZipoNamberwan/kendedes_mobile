@@ -24,13 +24,14 @@ class ProjectAdapter extends TypeAdapter<Project> {
       updatedAt: fields[4] as DateTime,
       deletedAt: fields[5] as DateTime?,
       type: fields[6] as ProjectType,
+      user: fields[7] as User?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Project obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -44,7 +45,9 @@ class ProjectAdapter extends TypeAdapter<Project> {
       ..writeByte(5)
       ..write(obj.deletedAt)
       ..writeByte(6)
-      ..write(obj.type);
+      ..write(obj.type)
+      ..writeByte(7)
+      ..write(obj.user);
   }
 
   @override

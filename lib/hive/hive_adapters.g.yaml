@@ -53,7 +53,7 @@ types:
         index: 21
   Project:
     typeId: 1
-    nextIndex: 7
+    nextIndex: 8
     fields:
       id:
         index: 0
@@ -69,6 +69,8 @@ types:
         index: 5
       type:
         index: 6
+      user:
+        index: 7
   Sector:
     typeId: 2
     nextIndex: 2

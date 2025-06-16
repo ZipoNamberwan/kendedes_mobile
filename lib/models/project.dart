@@ -1,6 +1,7 @@
 import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/classes/helpers.dart';
 import 'package:kendedes_mobile/hive/hive_types.dart';
+import 'package:kendedes_mobile/models/user.dart';
 part 'project.g.dart';
 
 @HiveType(typeId: projectTypeId)
@@ -19,6 +20,8 @@ class Project {
   final DateTime? deletedAt;
   @HiveField(6)
   final ProjectType type;
+  @HiveField(7)
+  final User? user;
 
   Project({
     required this.id,
@@ -28,6 +31,7 @@ class Project {
     required this.updatedAt,
     this.deletedAt,
     required this.type,
+    this.user,
   });
 
   factory Project.fromJson(Map<String, dynamic> json) {
@@ -42,6 +46,10 @@ class Project {
               ? DateTime.parse(json['deleted_at'])
               : null,
       type: ProjectType.fromKey(json['type']) ?? ProjectType.supplementMobile,
+      user:
+          json['user'] != null
+              ? User.fromJson(json['user'] as Map<String, dynamic>)
+              : null,
     );
   }
 
@@ -65,6 +73,7 @@ class Project {
     DateTime? updatedAt,
     DateTime? deletedAt,
     ProjectType? type,
+    User? user,
   }) {
     return Project(
       id: id ?? this.id,
@@ -74,6 +83,7 @@ class Project {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       type: type ?? this.type,
+      user: user ?? this.user,
     );
   }
 }

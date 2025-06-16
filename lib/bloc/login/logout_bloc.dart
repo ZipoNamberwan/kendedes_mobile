@@ -22,7 +22,14 @@ class LogoutBloc extends Bloc<LogoutEvent, LogoutState> {
       try {
         await AuthRepository().logout();
 
-        emit(LogoutSuccess(data: state.data.copyWith(isLogoutSuccess: true)));
+        emit(
+          LogoutSuccess(
+            data: state.data.copyWith(
+              isLogoutSuccess: true,
+              isLogoutLoading: false,
+            ),
+          ),
+        );
       } on DioException catch (dioError) {
         final err = dioError.error;
 
@@ -61,7 +68,10 @@ class LogoutBloc extends Bloc<LogoutEvent, LogoutState> {
         emit(
           LogoutFailed(
             errorMessage: e.toString(),
-            data: state.data.copyWith(isLogoutFailure: true),
+            data: state.data.copyWith(
+              isLogoutFailure: true,
+              isLogoutLoading: false,
+            ),
           ),
         );
       }

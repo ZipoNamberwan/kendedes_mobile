@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 
 class ProjectState extends Equatable {
   final ProjectStateData data;
@@ -79,6 +80,7 @@ class ProjectFormFieldState<T> {
 
 class ProjectStateData {
   final Box<Project>? projectBox;
+  final Box<TagData>? tagBox;
   final List<Project> projects;
   final Map<String, ProjectFormFieldState<dynamic>> formFields;
 
@@ -89,6 +91,7 @@ class ProjectStateData {
   ProjectStateData({
     required this.projects,
     this.projectBox,
+    this.tagBox,
     required this.saveLoading,
     required this.initLoading,
     required this.deleteLoading,
@@ -109,6 +112,7 @@ class ProjectStateData {
   ProjectStateData copyWith({
     List<Project>? projects,
     Box<Project>? projectBox,
+    Box<TagData>? tagBox,
     Map<String, ProjectFormFieldState<dynamic>>? formFields,
     bool? resetForm,
     bool? saveLoading,
@@ -118,6 +122,7 @@ class ProjectStateData {
     return ProjectStateData(
       projects: projects ?? this.projects,
       projectBox: projectBox ?? this.projectBox,
+      tagBox: tagBox ?? this.tagBox,
       formFields:
           (resetForm ?? false)
               ? _generateFormFields()

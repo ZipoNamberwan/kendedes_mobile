@@ -48,6 +48,7 @@ class InitializingStarted extends TaggingState {
           currentLocation: null,
           currentUser: null,
           isDeletingTag: false,
+          isUploadingMultipleTags: false,
         ),
       );
 
@@ -215,6 +216,58 @@ class ZoomLevelNotification extends TaggingState {
   List<Object> get props => [message, data];
 }
 
+class UploadMultipleTagsLoading extends TaggingState {
+  const UploadMultipleTagsLoading({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class UploadMultipleTagsError extends TaggingState {
+  final String errorMessage;
+  const UploadMultipleTagsError({
+    required this.errorMessage,
+    required super.data,
+  });
+
+  @override
+  List<Object> get props => [errorMessage, data];
+}
+
+class UploadMultipleTagsSuccess extends TaggingState {
+  final String successMessage;
+  const UploadMultipleTagsSuccess({required this.successMessage, required super.data});
+
+  @override
+  List<Object> get props => [successMessage, data];
+}
+
+class DeleteMultipleTagsLoading extends TaggingState {
+  const DeleteMultipleTagsLoading({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class DeleteMultipleTagsError extends TaggingState {
+  final String errorMessage;
+  const DeleteMultipleTagsError({
+    required this.errorMessage,
+    required super.data,
+  });
+
+  @override
+  List<Object> get props => [errorMessage, data];
+}
+
+class DeleteMultipleTagsSuccess extends TaggingState {
+  final String successMessage;
+  const DeleteMultipleTagsSuccess({required this.successMessage, required super.data});
+
+  @override
+  List<Object> get props => [successMessage, data];
+}
+
 class TaggingStateData {
   final Project project;
   final List<TagData> tags;
@@ -256,8 +309,9 @@ class TaggingStateData {
   //User attribute
   final User? currentUser;
 
-  //Delete confirmation attribute
+  //Confirmation dialog attribute
   final bool isDeletingTag;
+  final bool isUploadingMultipleTags;
 
   TaggingStateData({
     required this.project,
@@ -288,6 +342,7 @@ class TaggingStateData {
     this.currentUser,
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
     required this.isDeletingTag,
+    required this.isUploadingMultipleTags,
 
     this.tagDataBox,
   }) : formFields = formFields ?? _generateFormFields();
@@ -331,6 +386,7 @@ class TaggingStateData {
     bool? isSubmitting,
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
     bool? isDeletingTag,
+    bool? isUploadingMultipleTags,
     bool? resetForm,
     List<TagData>? filteredTags,
     String? searchQuery,
@@ -398,6 +454,8 @@ class TaggingStateData {
           isTaggingInsideBoundsError ?? this.isTaggingInsideBoundsError,
       currentUser: currentUser ?? this.currentUser,
       isDeletingTag: isDeletingTag ?? this.isDeletingTag,
+      isUploadingMultipleTags:
+          isUploadingMultipleTags ?? this.isUploadingMultipleTags,
     );
   }
 }

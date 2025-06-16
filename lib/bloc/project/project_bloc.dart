@@ -7,6 +7,7 @@ import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
 import 'package:kendedes_mobile/hive/hive_boxes.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:uuid/uuid.dart';
 
 class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
@@ -27,19 +28,21 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       try {
         emit(InitializingStarted(data: state.data.copyWith(initLoading: true)));
 
-        final box = await Hive.openBox<Project>(projectBox);
+        final pBox = await Hive.openBox<Project>(projectBox);
+        final tBox = await Hive.openBox<TagData>(tagDataBox);
 
-        if (box.isEmpty) {
+        if (pBox.isEmpty) {
           await ApiServerHandler.run(
             action: () async {
               final userId = AuthRepository().getUser()?.id;
               if (userId != null) {
                 final projects = await ProjectRepository().getProjects(userId);
-                await box.addAll(projects);
+                await pBox.addAll(projects);
                 emit(
                   InitializingSuccess(
                     data: state.data.copyWith(
-                      projectBox: box,
+                      projectBox: pBox,
+                      tagBox: tBox,
                       projects: projects,
                       initLoading: false,
                     ),
@@ -71,8 +74,9 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
           emit(
             InitializingSuccess(
               data: state.data.copyWith(
-                projectBox: box,
-                projects: box.values.toList(),
+                projectBox: pBox,
+                tagBox: tBox,
+                projects: pBox.values.toList(),
                 initLoading: false,
               ),
             ),
@@ -253,6 +257,16 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             emit(ProjectState(data: state.data.copyWith(deleteLoading: true)));
             await ProjectRepository().deleteProject(event.id);
             state.data.projectBox?.delete(event.id);
+
+            //delete tagging data associated with the project
+            final keysToDelete =
+                state.data.tagBox?.keys.where((key) {
+                  final tag = state.data.tagBox?.get(key);
+                  return tag?.project.id == event.id;
+                });
+
+            state.data.tagBox?.deleteAll(keysToDelete ?? []);
+
             emit(
               ProjectDeletedSuccess(
                 data: state.data.copyWith(

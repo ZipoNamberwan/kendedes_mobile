@@ -5,8 +5,10 @@ import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/project.dart';
-import 'package:kendedes_mobile/widgets/delete_tagging_confirmation_dialog.dart';
+import 'package:kendedes_mobile/widgets/delete_multiple_tag_confirmation_dialog.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/tag_list_item_widget.dart';
+import 'package:kendedes_mobile/widgets/upload_selected_tags_dialog.dart';
 
 class SidebarWidget extends StatefulWidget {
   const SidebarWidget({super.key});
@@ -30,10 +32,9 @@ class _SidebarWidgetState extends State<SidebarWidget> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return DeleteTaggingConfirmationDialog(
+        return DeleteMultipleTagConfirmationDialog(
           tagCount: tagCount,
           onConfirm: () {
-            Navigator.of(context).pop();
             _taggingBloc.add(DeleteSelectedTags());
           },
           onCancel: () {
@@ -41,6 +42,22 @@ class _SidebarWidgetState extends State<SidebarWidget> {
           },
         );
       },
+    );
+  }
+
+  void _showUploadTagsDialog(int tagCount, bool uploadAll) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => UploadSelectedTagsDialog(
+            tagCount: tagCount,
+            onConfirm: () {
+              _taggingBloc.add(UploadSelectedTags(uploadAll: uploadAll));
+            },
+            onCancel: () {
+              Navigator.of(context).pop();
+            },
+          ),
     );
   }
 
@@ -54,6 +71,17 @@ class _SidebarWidgetState extends State<SidebarWidget> {
           _searchController.text = '';
         } else if (state is SideBarClosed) {
           _searchFocusNode.unfocus();
+        } else if (state is UploadMultipleTagsSuccess ||
+            state is DeleteMultipleTagsSuccess) {
+          _taggingBloc.add(SetSideBarOpen(false));
+          Navigator.of(context).pop();
+          final message = switch (state) {
+            UploadMultipleTagsSuccess(:final successMessage) => successMessage,
+            DeleteMultipleTagsSuccess(:final successMessage) => successMessage,
+            _ => '',
+          };
+
+          CustomSnackBar.showSuccess(context, message: message);
         }
       },
       builder: (context, state) {
@@ -561,6 +589,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                             ),
                           ),
                         ),
+
                         const SizedBox(width: 6),
                         Expanded(
                           child: Builder(
@@ -579,8 +608,11 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                                 onPressed:
                                     shouldSentToServerSelectedTags.isNotEmpty
                                         ? () {
-                                          // TODO: Implement upload functionality for selected tags
-                                          // _taggingBloc.add(UploadSelectedTags());
+                                          _showUploadTagsDialog(
+                                            shouldSentToServerSelectedTags
+                                                .length,
+                                            false,
+                                          );
                                         }
                                         : null,
                                 icon: const Icon(Icons.cloud_upload, size: 16),
@@ -617,16 +649,9 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                                   });
                               return ElevatedButton.icon(
                                 onPressed: () {
-                                  if (canBeDeletedSelectedTags.length == 1) {
-                                    // Direct delete for single tag
-                                    _taggingBloc.add(DeleteSelectedTags());
-                                  } else if (canBeDeletedSelectedTags.length >
-                                      1) {
-                                    // Show confirmation dialog for multiple tags
-                                    _showDeleteConfirmationDialog(
-                                      canBeDeletedSelectedTags.length,
-                                    );
-                                  }
+                                  _showDeleteConfirmationDialog(
+                                    canBeDeletedSelectedTags.length,
+                                  );
                                 },
                                 icon: const Icon(Icons.delete, size: 16),
                                 label: const Text(
@@ -675,8 +700,10 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                             onPressed:
                                 shouldSentToServerTags.isNotEmpty
                                     ? () {
-                                      // TODO: Implement upload functionality for all unsynced tags
-                                      // _taggingBloc.add(UploadUnsyncedTags());
+                                      _showUploadTagsDialog(
+                                        shouldSentToServerTags.length,
+                                        true,
+                                      );
                                     }
                                     : null,
                             icon: const Icon(Icons.cloud_upload, size: 16),

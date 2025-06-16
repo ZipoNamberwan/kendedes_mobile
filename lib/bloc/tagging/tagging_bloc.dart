@@ -91,79 +91,57 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     });
 
     on<DeleteTag>((event, emit) async {
-      emit(TagDeletedLoading(data: state.data.copyWith(isDeletingTag: true)));
-
       try {
-        if (event.tagData.hasSentToServer == false) {
-          await state.data.tagDataBox?.delete(event.tagData.id);
-          final updatedTags = List<TagData>.from(state.data.tags)
-            ..removeWhere((tag) => tag.id == event.tagData.id);
+        await ApiServerHandler.run(
+          action: () async {
+            emit(
+              TagDeletedLoading(data: state.data.copyWith(isDeletingTag: true)),
+            );
 
-          // Also remove from selectedTags if present
-          final updatedSelectedTags = List<TagData>.from(
-            state.data.selectedTags,
-          )..removeWhere((tag) => tag.id == event.tagData.id);
+            await TaggingRepository().deleteTagging(event.tagData.id);
+            await state.data.tagDataBox?.delete(event.tagData.id);
+            final updatedTags = List<TagData>.from(state.data.tags)
+              ..removeWhere((tag) => tag.id == event.tagData.id);
 
-          emit(
-            TagDeletedSuccess(
-              successMessage: 'Tagging berhasil dihapus',
-              data: state.data.copyWith(
-                tags: updatedTags,
-                selectedTags: updatedSelectedTags,
-                isDeletingTag: false,
+            // Also remove from selectedTags if present
+            final updatedSelectedTags = List<TagData>.from(
+              state.data.selectedTags,
+            )..removeWhere((tag) => tag.id == event.tagData.id);
+
+            emit(
+              TagDeletedSuccess(
+                successMessage: 'Tagging berhasil dihapus',
+                data: state.data.copyWith(
+                  tags: updatedTags,
+                  selectedTags: updatedSelectedTags,
+                  isDeletingTag: false,
+                ),
               ),
-            ),
-          );
-        } else {
-          await ApiServerHandler.run(
-            action: () async {
-              await TaggingRepository().deleteTagging(event.tagData.id);
-              await state.data.tagDataBox?.delete(event.tagData.id);
-              final updatedTags = List<TagData>.from(state.data.tags)
-                ..removeWhere((tag) => tag.id == event.tagData.id);
-
-              // Also remove from selectedTags if present
-              final updatedSelectedTags = List<TagData>.from(
-                state.data.selectedTags,
-              )..removeWhere((tag) => tag.id == event.tagData.id);
-
-              emit(
-                TagDeletedSuccess(
-                  successMessage: 'Tagging berhasil dihapus',
-                  data: state.data.copyWith(
-                    tags: updatedTags,
-                    selectedTags: updatedSelectedTags,
-                    isDeletingTag: false,
-                  ),
-                ),
-              );
-            },
-            onLoginExpired: (e) {
-              emit(
-                TokenExpired(data: state.data.copyWith(isDeletingTag: false)),
-              );
-              return;
-            },
-            onDataProviderError: (e) {
-              emit(
-                TagDeletedError(
-                  errorMessage: e.message,
-                  data: state.data.copyWith(isDeletingTag: false),
-                ),
-              );
-              return;
-            },
-            onOtherError: (e) {
-              emit(
-                TagDeletedError(
-                  errorMessage: e.toString(),
-                  data: state.data.copyWith(isDeletingTag: false),
-                ),
-              );
-              return;
-            },
-          );
-        }
+            );
+          },
+          onLoginExpired: (e) {
+            emit(TokenExpired(data: state.data.copyWith(isDeletingTag: false)));
+            return;
+          },
+          onDataProviderError: (e) {
+            emit(
+              TagDeletedError(
+                errorMessage: e.message,
+                data: state.data.copyWith(isDeletingTag: false),
+              ),
+            );
+            return;
+          },
+          onOtherError: (e) {
+            emit(
+              TagDeletedError(
+                errorMessage: e.toString(),
+                data: state.data.copyWith(isDeletingTag: false),
+              ),
+            );
+            return;
+          },
+        );
       } catch (e) {
         emit(
           TagDeletedError(
@@ -175,9 +153,182 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       }
     });
 
+    on<DeleteSelectedTags>((event, emit) async {
+      try {
+        await ApiServerHandler.run(
+          action: () async {
+            emit(
+              DeleteMultipleTagsLoading(
+                data: state.data.copyWith(isDeletingTag: true),
+              ),
+            );
+
+            final deletedTags = state.data.selectedTags.where((tag) {
+              return tag.project.id == state.data.project.id;
+            });
+            final deletedTagIds = deletedTags.map((tag) => tag.id).toList();
+
+            final result = await TaggingRepository().deleteMultipleTags(
+              deletedTagIds,
+            );
+
+            if (result) {
+              state.data.tagDataBox?.deleteAll(deletedTagIds);
+
+              emit(
+                DeleteMultipleTagsSuccess(
+                  successMessage:
+                      'Berhasil menghapus ${deletedTags.length} tagging terpilih',
+                  data: state.data.copyWith(
+                    tags:
+                        state.data.tags
+                            .where((tag) => !deletedTags.contains(tag))
+                            .toList(),
+                    filteredTags:
+                        state.data.filteredTags
+                            .where((tag) => !deletedTags.contains(tag))
+                            .toList(),
+                    selectedTags: [],
+                    isDeletingTag: false,
+                  ),
+                ),
+              );
+            } else {
+              emit(
+                DeleteMultipleTagsError(
+                  errorMessage: 'Gagal menghapus tagging',
+                  data: state.data.copyWith(isDeletingTag: false),
+                ),
+              );
+            }
+          },
+          onLoginExpired: (e) {
+            emit(TokenExpired(data: state.data.copyWith(isDeletingTag: false)));
+          },
+          onDataProviderError: (e) {
+            emit(
+              DeleteMultipleTagsError(
+                errorMessage: e.message,
+                data: state.data.copyWith(isDeletingTag: false),
+              ),
+            );
+          },
+          onOtherError: (e) {
+            emit(
+              DeleteMultipleTagsError(
+                errorMessage: e.toString(),
+                data: state.data.copyWith(isDeletingTag: false),
+              ),
+            );
+          },
+        );
+      } catch (e) {
+        emit(
+          DeleteMultipleTagsError(
+            errorMessage: e.toString(),
+            data: state.data.copyWith(isDeletingTag: false),
+          ),
+        );
+      }
+    });
+
     on<SelectTag>((event, emit) {
       emit(
         TagSelected(data: state.data.copyWith(selectedTags: [event.tagData])),
+      );
+    });
+
+    on<UploadSelectedTags>((event, emit) async {
+      await ApiServerHandler.run(
+        action: () async {
+          emit(
+            UploadMultipleTagsLoading(
+              data: state.data.copyWith(isUploadingMultipleTags: true),
+            ),
+          );
+
+          List<TagData> uploadedTags = [];
+          if (event.uploadAll) {
+            uploadedTags =
+                state.data.tags.where((tag) {
+                  return tag.project.id == state.data.project.id &&
+                      !tag.hasSentToServer;
+                }).toList();
+          } else {
+            uploadedTags =
+                state.data.selectedTags.where((tag) {
+                  return tag.project.id == state.data.project.id &&
+                      !tag.hasSentToServer;
+                }).toList();
+          }
+
+          final ids = await TaggingRepository().uploadMultipleTags(
+            uploadedTags.toList(),
+          );
+
+          if (ids.isNotEmpty) {
+            // Update local Hive box
+            final tagBox = state.data.tagDataBox;
+            for (final tag in uploadedTags) {
+              if (ids.contains(tag.id)) {
+                final updatedTag = tag.copyWith(
+                  hasChanged: false,
+                  hasSentToServer: true,
+                );
+                await tagBox?.put(updatedTag.id, updatedTag);
+              }
+            }
+
+            // Update tags list
+            final updatedTags =
+                state.data.tags.map((tag) {
+                  return ids.contains(tag.id)
+                      ? tag.copyWith(hasChanged: false, hasSentToServer: true)
+                      : tag;
+                }).toList();
+
+            emit(
+              UploadMultipleTagsSuccess(
+                successMessage: 'Tagging berhasil diupload',
+                data: state.data.copyWith(
+                  tags: updatedTags,
+                  selectedTags: [],
+                  isUploadingMultipleTags: false,
+                ),
+              ),
+            );
+          } else {
+            emit(
+              UploadMultipleTagsError(
+                errorMessage: 'Tidak ada tagging yang berhasil diupload',
+                data: state.data.copyWith(isUploadingMultipleTags: false),
+              ),
+            );
+          }
+        },
+        onLoginExpired: (e) {
+          emit(
+            TokenExpired(
+              data: state.data.copyWith(isUploadingMultipleTags: false),
+            ),
+          );
+        },
+        onDataProviderError: (e) {
+          emit(
+            UploadMultipleTagsError(
+              errorMessage: e.message,
+              data: state.data.copyWith(isUploadingMultipleTags: false),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          emit(
+            UploadMultipleTagsError(
+              errorMessage: e.toString(),
+              data: state.data.copyWith(isUploadingMultipleTags: false),
+            ),
+          );
+        },
       );
     });
 
@@ -223,35 +374,6 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
     on<ClearTagSelection>((event, emit) {
       emit(TaggingState(data: state.data.copyWith(selectedTags: [])));
-    });
-
-    on<DeleteSelectedTags>((event, emit) {
-      try {
-        state.data.tagDataBox?.deleteAll(
-          state.data.selectedTags.map((tag) => tag.id),
-        );
-      } catch (e) {
-        emit(TagDeletedError(errorMessage: e.toString(), data: state.data));
-        return;
-      }
-
-      emit(
-        TagDeletedSuccess(
-          successMessage:
-              'Berhasil menghapus ${state.data.selectedTags.length} tagging terpilih',
-          data: state.data.copyWith(
-            tags:
-                state.data.tags
-                    .where((tag) => !state.data.selectedTags.contains(tag))
-                    .toList(),
-            filteredTags:
-                state.data.filteredTags
-                    .where((tag) => !state.data.selectedTags.contains(tag))
-                    .toList(),
-            selectedTags: [],
-          ),
-        ),
-      );
     });
 
     on<UpdateCurrentLocation>((event, emit) async {

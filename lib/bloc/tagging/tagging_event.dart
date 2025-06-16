@@ -119,6 +119,11 @@ class SaveEditForm extends TaggingEvent {
   const SaveEditForm({required this.tagData});
 }
 
+class UploadSelectedTags extends TaggingEvent {
+  final bool uploadAll;
+  const UploadSelectedTags({required this.uploadAll});
+}
+
 class SearchTagging extends TaggingEvent {
   final String? query;
   final bool? reset;

@@ -55,4 +55,22 @@ class TaggingProvider {
   Future<void> deleteTagging(String taggingId) async {
     await _dioService.dio.delete('/business/$taggingId');
   }
+
+  Future<Map<String, dynamic>> deleteMultipleTags(List<String> ids) async {
+    final response = await _dioService.dio.delete(
+      '/business/delete-multiple',
+      data: {'ids': ids},
+    );
+    return response.data['data'];
+  }
+
+  Future<Map<String, dynamic>> uploadMultipleTags(
+    List<Map<String, dynamic>> taggingData,
+  ) async {
+    final response = await _dioService.dio.post(
+      '/business/upload-multiple',
+      data: {'tags': taggingData},
+    );
+    return response.data['data'];
+  }
 }

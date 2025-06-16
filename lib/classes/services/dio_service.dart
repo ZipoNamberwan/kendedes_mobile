@@ -10,7 +10,7 @@ class DioService {
   DioService._internal();
 
   // static const String _baseUrl = 'https://kendedes.cathajatim.id/api';
-  static const String _baseUrl = 'http://10.35.0.141:8000/api';
+  static const String _baseUrl = 'http://192.168.1.7:8000/api';
 
   late Dio dio;
   late SharedPreferenceService _sharedPreferenceService;

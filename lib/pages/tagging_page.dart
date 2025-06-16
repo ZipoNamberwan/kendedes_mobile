@@ -5,6 +5,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
+import 'package:kendedes_mobile/classes/map_config.dart';
+import 'package:kendedes_mobile/classes/marker_display_strategy.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/project.dart';
@@ -16,14 +18,16 @@ import 'package:kendedes_mobile/widgets/color_legend_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_tag_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_dialog.dart';
-import 'package:kendedes_mobile/widgets/marker_widget.dart';
+import 'package:kendedes_mobile/widgets/complex_marker_widget.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
+import 'package:kendedes_mobile/widgets/simple_marker_widget.dart';
 import 'package:kendedes_mobile/widgets/tagging_form_dialog.dart';
 import 'package:kendedes_mobile/widgets/map_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/project_info_dialog.dart';
+import 'package:kendedes_mobile/widgets/zoom_level_notification_dialog.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
@@ -56,6 +60,8 @@ class _TaggingPageState extends State<TaggingPage>
   //     ],
   //   ),
   // ];
+
+  bool _confirmToZoom = false;
 
   @override
   void initState() {
@@ -101,7 +107,27 @@ class _TaggingPageState extends State<TaggingPage>
       }
 
       _logCurrentBounds();
+
+      if (event is MapEventMove) {
+        if (_confirmToZoom) {
+          _confirmToZoom = false;
+          _getTaggingInsideBounds();
+          return;
+        }
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _rippleController.dispose();
+    _taggingBloc.add(CloseProject());
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  void _getTaggingInsideBounds() {
+    _taggingBloc.add(GetTaggingInsideBounds());
   }
 
   void _logCurrentBounds() {
@@ -113,14 +139,6 @@ class _TaggingPageState extends State<TaggingPage>
 
   void _onMapReady() {
     _taggingBloc.add(GetCurrentLocation());
-  }
-
-  @override
-  void dispose() {
-    _rippleController.dispose();
-    _taggingBloc.add(CloseProject());
-    _mapController.dispose();
-    super.dispose();
   }
 
   void _showMarkerDialog(TagData tagData, Project project, User? currentUser) {
@@ -166,10 +184,6 @@ class _TaggingPageState extends State<TaggingPage>
       barrierDismissible: false,
       builder: (context) => TaggingFormDialog(initialTagData: tagData),
     );
-  }
-
-  void _toggleSidebar(bool isOpen) {
-    _taggingBloc.add(SetSideBarOpen(isOpen));
   }
 
   void _showLabelTypeDialog(LabelType? selectedLabelType) {
@@ -218,6 +232,31 @@ class _TaggingPageState extends State<TaggingPage>
         return ProjectInfoDialog();
       },
     );
+  }
+
+  void _showZoomLevelNotificationDialog(String message) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => ZoomLevelNotificationDialog(
+            message: message,
+            onYes: () {
+              Navigator.of(context).pop();
+              _confirmToZoom = true;
+              _mapController.move(
+                _mapController.camera.center,
+                MapConfig.minimumZoomToGetTaggingInsideBounds,
+              );
+            },
+            onCancel: () {
+              Navigator.of(context).pop();
+            },
+          ),
+    );
+  }
+
+  void _toggleSidebar(bool isOpen) {
+    _taggingBloc.add(SetSideBarOpen(isOpen));
   }
 
   // Helper: pixel distance between two points
@@ -402,6 +441,8 @@ class _TaggingPageState extends State<TaggingPage>
             MaterialPageRoute(builder: (context) => const LoginPage()),
             (route) => false,
           );
+        } else if (state is ZoomLevelNotification) {
+          _showZoomLevelNotificationDialog(state.message);
         }
       },
       builder: (context, state) {
@@ -477,33 +518,65 @@ class _TaggingPageState extends State<TaggingPage>
                             ].map((tagData) {
                               final isSelected = state.data.selectedTags
                                   .contains(tagData);
-                              return Marker(
-                                point: LatLng(
-                                  tagData.positionLat,
-                                  tagData.positionLng,
-                                ),
-                                alignment: Alignment.center,
-                                width: isSelected ? 130 : 120,
-                                height: isSelected ? 130 : 120,
-                                child: MarkerWidget(
-                                  tagData: tagData,
-                                  isSelected: isSelected,
-                                  labelType: state.data.selectedLabelType?.key,
-                                  currentUser: state.data.currentUser,
-                                  currentProject: state.data.project,
-                                  onTap: () {
-                                    _handleMarkerClick(
-                                      tagData,
-                                      state.data.project,
-                                      state.data.currentUser,
-                                      state.data.tags,
-                                      state.data.selectedTags,
-                                      state.data.currentZoom,
-                                      mapSize,
-                                    );
-                                  },
-                                ),
+
+                              final labelType =
+                                  state.data.selectedLabelType?.key;
+                              final currentUser = state.data.currentUser;
+                              final currentProject = state.data.project;
+                              void onMarkerTap() {
+                                _handleMarkerClick(
+                                  tagData,
+                                  state.data.project,
+                                  state.data.currentUser,
+                                  state.data.tags,
+                                  state.data.selectedTags,
+                                  state.data.currentZoom,
+                                  mapSize,
+                                );
+                              }
+
+                              final mode = MarkerDisplayStrategy.getRenderMode(
+                                zoom: state.data.currentZoom,
                               );
+
+                              switch (mode) {
+                                case MarkerRenderMode.simple:
+                                  return Marker(
+                                    point: LatLng(
+                                      tagData.positionLat,
+                                      tagData.positionLng,
+                                    ),
+                                    alignment: Alignment.center,
+                                    width: isSelected ? 28 : 20,
+                                    height: isSelected ? 28 : 20,
+                                    child: SimpleMarkerWidget(
+                                      tagData: tagData,
+                                      isSelected: isSelected,
+                                      labelType: labelType,
+                                      currentUser: currentUser,
+                                      currentProject: currentProject,
+                                      onTap: onMarkerTap,
+                                    ),
+                                  );
+                                default:
+                                  return Marker(
+                                    point: LatLng(
+                                      tagData.positionLat,
+                                      tagData.positionLng,
+                                    ),
+                                    alignment: Alignment.center,
+                                    width: isSelected ? 130 : 120,
+                                    height: isSelected ? 130 : 120,
+                                    child: ComplexMarkerWidget(
+                                      tagData: tagData,
+                                      isSelected: isSelected,
+                                      labelType: labelType,
+                                      currentUser: currentUser,
+                                      currentProject: currentProject,
+                                      onTap: onMarkerTap,
+                                    ),
+                                  );
+                              }
                             }),
 
                             // Current location marker
@@ -641,7 +714,7 @@ class _TaggingPageState extends State<TaggingPage>
                               Padding(
                                 padding: const EdgeInsets.only(left: 16),
                                 child: Text(
-                                  '${state.data.tags.length}',
+                                  '${state.data.tags.length} di map',
                                   style: TextStyle(
                                     color: Colors.grey.shade800,
                                     fontSize: 10,
@@ -1009,7 +1082,7 @@ class _TaggingPageState extends State<TaggingPage>
                           icon: Icons.sync,
                           iconColor: Colors.deepOrange,
                           onPressed: () {
-                            _taggingBloc.add(GetTaggingInsideBounds());
+                            _getTaggingInsideBounds();
                           },
                           child:
                               state.data.isTaggingInsideBoundsLoading

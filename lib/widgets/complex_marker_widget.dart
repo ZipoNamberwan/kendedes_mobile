@@ -3,7 +3,7 @@ import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
 
-class MarkerWidget extends StatelessWidget {
+class ComplexMarkerWidget extends StatelessWidget {
   final TagData tagData;
   final bool isSelected;
   final VoidCallback onTap;
@@ -11,7 +11,7 @@ class MarkerWidget extends StatelessWidget {
   final User? currentUser;
   final Project? currentProject;
 
-  const MarkerWidget({
+  const ComplexMarkerWidget({
     super.key,
     required this.tagData,
     required this.isSelected,

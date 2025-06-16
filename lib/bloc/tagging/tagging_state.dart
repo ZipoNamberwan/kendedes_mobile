@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/poligon_data.dart';
@@ -34,7 +35,7 @@ class InitializingStarted extends TaggingState {
           isLoadingTag: false,
           isLoadingPolygon: false,
           isLoadingCurrentLocation: false,
-          currentZoom: 16.0,
+          currentZoom: MapConfig.initialZoom,
           rotation: 0.0,
           selectedTags: [],
           isMultiSelectMode: false,
@@ -204,6 +205,14 @@ class TokenExpired extends TaggingState {
 
   @override
   List<Object> get props => [data];
+}
+
+class ZoomLevelNotification extends TaggingState {
+  final String message;
+  const ZoomLevelNotification({required this.message, required super.data});
+
+  @override
+  List<Object> get props => [message, data];
 }
 
 class TaggingStateData {

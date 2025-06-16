@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
+import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/hive/hive_boxes.dart';
@@ -664,78 +665,91 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     });
 
     on<GetTaggingInsideBounds>((event, emit) async {
-      await ApiServerHandler.run(
-        action: () async {
-          emit(
-            TaggingState(
-              data: state.data.copyWith(
-                isTaggingInsideBoundsLoading: true,
-                isFirstTimeMapLoading: false,
+      if (state.data.currentZoom <
+          MapConfig.minimumZoomToGetTaggingInsideBounds) {
+        emit(
+          ZoomLevelNotification(
+            message:
+                'Minimum zoom level untuk mendapatkan data tagging adalah '
+                '${MapConfig.minimumZoomToGetTaggingInsideBounds}. Apakah akan memperbesar zoom?',
+            data: state.data.copyWith(isTaggingInsideBoundsLoading: false),
+          ),
+        );
+        return;
+      } else {
+        await ApiServerHandler.run(
+          action: () async {
+            emit(
+              TaggingState(
+                data: state.data.copyWith(
+                  isTaggingInsideBoundsLoading: true,
+                  isFirstTimeMapLoading: false,
+                ),
               ),
-            ),
-          );
+            );
 
-          final ne = state.data.northEastCorner;
-          final sw = state.data.southWestCorner;
+            final ne = state.data.northEastCorner;
+            final sw = state.data.southWestCorner;
 
-          final tags = await TaggingRepository().getTaggingInBox(
-            minLat: sw?.latitude ?? 0.0,
-            minLng: sw?.longitude ?? 0.0,
-            maxLat: ne?.latitude ?? 0.0,
-            maxLng: ne?.longitude ?? 0.0,
-          );
+            final tags = await TaggingRepository().getTaggingInBox(
+              minLat: sw?.latitude ?? 0.0,
+              minLng: sw?.longitude ?? 0.0,
+              maxLat: ne?.latitude ?? 0.0,
+              maxLng: ne?.longitude ?? 0.0,
+            );
 
-          final updatedNearByTags = state.data.tags;
-          final existingIds = updatedNearByTags.map((e) => e.id).toSet();
+            final updatedNearByTags = state.data.tags;
+            final existingIds = updatedNearByTags.map((e) => e.id).toSet();
 
-          for (final tag in tags) {
-            if (!existingIds.contains(tag.id)) {
-              updatedNearByTags.add(tag);
+            for (final tag in tags) {
+              if (!existingIds.contains(tag.id)) {
+                updatedNearByTags.add(tag);
+              }
             }
-          }
 
-          emit(
-            TaggingState(
-              data: state.data.copyWith(
-                isTaggingInsideBoundsLoading: false,
-                tags: updatedNearByTags,
+            emit(
+              TaggingState(
+                data: state.data.copyWith(
+                  isTaggingInsideBoundsLoading: false,
+                  tags: updatedNearByTags,
+                ),
               ),
-            ),
-          );
-        },
-        onLoginExpired: (e) {
-          emit(
-            TokenExpired(
-              data: state.data.copyWith(
-                isTaggingInsideBoundsLoading: false,
-                isTaggingInsideBoundsError: true,
+            );
+          },
+          onLoginExpired: (e) {
+            emit(
+              TokenExpired(
+                data: state.data.copyWith(
+                  isTaggingInsideBoundsLoading: false,
+                  isTaggingInsideBoundsError: true,
+                ),
               ),
-            ),
-          );
-        },
-        onDataProviderError: (e) {
-          emit(
-            TaggingInsideBoundsFailed(
-              errorMessage: e.message,
-              data: state.data.copyWith(
-                isTaggingInsideBoundsLoading: false,
-                isTaggingInsideBoundsError: true,
+            );
+          },
+          onDataProviderError: (e) {
+            emit(
+              TaggingInsideBoundsFailed(
+                errorMessage: e.message,
+                data: state.data.copyWith(
+                  isTaggingInsideBoundsLoading: false,
+                  isTaggingInsideBoundsError: true,
+                ),
               ),
-            ),
-          );
-        },
-        onOtherError: (e) {
-          emit(
-            TaggingInsideBoundsFailed(
-              errorMessage: e.toString(),
-              data: state.data.copyWith(
-                isTaggingInsideBoundsLoading: false,
-                isTaggingInsideBoundsError: true,
+            );
+          },
+          onOtherError: (e) {
+            emit(
+              TaggingInsideBoundsFailed(
+                errorMessage: e.toString(),
+                data: state.data.copyWith(
+                  isTaggingInsideBoundsLoading: false,
+                  isTaggingInsideBoundsError: true,
+                ),
               ),
-            ),
-          );
-        },
-      );
+            );
+          },
+        );
+      }
     });
   }
 

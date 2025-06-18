@@ -422,10 +422,79 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                         ],
                       ),
 
+                      // --- New: Switch filters ---
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Transform.scale(
+                                  scale: 0.7,
+                                  child: Switch(
+                                    value: state.data.isFilterCurrentProject,
+                                    onChanged: (val) {
+                                      _taggingBloc.add(
+                                        FilterCurrentProject(
+                                          isFilterCurrentProject: val,
+                                        ),
+                                      );
+                                    },
+                                    padding: const EdgeInsets.all(0),
+                                    activeColor: Colors.deepOrange,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                                const Flexible(
+                                  child: Text(
+                                    'Projek ini saja',
+                                    style: TextStyle(fontSize: 12),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Transform.scale(
+                                  scale: 0.7,
+                                  child: Switch(
+                                    value: state.data.isFilterSentToServer,
+                                    onChanged: (val) {
+                                      _taggingBloc.add(
+                                        FilterHasSentToServer(
+                                          isFilterSentToServer: val,
+                                        ),
+                                      );
+                                    },
+                                    padding: const EdgeInsets.all(0),
+                                    activeColor: Colors.deepOrange,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                                const Flexible(
+                                  child: Text(
+                                    'Blm sinkron',
+                                    style: TextStyle(fontSize: 12),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // --- End new switches ---
+
                       // Active Filters Indicator
                       if ((state.data.searchQuery?.isNotEmpty ?? false) ||
                           state.data.selectedSectorFilter != null ||
-                          state.data.selectedProjectTypeFilter != null)
+                          state.data.selectedProjectTypeFilter != null ||
+                          state.data.isFilterCurrentProject ||
+                          state.data.isFilterSentToServer)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Row(

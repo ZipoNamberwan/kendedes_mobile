@@ -125,7 +125,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
           action: () async {
             emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
             await ProjectRepository().createProject(newProject.toJson());
-            state.data.projectBox?.put(newProject.id, newProject);
+            await state.data.projectBox?.put(newProject.id, newProject);
             emit(
               ProjectAddedSuccess(
                 data: state.data.copyWith(
@@ -212,7 +212,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
                       : project;
                 }).toList();
 
-            state.data.projectBox?.put(updatedProject.id, updatedProject);
+            await state.data.projectBox?.put(updatedProject.id, updatedProject);
             emit(
               ProjectUpdatedSuccess(
                 data: state.data.copyWith(
@@ -258,12 +258,15 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
     });
 
     on<DeleteProject>((event, emit) async {
+      // "4d52ef14-a7ce-4bf8-8c4a-25b6910c3374"
+      // "4d52ef14-a7ce-4bf8-8c4a-25b6910c3374"
       try {
         await ApiServerHandler.run(
           action: () async {
             emit(ProjectState(data: state.data.copyWith(deleteLoading: true)));
             await ProjectRepository().deleteProject(event.id);
-            state.data.projectBox?.delete(event.id);
+            
+            await state.data.projectBox?.delete(event.id);
 
             //delete tagging data associated with the project
             final keysToDelete = state.data.tagBox?.keys.where((key) {
@@ -271,7 +274,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
               return tag?.project.id == event.id;
             });
 
-            state.data.tagBox?.deleteAll(keysToDelete ?? []);
+            await state.data.tagBox?.deleteAll(keysToDelete ?? []);
 
             emit(
               ProjectDeletedSuccess(

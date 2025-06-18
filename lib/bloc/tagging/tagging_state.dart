@@ -49,6 +49,8 @@ class InitializingStarted extends TaggingState {
           currentUser: null,
           isDeletingTag: false,
           isUploadingMultipleTags: false,
+          isFilterCurrentProject: false,
+          isFilterSentToServer: false,
         ),
       );
 
@@ -236,7 +238,10 @@ class UploadMultipleTagsError extends TaggingState {
 
 class UploadMultipleTagsSuccess extends TaggingState {
   final String successMessage;
-  const UploadMultipleTagsSuccess({required this.successMessage, required super.data});
+  const UploadMultipleTagsSuccess({
+    required this.successMessage,
+    required super.data,
+  });
 
   @override
   List<Object> get props => [successMessage, data];
@@ -262,7 +267,10 @@ class DeleteMultipleTagsError extends TaggingState {
 
 class DeleteMultipleTagsSuccess extends TaggingState {
   final String successMessage;
-  const DeleteMultipleTagsSuccess({required this.successMessage, required super.data});
+  const DeleteMultipleTagsSuccess({
+    required this.successMessage,
+    required super.data,
+  });
 
   @override
   List<Object> get props => [successMessage, data];
@@ -298,6 +306,8 @@ class TaggingStateData {
   final String? searchQuery;
   final Sector? selectedSectorFilter;
   final ProjectType? selectedProjectTypeFilter;
+  final bool isFilterCurrentProject;
+  final bool isFilterSentToServer;
 
   //form attribute
   final bool isSubmitting;
@@ -336,6 +346,8 @@ class TaggingStateData {
     this.searchQuery,
     this.selectedSectorFilter,
     this.selectedProjectTypeFilter,
+    required this.isFilterCurrentProject,
+    required this.isFilterSentToServer,
     this.selectedLabelType,
     this.selectedMapType,
     required this.isSubmitting,
@@ -396,6 +408,8 @@ class TaggingStateData {
     bool? resetSearchQuery,
     bool? resetSectorFilter,
     bool? resetProjectTypeFilter,
+    bool? isFilterCurrentProject,
+    bool? isFilterSentToServer,
     LabelType? selectedLabelType,
     MapType? selectedMapType,
     User? currentUser,
@@ -456,6 +470,14 @@ class TaggingStateData {
       isDeletingTag: isDeletingTag ?? this.isDeletingTag,
       isUploadingMultipleTags:
           isUploadingMultipleTags ?? this.isUploadingMultipleTags,
+      isFilterCurrentProject:
+          resetAllFilter ?? false
+              ? false
+              : isFilterCurrentProject ?? this.isFilterCurrentProject,
+      isFilterSentToServer:
+          resetAllFilter ?? false
+              ? false
+              : isFilterSentToServer ?? this.isFilterSentToServer,
     );
   }
 }

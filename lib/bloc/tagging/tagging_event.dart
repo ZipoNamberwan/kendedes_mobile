@@ -142,6 +142,16 @@ class FilterTaggingByProjectType extends TaggingEvent {
   const FilterTaggingByProjectType({this.projectType, this.reset});
 }
 
+class FilterCurrentProject extends TaggingEvent {
+  final bool isFilterCurrentProject;
+  const FilterCurrentProject({required this.isFilterCurrentProject});
+}
+
+class FilterHasSentToServer extends TaggingEvent {
+  final bool isFilterSentToServer;
+  const FilterHasSentToServer({required this.isFilterSentToServer});
+}
+
 class ResetAllFilter extends TaggingEvent {
   const ResetAllFilter();
 }

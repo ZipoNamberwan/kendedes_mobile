@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_ce/hive.dart';
@@ -9,14 +11,40 @@ import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
+import 'package:kendedes_mobile/classes/telegram_logger.dart';
 import 'package:kendedes_mobile/hive/hive_registrar.g.dart';
 import 'package:path_provider/path_provider.dart';
 import 'pages/login_page.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await _initializeApp();
-  runApp(MyApp());
+void main() {
+  FlutterError.onError = (FlutterErrorDetails details) {
+    TelegramLogger.send('''🚨 *Flutter Error*
+
+    *Exception:* `${details.exception}`
+    *Library:* `${details.library}`
+    *Stack Trace:*
+    ${details.stack.toString().substring(0, 1000)}
+
+    ''');
+    FlutterError.presentError(details);
+  };
+
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await _initializeApp();
+      runApp(MyApp());
+    },
+    (Object error, StackTrace stack) {
+      TelegramLogger.send('''🚨 *Unhandled Dart Error*
+
+      *Error:* `${error.toString()}`
+      *Stack Trace:*
+      ${stack.toString().substring(0, 1000)}
+
+      ''');
+    },
+  );
 }
 
 Future<void> _initializeApp() async {

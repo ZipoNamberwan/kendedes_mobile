@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:kendedes_mobile/classes/services/dio_service.dart';
+import 'package:kendedes_mobile/classes/telegram_logger.dart';
 
 typedef HandlerFunction<T> = void Function(T exception);
 
@@ -24,7 +25,19 @@ class ApiServerHandler {
       } else if (err is DataProviderException) {
         onDataProviderError(err);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      try {
+        final logMessage = '''
+        🚨 *Unhandled Error*
+
+        *Error:* `${e.toString()}`
+        *Stack Trace:*
+        ${stackTrace.toString().substring(0, 1000)}
+        ''';
+        TelegramLogger.send(logMessage);
+      } catch (_) {
+        // Fail silently so it never blocks real error flow
+      }
       if (e is Exception) {
         onOtherError(e);
       } else {

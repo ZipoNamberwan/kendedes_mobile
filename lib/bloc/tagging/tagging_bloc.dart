@@ -173,7 +173,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             );
 
             if (result) {
-              state.data.tagDataBox?.deleteAll(deletedTagIds);
+              await state.data.tagDataBox?.deleteAll(deletedTagIds);
 
               emit(
                 DeleteMultipleTagsSuccess(
@@ -697,6 +697,9 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         query: newQuery,
         sector: state.data.selectedSectorFilter,
         projectType: state.data.selectedProjectTypeFilter,
+        isFilterCurrentProject: state.data.isFilterCurrentProject,
+        isFilterSentToServer: state.data.isFilterSentToServer,
+        currentProject: state.data.project,
       );
 
       final newDataState = state.data.copyWith(
@@ -718,6 +721,9 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         query: state.data.searchQuery,
         sector: selectedSector,
         projectType: state.data.selectedProjectTypeFilter,
+        isFilterCurrentProject: state.data.isFilterCurrentProject,
+        isFilterSentToServer: state.data.isFilterSentToServer,
+        currentProject: state.data.project,
       );
 
       emit(
@@ -738,6 +744,9 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         query: state.data.searchQuery,
         sector: state.data.selectedSectorFilter,
         projectType: selectedProjectType,
+        isFilterCurrentProject: state.data.isFilterCurrentProject,
+        isFilterSentToServer: state.data.isFilterSentToServer,
+        currentProject: state.data.project,
       );
 
       emit(
@@ -746,6 +755,48 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             filteredTags: filtered,
             selectedProjectTypeFilter: selectedProjectType,
             resetProjectTypeFilter: event.reset ?? false,
+          ),
+        ),
+      );
+    });
+
+    on<FilterCurrentProject>((event, emit) {
+      final filtered = _applyFilters(
+        allTags: state.data.tags,
+        query: state.data.searchQuery,
+        sector: state.data.selectedSectorFilter,
+        projectType: state.data.selectedProjectTypeFilter,
+        isFilterCurrentProject: event.isFilterCurrentProject,
+        isFilterSentToServer: state.data.isFilterSentToServer,
+        currentProject: state.data.project,
+      );
+
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            filteredTags: filtered,
+            isFilterCurrentProject: event.isFilterCurrentProject,
+          ),
+        ),
+      );
+    });
+
+    on<FilterHasSentToServer>((event, emit) {
+      final filtered = _applyFilters(
+        allTags: state.data.tags,
+        query: state.data.searchQuery,
+        sector: state.data.selectedSectorFilter,
+        projectType: state.data.selectedProjectTypeFilter,
+        isFilterCurrentProject: state.data.isFilterCurrentProject,
+        isFilterSentToServer: event.isFilterSentToServer,
+        currentProject: state.data.project,
+      );
+
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            filteredTags: filtered,
+            isFilterSentToServer: event.isFilterSentToServer,
           ),
         ),
       );
@@ -768,7 +819,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     });
 
     on<CloseProject>((event, emit) {
-      state.data.tagDataBox?.close();
+      // state.data.tagDataBox?.close();
     });
 
     on<UpdateVisibleMapBounds>((event, emit) {
@@ -880,13 +931,18 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     required String? query,
     required Sector? sector,
     required ProjectType? projectType,
+    required bool isFilterCurrentProject,
+    required bool isFilterSentToServer,
+    required Project currentProject,
   }) {
     final normalizedQuery = query?.trim().toLowerCase();
 
     // No filters applied → return all
     if ((normalizedQuery == null || normalizedQuery.isEmpty) &&
         sector == null &&
-        projectType == null) {
+        projectType == null &&
+        !isFilterCurrentProject &&
+        !isFilterSentToServer) {
       return allTags;
     }
 
@@ -906,7 +962,17 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       final matchesProjectType =
           projectType == null || tag.project.type.key == projectType.key;
 
-      return matchesQuery && matchesSector && matchesProjectType;
+      final matchesCurrentProject =
+          !isFilterCurrentProject || (tag.project.id == currentProject.id);
+
+      final matchesSentToServer =
+          !isFilterSentToServer || (!tag.hasSentToServer);
+
+      return matchesQuery &&
+          matchesSector &&
+          matchesProjectType &&
+          matchesCurrentProject &&
+          matchesSentToServer;
     }).toList();
   }
 

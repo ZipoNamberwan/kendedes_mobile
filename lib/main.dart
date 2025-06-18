@@ -8,9 +8,11 @@ import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
+import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/version_checking_repository.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
 import 'package:kendedes_mobile/hive/hive_registrar.g.dart';
 import 'package:path_provider/path_provider.dart';
@@ -56,6 +58,7 @@ Future<void> _initializeApp() async {
   await AuthRepository().init();
   await ProjectRepository().init();
   await TaggingRepository().init();
+  await VersionCheckingRepository().init();
 }
 
 class MyApp extends StatelessWidget {
@@ -71,6 +74,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<ProjectBloc>(create: (context) => ProjectBloc()),
         BlocProvider<TaggingBloc>(create: (context) => TaggingBloc()),
         BlocProvider<LogoutBloc>(create: (context) => LogoutBloc()),
+        BlocProvider<VersionBloc>(create: (context) => VersionBloc()),
       ],
       child: MaterialApp(
         title: 'Kendedes Mobile',

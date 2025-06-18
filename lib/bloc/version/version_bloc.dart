@@ -1,0 +1,39 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kendedes_mobile/bloc/version/version_event.dart';
+import 'package:kendedes_mobile/bloc/version/version_state.dart';
+import 'package:kendedes_mobile/classes/api_server_handler.dart';
+import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/version_checking_repository.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+class VersionBloc extends Bloc<VersionEvent, VersionState> {
+  VersionBloc() : super(CheckVersionInitializing()) {
+    on<CheckVersion>((event, emit) async {
+      await ApiServerHandler.run(
+        action: () async {
+          PackageInfo packageInfo = await PackageInfo.fromPlatform();
+          int buildNumber = int.parse(packageInfo.buildNumber);
+          final organization =
+              AuthRepository().getUser()?.organization?.id ?? '3500';
+          final response = await VersionCheckingRepository().checkForUpdates(
+            buildNumber,
+            organization,
+          );
+          if (response['shouldUpdate'] == true) {
+            emit(
+              UpdateNotification(
+                data: VersionStateData(
+                  shouldUpdate: true,
+                  version: response['version'],
+                ),
+              ),
+            );
+          }
+        },
+        onLoginExpired: (e) {},
+        onDataProviderError: (e) {},
+        onOtherError: (e) {},
+      );
+    });
+  }
+}

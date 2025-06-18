@@ -33,6 +33,14 @@ class AuthProvider {
     return _sharedPreferenceService.getUser();
   }
 
+  Future<void> saveToken(String token) async {
+    await _sharedPreferenceService.saveToken(token);
+  }
+
+  Future<void> saveUser(Map<String, dynamic> user) async {
+    await _sharedPreferenceService.saveUser(user);
+  }
+
   Future<void> clearToken() async {
     await _sharedPreferenceService.clearToken();
   }

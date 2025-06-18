@@ -12,7 +12,7 @@ class UserRole extends HiveObject {
   UserRole({required this.id, required this.name});
 
   factory UserRole.fromJson(Map<String, dynamic> json) {
-    return UserRole(id: json['id'] as String, name: json['name'] as String);
+    return UserRole(id: json['id'].toString(), name: json['name'] as String);
   }
 
   Map<String, dynamic> toJson() {

@@ -34,6 +34,17 @@ class InitLogin extends LoginEvent {
   const InitLogin();
 }
 
+class ThrowLoginError extends LoginEvent {
+  final String message;
+  const ThrowLoginError(this.message);
+}
+
+class LoginMajapahit extends LoginEvent {
+  final String token;
+  final Map<String, dynamic> user;
+  const LoginMajapahit({required this.token, required this.user});
+}
+
 // class MockupLogin extends LoginEvent {
 //   const MockupLogin();
 // }

@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kendedes_mobile/classes/api_server_handler.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
-import 'package:kendedes_mobile/classes/services/dio_service.dart';
+import 'package:kendedes_mobile/models/user.dart';
 import 'login_event.dart';
 import 'login_state.dart';
 
@@ -112,55 +112,67 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         return;
       }
 
-      await _safeExecute(emit, () async {
-        emit(LoginState(data: state.data.copyWith(isSubmitting: true)));
-        await AuthRepository().login(email: email!, password: password!);
-        emit(
-          LoginSuccess(
-            data: state.data.copyWith(isSuccess: true, isSubmitting: false),
-          ),
-        );
-      });
+      await ApiServerHandler.run(
+        action: () async {
+          emit(LoginState(data: state.data.copyWith(isSubmitting: true)));
+          await AuthRepository().login(email: email!, password: password!);
+          emit(
+            LoginSuccess(
+              data: state.data.copyWith(isSuccess: true, isSubmitting: false),
+            ),
+          );
+        },
+        onLoginExpired: (e) {},
+        onDataProviderError: (e) {
+          emit(
+            LoginFailed(
+              errorMessage: e.message,
+              data: state.data.copyWith(
+                isSubmitting: false,
+                isFailure: true,
+                isSuccess: false,
+              ),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          emit(
+            LoginFailed(
+              errorMessage: e.toString(),
+              data: state.data.copyWith(
+                isSubmitting: false,
+                isFailure: true,
+                isSuccess: false,
+              ),
+            ),
+          );
+        },
+      );
     });
-  }
 
-  Future<void> _safeExecute(
-    Emitter<LoginState> emit,
-    Future<void> Function() action,
-  ) async {
-    try {
-      await action();
-    } on DioException catch (dioError) {
-      final err = dioError.error;
+    on<ThrowLoginError>((event, emit) {
+      emit(
+        LoginFailed(
+          errorMessage: event.message,
+          data: state.data.copyWith(isSubmitting: false),
+        ),
+      );
+    });
 
-      if (err is LoginExpiredException) {
-        emit(
-          TokenExpired(
-            data: state.data.copyWith(isFailure: true, isSubmitting: false),
-          ),
-        );
-      } else if (err is DataProviderException) {
+    on<LoginMajapahit>((event, emit) async {
+      try {
+        await AuthRepository().saveToken(event.token);
+        await AuthRepository().saveUser(User.fromJson(event.user));
+
+        emit(LoginSuccess(data: state.data.copyWith(isSuccess: true)));
+      } catch (e) {
         emit(
           LoginFailed(
-            errorMessage: err.message,
-            data: state.data.copyWith(isFailure: true, isSubmitting: false),
-          ),
-        );
-      } else {
-        emit(
-          LoginFailed(
-            errorMessage: 'Something went wrong: ${dioError.message}',
-            data: state.data.copyWith(isFailure: true, isSubmitting: false),
+            errorMessage: 'Gagal menyimpan data pengguna: ${e.toString()}',
+            data: state.data.copyWith(isSubmitting: false, isFailure: true),
           ),
         );
       }
-    } catch (e) {
-      emit(
-        LoginFailed(
-          errorMessage: e.toString(),
-          data: state.data.copyWith(isFailure: true, isSubmitting: false),
-        ),
-      );
-    }
+    });
   }
 }

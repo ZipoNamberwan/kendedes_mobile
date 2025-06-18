@@ -11,35 +11,42 @@ class User extends HiveObject {
   @HiveField(1)
   final String email;
   @HiveField(2)
-  final String name;
+  final String firstname;
   @HiveField(3)
   final Organization? organization;
   @HiveField(4)
-  final UserRole? role;
+  final List<UserRole> roles;
 
   User({
     required this.id,
     required this.email,
-    required this.name,
+    required this.firstname,
     this.organization,
-    this.role,
+    required this.roles,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final rolesData = json['roles'];
+
+    List<UserRole> parsedRoles = [];
+    if (rolesData is List) {
+      parsedRoles =
+          rolesData
+              .whereType<Map<String, dynamic>>() // ✅ recommended Dart style
+              .map((e) => UserRole.fromJson(e))
+              .toList();
+    }
     return User(
       id: json['id'] as String,
       email: json['email'] as String,
-      name: json['firstname'] as String,
+      firstname: json['firstname'] as String,
       organization:
           json['organization'] != null
               ? Organization.fromJson(
                 json['organization'] as Map<String, dynamic>,
               )
               : null,
-      role:
-          json['role'] != null
-              ? UserRole.fromJson(json['role'] as Map<String, dynamic>)
-              : null,
+      roles: parsedRoles,
     );
   }
 
@@ -47,9 +54,9 @@ class User extends HiveObject {
     return {
       'id': id,
       'email': email,
-      'name': name,
+      'firstname': firstname,
       'organization': organization?.toJson(),
-      'role': role?.toJson(),
+      'roles': roles.map((role) => role.toJson()).toList(),
     };
   }
 }

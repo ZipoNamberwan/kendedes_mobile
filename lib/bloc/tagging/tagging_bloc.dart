@@ -447,7 +447,8 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
       try {
         final User user =
-            AuthRepository().getUser() ?? User(id: '', email: '', name: '');
+            AuthRepository().getUser() ??
+            User(id: '', email: '', firstname: '', roles: []);
 
         final newTag = TagData(
           id: _uuid.v4(),

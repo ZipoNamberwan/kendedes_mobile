@@ -159,7 +159,7 @@ class ProjectInfoDialog extends StatelessWidget {
                         _buildInfoSection(
                           icon: Icons.person,
                           title: 'Pengguna Aktif',
-                          content: state.data.currentUser!.name,
+                          content: state.data.currentUser!.firstname,
                           iconColor: Colors.indigo.shade600,
                         ),
                         const SizedBox(height: 6),

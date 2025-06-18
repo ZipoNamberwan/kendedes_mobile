@@ -314,9 +314,9 @@ class UserAdapter extends TypeAdapter<User> {
     return User(
       id: fields[0] as String,
       email: fields[1] as String,
-      name: fields[2] as String,
+      firstname: fields[2] as String,
       organization: fields[3] as Organization?,
-      role: fields[4] as UserRole?,
+      roles: (fields[4] as List).cast<UserRole>(),
     );
   }
 
@@ -329,11 +329,11 @@ class UserAdapter extends TypeAdapter<User> {
       ..writeByte(1)
       ..write(obj.email)
       ..writeByte(2)
-      ..write(obj.name)
+      ..write(obj.firstname)
       ..writeByte(3)
       ..write(obj.organization)
       ..writeByte(4)
-      ..write(obj.role);
+      ..write(obj.roles);
   }
 
   @override

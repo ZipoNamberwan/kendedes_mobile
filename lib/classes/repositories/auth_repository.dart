@@ -49,4 +49,12 @@ class AuthRepository {
   Future<void> logout() async {
     await _authProvider.logout();
   }
+
+  Future<void> saveToken(String token) async {
+    await _authProvider.saveToken(token);
+  }
+
+  Future<void> saveUser(User user) async {
+    await _authProvider.saveUser(user.toJson());
+  }
 }

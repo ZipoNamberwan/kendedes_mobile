@@ -113,11 +113,11 @@ types:
         index: 0
       email:
         index: 1
-      name:
+      firstname:
         index: 2
       organization:
         index: 3
-      role:
+      roles:
         index: 4
   Organization:
     typeId: 7

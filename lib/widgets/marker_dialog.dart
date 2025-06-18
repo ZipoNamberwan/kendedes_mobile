@@ -94,7 +94,7 @@ class MarkerDialog extends StatelessWidget {
                       'Posisi',
                       '${tagData.positionLat.toStringAsFixed(6)}, ${tagData.positionLng.toStringAsFixed(6)}',
                     ),
-                    _buildInfoRow('Ditagging oleh', tagData.user.name),
+                    _buildInfoRow('Ditagging oleh', tagData.user.firstname),
                     // if (tagData.createdAt != null)
                     //   _buildInfoRow(
                     //     'Dibuat pada',

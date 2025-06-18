@@ -1,4 +1,4 @@
-package com.example.kendedes_mobile
+package kendedes.douwes.dekker
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -18,7 +18,22 @@ class VersionUpdateDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.system_update, color: Colors.orange.shade700, size: 48),
+            Text(
+              'Pembaruan Aplikasi Tersedia',
+              style: TextStyle(
+                color: Colors.orange.shade800,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                letterSpacing: 0.1,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Icon(
+              Icons.system_update,
+              color: Colors.orange.shade700,
+              size: 48,
+            ),
             const SizedBox(height: 16),
             Text(
               version.title,
@@ -29,7 +44,8 @@ class VersionUpdateDialog extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (version.description != null && version.description!.isNotEmpty)
+            if (version.description != null &&
+                version.description!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(

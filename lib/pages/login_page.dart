@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/login_state.dart';
+import 'package:kendedes_mobile/classes/helpers.dart';
 import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
@@ -68,8 +69,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _openSSOLogin() async {
-    final ssoUrl =
-        'https://www.majapah.it/dashboard?callback_uri=https://kendedes.cathajatim.id/majapahit-mobile-login';
+    final ssoUrl = AppHelper.majapahitLoginUrl;
 
     // final ssoUrl = 'https://google.com';
     if (await canLaunchUrl(Uri.parse(ssoUrl))) {
@@ -183,14 +183,34 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
-                      // const SizedBox(height: 8),
-                      // Text(
-                      //   'Login untuk melanjutkan',
-                      //   style: theme.textTheme.bodyLarge?.copyWith(
-                      //     color: Colors.grey.shade600,
-                      //     fontWeight: FontWeight.w400,
-                      //   ),
-                      // ),
+                      // --- Slogan ---
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Tag Anywhere. ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.deepOrange,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.1,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            'Discover Everywhere.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.1,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                      // --- End Slogan ---
                       const SizedBox(height: 32),
 
                       // --- Login Options ---

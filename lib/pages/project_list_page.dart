@@ -6,6 +6,7 @@ import 'package:kendedes_mobile/bloc/project/project_state.dart';
 import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_event.dart';
 import 'package:kendedes_mobile/bloc/version/version_state.dart';
+import 'package:kendedes_mobile/classes/helpers.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/version.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
@@ -92,7 +93,7 @@ class _ProjectListPageState extends State<ProjectListPage>
             (ctx) => VersionUpdateDialog(
               version: version,
               onUpdate: () async {
-                final updateUrl = 'http://s.bps.go.id/kendedes';
+                final updateUrl = version.url ?? AppHelper.updateUrl;
 
                 if (await canLaunchUrl(Uri.parse(updateUrl))) {
                   await launchUrl(

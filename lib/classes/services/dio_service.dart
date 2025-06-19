@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:kendedes_mobile/classes/helpers.dart';
 import 'package:kendedes_mobile/classes/services/shared_preference_service.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
 
@@ -10,8 +11,7 @@ class DioService {
 
   DioService._internal();
 
-  // static const String _baseUrl = 'https://kendedes.cathajatim.id/api';
-  static const String _baseUrl = 'http://192.168.1.16:8000/api';
+  static const String _baseUrl = AppHelper.apiUrl;
 
   late Dio dio;
   late SharedPreferenceService _sharedPreferenceService;

@@ -118,13 +118,13 @@ class ColorLegendDialog extends StatelessWidget {
                   ),
                   _buildLegendItem(
                     color: Colors.amber,
-                    title: 'Tagging Saya',
+                    title: 'Tagging Projek Lain',
                     description:
                         'Tagging yang dibuat oleh Anda di projek lain di Kendedes Mobile',
                   ),
                   _buildLegendItem(
                     color: Colors.cyan,
-                    title: 'Tagging Lainnya',
+                    title: 'Tagging Pengguna Lain',
                     description:
                         'Tagging dari pengguna lain melalui Kendedes Mobile',
                   ),

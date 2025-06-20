@@ -27,13 +27,18 @@ class ApiServerHandler {
       }
     } catch (e, stackTrace) {
       try {
+        final fullTrace = stackTrace.toString();
+        final truncatedTrace =
+            fullTrace.length > 1000 ? fullTrace.substring(0, 1000) : fullTrace;
+
         final logMessage = '''
         🚨 *Unhandled Error*
 
         *Error:* `${e.toString()}`
         *Stack Trace:*
-        ${stackTrace.toString().substring(0, 1000)}
+        $truncatedTrace
         ''';
+
         TelegramLogger.send(logMessage);
       } catch (_) {
         // Fail silently so it never blocks real error flow

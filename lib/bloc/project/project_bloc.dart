@@ -1,13 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
-import 'package:kendedes_mobile/hive/hive_boxes.dart';
+import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/models/project.dart';
-import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:uuid/uuid.dart';
 
 class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
@@ -28,21 +26,22 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       try {
         emit(InitializingStarted(data: state.data.copyWith(initLoading: true)));
 
-        final pBox = await Hive.openBox<Project>(projectBox);
-        final tBox = await Hive.openBox<TagData>(tagDataBox);
+        final user = AuthRepository().getUser();
+        final projects = await ProjectRepository()
+            .getAllProjectByUserIdFromLocalDb(user?.id ?? '');
 
-        if (pBox.isEmpty) {
+        if (projects.isEmpty) {
           await ApiServerHandler.run(
             action: () async {
-              final userId = AuthRepository().getUser()?.id;
-              if (userId != null) {
-                final projects = await ProjectRepository().getProjects(userId);
-                await pBox.addAll(projects);
+              if (user?.id != null) {
+                final projects = await ProjectRepository().getProjects(
+                  user?.id ?? '',
+                );
+
+                await ProjectRepository().insertAllToLocalDb(projects);
                 emit(
                   InitializingSuccess(
                     data: state.data.copyWith(
-                      projectBox: pBox,
-                      tagBox: tBox,
                       projects: projects,
                       initLoading: false,
                     ),
@@ -71,19 +70,9 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             },
           );
         } else {
-          final user = AuthRepository().getUser();
-          final projects =
-              pBox.values
-                  .where((project) => project.user?.id == user?.id)
-                  .toList();
           emit(
             InitializingSuccess(
-              data: state.data.copyWith(
-                projectBox: pBox,
-                tagBox: tBox,
-                projects: projects,
-                initLoading: false,
-              ),
+              data: state.data.copyWith(projects: projects, initLoading: false),
             ),
           );
         }
@@ -125,7 +114,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
           action: () async {
             emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
             await ProjectRepository().createProject(newProject.toJson());
-            await state.data.projectBox?.put(newProject.id, newProject);
+            await ProjectRepository().insertToLocalDb(newProject);
             emit(
               ProjectAddedSuccess(
                 data: state.data.copyWith(
@@ -212,7 +201,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
                       : project;
                 }).toList();
 
-            await state.data.projectBox?.put(updatedProject.id, updatedProject);
+            await ProjectRepository().insertToLocalDb(updatedProject);
             emit(
               ProjectUpdatedSuccess(
                 data: state.data.copyWith(
@@ -258,23 +247,14 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
     });
 
     on<DeleteProject>((event, emit) async {
-      // "4d52ef14-a7ce-4bf8-8c4a-25b6910c3374"
-      // "4d52ef14-a7ce-4bf8-8c4a-25b6910c3374"
       try {
         await ApiServerHandler.run(
           action: () async {
             emit(ProjectState(data: state.data.copyWith(deleteLoading: true)));
             await ProjectRepository().deleteProject(event.id);
-            
-            await state.data.projectBox?.delete(event.id);
 
-            //delete tagging data associated with the project
-            final keysToDelete = state.data.tagBox?.keys.where((key) {
-              final tag = state.data.tagBox?.get(key);
-              return tag?.project.id == event.id;
-            });
-
-            await state.data.tagBox?.deleteAll(keysToDelete ?? []);
+            await ProjectRepository().deleteFromLocalDb(event.id);
+            await TaggingRepository().deleteAllByProjectId(event.id);
 
             emit(
               ProjectDeletedSuccess(

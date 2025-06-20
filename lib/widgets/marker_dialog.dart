@@ -47,24 +47,28 @@ class MarkerDialog extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.location_on, color: Colors.white, size: 20),
+                  const Icon(Icons.location_on, color: Colors.white, size: 25),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
                       'Detail Tagging',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   GestureDetector(
+                    behavior: HitTestBehavior.translucent,
                     onTap: () => Navigator.of(context).pop(),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 20,
+                    child: Container(
+                      padding: const EdgeInsets.all(8), // Increase tap area
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 25, // Larger icon
+                      ),
                     ),
                   ),
                 ],

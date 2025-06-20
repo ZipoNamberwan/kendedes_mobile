@@ -1,20 +1,11 @@
-import 'package:hive_ce/hive.dart';
-import 'package:kendedes_mobile/hive/hive_types.dart';
 import 'package:kendedes_mobile/models/organization.dart';
 import 'package:kendedes_mobile/models/user_role.dart';
-part 'user.g.dart';
 
-@HiveType(typeId: userTypeId)
-class User extends HiveObject {
-  @HiveField(0)
+class User {
   final String id;
-  @HiveField(1)
   final String email;
-  @HiveField(2)
   final String firstname;
-  @HiveField(3)
   final Organization? organization;
-  @HiveField(4)
   final List<UserRole> roles;
 
   User({

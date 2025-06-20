@@ -75,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
     if (await canLaunchUrl(Uri.parse(ssoUrl))) {
       await launchUrl(Uri.parse(ssoUrl), mode: LaunchMode.externalApplication);
     } else {
-      _loginBloc.add(ThrowLoginError('Could not launch SSO login'));
+      _loginBloc.add(ThrowLoginError('Pastikan menggunakan Google Chrome'));
     }
   }
 

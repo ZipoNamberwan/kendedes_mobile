@@ -9,10 +9,10 @@ class TelegramLogger {
 
   static Future<void> send(String message) async {
     try {
-      await _dio.post(
-        'https://api.telegram.org/bot$_token/sendMessage',
-        data: {'chat_id': _chatId, 'text': message, 'parse_mode': 'Markdown'},
-      );
+      // await _dio.post(
+      //   'https://api.telegram.org/bot$_token/sendMessage',
+      //   data: {'chat_id': _chatId, 'text': message, 'parse_mode': 'Markdown'},
+      // );
     } catch (e) {
       // silent failure, do not throw
     }

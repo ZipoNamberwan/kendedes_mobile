@@ -1,11 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
-import 'package:kendedes_mobile/hive/hive_boxes.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
@@ -22,11 +20,9 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       emit(InitializingStarted());
       try {
         // Open the Hive box for tag data
-        final box = await Hive.openBox<TagData>(tagDataBox);
-        final List<TagData> tags =
-            box.values
-                .where((tag) => tag.project.id == event.project.id)
-                .toList();
+        final List<TagData> tags = await TaggingRepository().getAllByProjectId(
+          event.project.id,
+        );
 
         final User? currentUser = AuthRepository().getUser();
 
@@ -35,7 +31,6 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           InitializingSuccess(
             data: state.data.copyWith(
               project: event.project,
-              tagDataBox: box,
               tags: tags,
               currentUser: currentUser,
             ),
@@ -99,7 +94,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             );
 
             await TaggingRepository().deleteTagging(event.tagData.id);
-            await state.data.tagDataBox?.delete(event.tagData.id);
+            await TaggingRepository().deleteById(event.tagData.id);
             final updatedTags = List<TagData>.from(state.data.tags)
               ..removeWhere((tag) => tag.id == event.tagData.id);
 
@@ -173,7 +168,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             );
 
             if (result) {
-              await state.data.tagDataBox?.deleteAll(deletedTagIds);
+              await TaggingRepository().deleteByIds(deletedTagIds);
 
               emit(
                 DeleteMultipleTagsSuccess(
@@ -268,14 +263,14 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
           if (ids.isNotEmpty) {
             // Update local Hive box
-            final tagBox = state.data.tagDataBox;
             for (final tag in uploadedTags) {
               if (ids.contains(tag.id)) {
                 final updatedTag = tag.copyWith(
                   hasChanged: false,
                   hasSentToServer: true,
                 );
-                await tagBox?.put(updatedTag.id, updatedTag);
+                //TODO: can be optimized by using a batch operation
+                await TaggingRepository().insertOrUpdate(updatedTag);
               }
             }
 
@@ -473,9 +468,8 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           user: user,
         );
 
-        // 🔐 Save to Hive
-        final tagBox = state.data.tagDataBox;
-        await tagBox?.put(newTag.id, newTag);
+        // 🔐 Save to SQL Lite
+        await TaggingRepository().insertOrUpdate(newTag);
 
         final updatedTags = [...state.data.tags, newTag];
 
@@ -498,7 +492,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               hasChanged: false,
               hasSentToServer: true,
             );
-            await tagBox?.put(savedTag.id, savedTag);
+            await TaggingRepository().insertOrUpdate(savedTag);
 
             final updatedTags =
                 state.data.tags
@@ -569,13 +563,17 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           user: event.tagData.user,
         );
 
-        // 🔐 Save to Hive
-        final tagBox = state.data.tagDataBox;
-        await tagBox?.put(updatedTag.id, updatedTag);
+        // 🔐 Save to db
+        await TaggingRepository().insertOrUpdate(updatedTag);
 
         // Update tags list
         final updatedTags =
             state.data.tags
+                .map((tag) => tag.id == event.tagData.id ? updatedTag : tag)
+                .toList();
+        // Update selected tags if the edited tag is selected
+        final updatedSelectedTags =
+            state.data.selectedTags
                 .map((tag) => tag.id == event.tagData.id ? updatedTag : tag)
                 .toList();
 
@@ -585,6 +583,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             successMessage: 'Tagging berhasil disimpan',
             data: state.data.copyWith(
               tags: updatedTags,
+              selectedTags: updatedSelectedTags,
               isSubmitting: false,
               formFields: validationResult.updatedFields,
             ),
@@ -598,16 +597,23 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               hasChanged: false,
               hasSentToServer: true,
             );
-            await tagBox?.put(savedTag.id, savedTag);
+            await TaggingRepository().insertOrUpdate(savedTag);
 
             final updatedTags =
                 state.data.tags
                     .map((tag) => tag.id == savedTag.id ? savedTag : tag)
                     .toList();
+
+            final updatedSelectedTags =
+                state.data.selectedTags
+                    .map((tag) => tag.id == savedTag.id ? savedTag : tag)
+                    .toList();
+                    
             emit(
               TaggingState(
                 data: state.data.copyWith(
                   tags: updatedTags,
+                  selectedTags: updatedSelectedTags,
                   filteredTags: updatedTags,
                 ),
               ),

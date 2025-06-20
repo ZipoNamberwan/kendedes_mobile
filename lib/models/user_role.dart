@@ -1,12 +1,5 @@
-import 'package:hive_ce/hive.dart';
-import 'package:kendedes_mobile/hive/hive_types.dart';
-part 'user_role.g.dart';
-
-@HiveType(typeId: userRoleTypeId)
-class UserRole extends HiveObject {
-  @HiveField(0)
+class UserRole {
   final String id;
-  @HiveField(1)
   final String name;
 
   UserRole({required this.id, required this.name});

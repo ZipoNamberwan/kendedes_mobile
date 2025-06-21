@@ -13,7 +13,7 @@ class ProjectListAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: preferredSize.height,
+      height: preferredSize.height + 20,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -52,7 +52,7 @@ class ProjectListAppBar extends StatelessWidget implements PreferredSizeWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Projek',
+                  'Kendedes Mobile',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -61,7 +61,7 @@ class ProjectListAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
                 Text(
-                  'Kelola projek updating usaha',
+                  'Tag Anywhere. Discover Everywhere.',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 12,

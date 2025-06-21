@@ -477,7 +477,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                                 ),
                                 const Flexible(
                                   child: Text(
-                                    'Blm sinkron',
+                                    'Blm upload',
                                     style: TextStyle(fontSize: 12),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -779,7 +779,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                             label: Text(
                               shouldSentToServerTags.isNotEmpty
                                   ? 'Upload Semua (${shouldSentToServerTags.length})'
-                                  : 'Semua Telah Tersinkron',
+                                  : 'Semua Telah Terupload',
                               style: const TextStyle(fontSize: 12),
                             ),
                             style: ElevatedButton.styleFrom(

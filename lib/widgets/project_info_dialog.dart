@@ -208,7 +208,7 @@ class ProjectInfoDialog extends StatelessWidget {
 
                             // Synced Tags
                             _buildStatRow(
-                              'Tersinkron',
+                              'Terupload',
                               syncedCount.toString(),
                               Colors.green.shade600,
                               Icons.cloud_done,
@@ -218,7 +218,7 @@ class ProjectInfoDialog extends StatelessWidget {
 
                             // Unsynced Tags
                             _buildStatRow(
-                              'Belum Tersinkron',
+                              'Belum Terupload',
                               unsyncedCount.toString(),
                               Colors.red.shade600,
                               Icons.cloud_off,
@@ -247,7 +247,7 @@ class ProjectInfoDialog extends StatelessWidget {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                'Data tagging akan disimpan secara lokal dan tersinkron dengan server jika dikirim.',
+                                'Data tagging akan disimpan secara lokal dan terupload dengan server jika dikirim.',
                                 style: TextStyle(
                                   color: Colors.blue.shade700,
                                   fontSize: 11,

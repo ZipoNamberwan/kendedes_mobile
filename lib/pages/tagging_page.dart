@@ -463,770 +463,554 @@ class _TaggingPageState extends State<TaggingPage>
         }
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
-          body: LayoutBuilder(
-            builder: (context, constraints) {
-              final mapSize = Size(constraints.maxWidth, constraints.maxHeight);
-              return Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                    child: FlutterMap(
-                      mapController: _mapController,
-                      options: MapOptions(
-                        initialCenter: LatLng(-7.9666, 112.6326),
-                        initialZoom: state.data.currentZoom,
-                        onLongPress: (tapPosition, point) => {},
-                        onMapReady: () {
-                          _onMapReady();
-                        },
+          body: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final mapSize = Size(
+                  constraints.maxWidth,
+                  constraints.maxHeight,
+                );
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
                       ),
-                      children: [
-                        TileLayer(
-                          urlTemplate:
-                              state.data.selectedMapType?.url ??
-                              MapType.openStreetMapDefault.url,
-                          userAgentPackageName: 'com.example.kendedes_mobile',
+                      child: FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: LatLng(-7.9666, 112.6326),
+                          initialZoom: state.data.currentZoom,
+                          onLongPress: (tapPosition, point) => {},
+                          onMapReady: () {
+                            _onMapReady();
+                          },
                         ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                state.data.selectedMapType?.url ??
+                                MapType.openStreetMapDefault.url,
+                            userAgentPackageName: 'com.example.kendedes_mobile',
+                          ),
 
-                        // // Polygon layer
-                        // PolygonLayer(
-                        //   polygons:
-                        //       _polygonData
-                        //           .map(
-                        //             (polygonData) => Polygon(
-                        //               points: polygonData.points,
-                        //               color: Colors.orange.withValues(alpha: 0.3),
-                        //               borderStrokeWidth: 2,
-                        //               borderColor: Colors.orange,
-                        //             ),
-                        //           )
-                        //           .toList(),
-                        // ),
+                          // // Polygon layer
+                          // PolygonLayer(
+                          //   polygons:
+                          //       _polygonData
+                          //           .map(
+                          //             (polygonData) => Polygon(
+                          //               points: polygonData.points,
+                          //               color: Colors.orange.withValues(alpha: 0.3),
+                          //               borderStrokeWidth: 2,
+                          //               borderColor: Colors.orange,
+                          //             ),
+                          //           )
+                          //           .toList(),
+                          // ),
 
-                        // Marker layer from bloc state
-                        MarkerLayer(
-                          markers: [
-                            // User tags: show selected tags above non-selected tags
-                            ...[
-                              ...state.data.tags.where(
-                                (tag) => !state.data.selectedTags.contains(tag),
-                              ),
-                              ...state.data.selectedTags,
-                            ].map((tagData) {
-                              final isSelected = state.data.selectedTags
-                                  .contains(tagData);
+                          // Marker layer from bloc state
+                          MarkerLayer(
+                            markers: [
+                              // User tags: show selected tags above non-selected tags
+                              ...[
+                                ...state.data.tags.where(
+                                  (tag) =>
+                                      !state.data.selectedTags.contains(tag),
+                                ),
+                                ...state.data.selectedTags,
+                              ].map((tagData) {
+                                final isSelected = state.data.selectedTags
+                                    .contains(tagData);
 
-                              final labelType =
-                                  state.data.selectedLabelType?.key;
-                              final currentUser = state.data.currentUser;
-                              final currentProject = state.data.project;
-                              void onMarkerTap() {
-                                _handleMarkerClick(
-                                  tagData,
-                                  state.data.project,
-                                  state.data.currentUser,
-                                  state.data.tags,
-                                  state.data.selectedTags,
-                                  state.data.currentZoom,
-                                  mapSize,
-                                );
-                              }
-
-                              final mode = MarkerDisplayStrategy.getRenderMode(
-                                zoom: state.data.currentZoom,
-                              );
-
-                              switch (mode) {
-                                case MarkerRenderMode.simple:
-                                  return Marker(
-                                    point: LatLng(
-                                      tagData.positionLat,
-                                      tagData.positionLng,
-                                    ),
-                                    alignment: Alignment.center,
-                                    width: isSelected ? 28 : 20,
-                                    height: isSelected ? 28 : 20,
-                                    child: SimpleMarkerWidget(
-                                      tagData: tagData,
-                                      isSelected: isSelected,
-                                      labelType: labelType,
-                                      currentUser: currentUser,
-                                      currentProject: currentProject,
-                                      onTap: onMarkerTap,
-                                    ),
+                                final labelType =
+                                    state.data.selectedLabelType?.key;
+                                final currentUser = state.data.currentUser;
+                                final currentProject = state.data.project;
+                                void onMarkerTap() {
+                                  _handleMarkerClick(
+                                    tagData,
+                                    state.data.project,
+                                    state.data.currentUser,
+                                    state.data.tags,
+                                    state.data.selectedTags,
+                                    state.data.currentZoom,
+                                    mapSize,
                                   );
-                                default:
-                                  return Marker(
-                                    point: LatLng(
-                                      tagData.positionLat,
-                                      tagData.positionLng,
-                                    ),
-                                    alignment: Alignment.center,
-                                    width: isSelected ? 130 : 120,
-                                    height: isSelected ? 130 : 120,
-                                    child: ComplexMarkerWidget(
-                                      tagData: tagData,
-                                      isSelected: isSelected,
-                                      labelType: labelType,
-                                      currentUser: currentUser,
-                                      currentProject: currentProject,
-                                      onTap: onMarkerTap,
-                                    ),
-                                  );
-                              }
-                            }),
+                                }
 
-                            // Current location marker
-                            if (state.data.currentLocation != null)
-                              Marker(
-                                point: state.data.currentLocation!,
-                                width: 70,
-                                height: 70,
-                                child: IgnorePointer(
-                                  ignoring: true,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      // Animated ripple effect
-                                      AnimatedBuilder(
-                                        animation: _rippleAnimation,
-                                        builder: (context, child) {
-                                          return Container(
-                                            width: 70 * _rippleAnimation.value,
-                                            height: 70 * _rippleAnimation.value,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: Colors.blue.withValues(
-                                                alpha:
-                                                    (1 -
-                                                        _rippleAnimation
-                                                            .value) *
-                                                    0.3,
-                                              ),
-                                              border: Border.all(
+                                final mode =
+                                    MarkerDisplayStrategy.getRenderMode(
+                                      zoom: state.data.currentZoom,
+                                    );
+
+                                switch (mode) {
+                                  case MarkerRenderMode.simple:
+                                    return Marker(
+                                      point: LatLng(
+                                        tagData.positionLat,
+                                        tagData.positionLng,
+                                      ),
+                                      alignment: Alignment.center,
+                                      width: isSelected ? 28 : 20,
+                                      height: isSelected ? 28 : 20,
+                                      child: SimpleMarkerWidget(
+                                        tagData: tagData,
+                                        isSelected: isSelected,
+                                        labelType: labelType,
+                                        currentUser: currentUser,
+                                        currentProject: currentProject,
+                                        onTap: onMarkerTap,
+                                      ),
+                                    );
+                                  default:
+                                    return Marker(
+                                      point: LatLng(
+                                        tagData.positionLat,
+                                        tagData.positionLng,
+                                      ),
+                                      alignment: Alignment.center,
+                                      width: isSelected ? 130 : 120,
+                                      height: isSelected ? 130 : 120,
+                                      child: ComplexMarkerWidget(
+                                        tagData: tagData,
+                                        isSelected: isSelected,
+                                        labelType: labelType,
+                                        currentUser: currentUser,
+                                        currentProject: currentProject,
+                                        onTap: onMarkerTap,
+                                      ),
+                                    );
+                                }
+                              }),
+
+                              // Current location marker
+                              if (state.data.currentLocation != null)
+                                Marker(
+                                  point: state.data.currentLocation!,
+                                  width: 70,
+                                  height: 70,
+                                  child: IgnorePointer(
+                                    ignoring: true,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        // Animated ripple effect
+                                        AnimatedBuilder(
+                                          animation: _rippleAnimation,
+                                          builder: (context, child) {
+                                            return Container(
+                                              width:
+                                                  70 * _rippleAnimation.value,
+                                              height:
+                                                  70 * _rippleAnimation.value,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
                                                 color: Colors.blue.withValues(
                                                   alpha:
-                                                      1 -
-                                                      _rippleAnimation.value,
+                                                      (1 -
+                                                          _rippleAnimation
+                                                              .value) *
+                                                      0.3,
                                                 ),
-                                                width: 2,
+                                                border: Border.all(
+                                                  color: Colors.blue.withValues(
+                                                    alpha:
+                                                        1 -
+                                                        _rippleAnimation.value,
+                                                  ),
+                                                  width: 2,
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      // Main location dot
-                                      Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 3,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(
-                                                alpha: 0.4,
-                                              ),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 3),
-                                            ),
-                                          ],
+                                            );
+                                          },
                                         ),
-                                      ),
-                                    ],
+                                        // Main location dot
+                                        Container(
+                                          width: 20,
+                                          height: 20,
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 3,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.4,
+                                                ),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 3),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                        Scalebar(
-                          textStyle: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          padding: const EdgeInsets.only(
-                            right: 10,
-                            left: 50,
-                            bottom: 120,
-                          ),
-                          lineColor: Colors.grey.shade700,
-                          alignment: Alignment.bottomLeft,
-                          length: ScalebarLength.l,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Zoom level indicator
-                  Positioned(
-                    top: MediaQuery.of(context).padding.top + 100,
-                    left: 16,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
                             ],
                           ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.location_on,
-                                    size: 12,
-                                    color: Colors.orange.shade600,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Total tagging:',
+                          Scalebar(
+                            textStyle: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            padding: const EdgeInsets.only(
+                              right: 10,
+                              left: 50,
+                              bottom: 120,
+                            ),
+                            lineColor: Colors.grey.shade700,
+                            alignment: Alignment.bottomLeft,
+                            length: ScalebarLength.l,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Zoom level indicator
+                    Positioned(
+                      top: MediaQuery.of(context).padding.top + 100,
+                      left: 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.location_on,
+                                      size: 12,
+                                      color: Colors.orange.shade600,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Total tagging:',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade800,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 16),
+                                  child: Text(
+                                    '${state.data.tags.length} di map',
                                     style: TextStyle(
                                       color: Colors.grey.shade800,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                ],
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 16),
-                                child: Text(
-                                  '${state.data.tags.length} di map',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade800,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            'Zoom Level: ${state.data.currentZoom.toStringAsFixed(1)}',
-                            style: TextStyle(
-                              color: Colors.grey.shade800,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
+                              ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Color Legend Button
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
                               borderRadius: BorderRadius.circular(12),
-                              onTap: _showColorLegendDialog,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.palette,
-                                      size: 12,
-                                      color: Colors.purple.shade600,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Legenda',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.grey.shade800,
+                              ],
+                            ),
+                            child: Text(
+                              'Zoom Level: ${state.data.currentZoom.toStringAsFixed(1)}',
+                              style: TextStyle(
+                                color: Colors.grey.shade800,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Color Legend Button
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: _showColorLegendDialog,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.palette,
+                                        size: 12,
+                                        color: Colors.purple.shade600,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Legenda',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Floating title bar
-                  Positioned(
-                    top: MediaQuery.of(context).padding.top + 12,
-                    left: 16,
-                    right: 16,
-                    child: Container(
-                      height: 64,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        gradient: const LinearGradient(
-                          colors: [Colors.orange, Colors.deepOrange],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.orange.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
                         ],
                       ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.folder_outlined,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      state.data.project.name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 2),
-
-                                    Builder(
-                                      builder: (context) {
-                                        final syncedCount =
-                                            state.data.tags.where((tag) {
-                                              return tag.hasSentToServer &&
-                                                  tag.project.id ==
-                                                      state.data.project.id;
-                                            }).length;
-                                        final unsyncedCount =
-                                            state.data.tags.where((tag) {
-                                              return !tag.hasSentToServer &&
-                                                  tag.project.id ==
-                                                      state.data.project.id;
-                                            }).length;
-
-                                        return Row(
-                                          children: [
-                                            // Synced tags counter
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.green.withValues(
-                                                  alpha: 0.8,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  const Icon(
-                                                    Icons.cloud_done_rounded,
-                                                    color: Colors.white,
-                                                    size: 10,
-                                                  ),
-                                                  const SizedBox(width: 2),
-                                                  Text(
-                                                    '$syncedCount',
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 9,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            // Unsynced tags counter
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.2,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  const Icon(
-                                                    Icons.cloud_off_rounded,
-                                                    color: Colors.white,
-                                                    size: 10,
-                                                  ),
-                                                  const SizedBox(width: 2),
-                                                  Text(
-                                                    '$unsyncedCount',
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 9,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Project detail button
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(14),
-                                    onTap: _showProjectInfoDialog,
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(12),
-                                      child: Icon(
-                                        Icons.info_outline,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(14),
-                                    onTap: () => _toggleSidebar(true),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(12),
-                                      child: Icon(
-                                        Icons.menu_rounded,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                     ),
-                  ),
 
-                  // Right action buttons column
-                  Positioned(
-                    top: MediaQuery.of(context).padding.top + 92,
-                    right: 16,
-                    child: Column(
-                      children: [
-                        // Compass button
-                        _buildActionButton(
-                          icon: Icons.navigation_rounded,
-                          iconColor: Colors.red,
-                          onPressed: () {
-                            _mapController.rotate(0.0);
-                          },
-                          child: Transform.rotate(
-                            angle: state.data.rotation * math.pi / 180,
-                            child: Icon(
-                              Icons.navigation_rounded,
-                              color: Colors.red,
-                              size: 22,
+                    // Floating title bar
+                    Positioned(
+                      top: MediaQuery.of(context).padding.top + 12,
+                      left: 16,
+                      right: 16,
+                      child: Container(
+                        height: 64,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: const LinearGradient(
+                            colors: [Colors.orange, Colors.deepOrange],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
                             ),
-                          ),
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-
-                        const SizedBox(height: 12),
-
-                        // Label type button
-                        _buildActionButton(
-                          icon: Icons.label,
-                          iconColor: Colors.green,
-                          onPressed: () {
-                            _showLabelTypeDialog(state.data.selectedLabelType);
-                          },
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Map type button
-                        _buildActionButton(
-                          icon: Icons.layers_rounded,
-                          iconColor: Colors.blue.shade600,
-                          onPressed: () {
-                            _showMapTypeDialog(state.data.selectedMapType);
-                          },
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Clear selection button
-                        if (state.data.selectedTags.isNotEmpty) ...[
-                          _buildActionButton(
-                            icon: Icons.clear_all_rounded,
-                            iconColor: Colors.red,
-                            onPressed:
-                                () => _taggingBloc.add(ClearTagSelection()),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  // Bottom action buttons row
-                  Positioned(
-                    bottom: 120,
-                    right: 16,
-                    child: Column(
-                      children: [
-                        // Refresh tagging button
-                        _buildActionButton(
-                          icon: Icons.sync,
-                          iconColor: Colors.deepOrange,
-                          onPressed: () {
-                            _getTaggingInsideBounds();
-                          },
-                          child:
-                              state.data.isTaggingInsideBoundsLoading
-                                  ? Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      const SizedBox(
-                                        child: CircularProgressIndicator(
-                                          color: Colors.deepOrange,
-                                          strokeWidth: 2.5,
-                                        ),
-                                      ),
-                                      const Icon(
-                                        Icons.sync,
-                                        color: Colors.deepOrange,
-                                        size: 14,
-                                      ),
-                                    ],
-                                  )
-                                  : const Icon(
-                                    Icons.sync,
-                                    color: Colors.deepOrange,
-                                    size: 22,
-                                  ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // My location button
-                        _buildActionButton(
-                          icon: Icons.my_location_rounded,
-                          iconColor: Colors.deepOrange,
-                          isEnabled: !state.data.isLoadingCurrentLocation,
-                          onPressed:
-                              () =>
-                                  _taggingBloc.add(const GetCurrentLocation()),
-                          child:
-                              state.data.isLoadingCurrentLocation
-                                  ? Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      const SizedBox(
-                                        child: CircularProgressIndicator(
-                                          color: Colors.deepOrange,
-                                          strokeWidth: 2.5,
-                                        ),
-                                      ),
-                                      const Icon(
-                                        Icons.my_location_rounded,
-                                        color: Colors.deepOrange,
-                                        size: 14,
-                                      ),
-                                    ],
-                                  )
-                                  : const Icon(
-                                    Icons.my_location_rounded,
-                                    color: Colors.deepOrange,
-                                    size: 22,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Main tag location button
-                  Positioned(
-                    bottom: 32,
-                    left: 16,
-                    right: 16,
-                    child: Container(
-                      height: 64,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(32),
-                        gradient: const LinearGradient(
-                          colors: [Colors.orange, Colors.deepOrange],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.orange.withValues(alpha: 0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(32),
-                          splashColor: Colors.white.withValues(alpha: 0.2),
-                          highlightColor: Colors.white.withValues(alpha: 0.1),
-                          onTap:
-                              state.data.isLoadingCurrentLocation ||
-                                      state.data.isLoadingTag
-                                  ? null
-                                  : () => _taggingBloc.add(RecordTagLocation()),
-                          child: Center(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                if (state.data.isLoadingCurrentLocation ||
-                                    state.data.isLoadingTag)
-                                  Container(
-                                    width: 24,
-                                    height: 24,
-                                    margin: const EdgeInsets.only(right: 12),
-                                    child: const CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
-                                else
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    margin: const EdgeInsets.only(right: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.2,
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.folder_outlined,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        state.data.project.name,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.add_location_alt_rounded,
-                                      color: Colors.white,
-                                      size: 18,
+                                      const SizedBox(height: 2),
+
+                                      Builder(
+                                        builder: (context) {
+                                          final syncedCount =
+                                              state.data.tags.where((tag) {
+                                                return tag.hasSentToServer &&
+                                                    tag.project.id ==
+                                                        state.data.project.id;
+                                              }).length;
+                                          final unsyncedCount =
+                                              state.data.tags.where((tag) {
+                                                return !tag.hasSentToServer &&
+                                                    tag.project.id ==
+                                                        state.data.project.id;
+                                              }).length;
+
+                                          return Row(
+                                            children: [
+                                              // Synced tags counter
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green
+                                                      .withValues(alpha: 0.8),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.cloud_done_rounded,
+                                                      color: Colors.white,
+                                                      size: 10,
+                                                    ),
+                                                    const SizedBox(width: 2),
+                                                    Text(
+                                                      '$syncedCount',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 9,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              // Unsynced tags counter
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.cloud_off_rounded,
+                                                      color: Colors.white,
+                                                      size: 10,
+                                                    ),
+                                                    const SizedBox(width: 2),
+                                                    Text(
+                                                      '$unsyncedCount',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 9,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Project detail button
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(14),
+                                      onTap: _showProjectInfoDialog,
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: Icon(
+                                          Icons.info_outline,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                Text(
-                                  state.data.isLoadingCurrentLocation
-                                      ? 'Mengambil Lokasi...'
-                                      : state.data.isLoadingTag
-                                      ? 'Tagging...'
-                                      : 'Tag Usaha',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.3,
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(14),
+                                      onTap: () => _toggleSidebar(true),
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: Icon(
+                                          Icons.menu_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1235,22 +1019,252 @@ class _TaggingPageState extends State<TaggingPage>
                         ),
                       ),
                     ),
-                  ),
 
-                  // Sidebar overlay
-                  if (state.data.isSideBarOpen)
-                    GestureDetector(
-                      onTap: () => _toggleSidebar(false),
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.3),
+                    // Right action buttons column
+                    Positioned(
+                      top: MediaQuery.of(context).padding.top + 92,
+                      right: 16,
+                      child: Column(
+                        children: [
+                          // Compass button
+                          _buildActionButton(
+                            icon: Icons.navigation_rounded,
+                            iconColor: Colors.red,
+                            onPressed: () {
+                              _mapController.rotate(0.0);
+                            },
+                            child: Transform.rotate(
+                              angle: state.data.rotation * math.pi / 180,
+                              child: Icon(
+                                Icons.navigation_rounded,
+                                color: Colors.red,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Label type button
+                          _buildActionButton(
+                            icon: Icons.label,
+                            iconColor: Colors.green,
+                            onPressed: () {
+                              _showLabelTypeDialog(
+                                state.data.selectedLabelType,
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Map type button
+                          _buildActionButton(
+                            icon: Icons.layers_rounded,
+                            iconColor: Colors.blue.shade600,
+                            onPressed: () {
+                              _showMapTypeDialog(state.data.selectedMapType);
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Clear selection button
+                          if (state.data.selectedTags.isNotEmpty) ...[
+                            _buildActionButton(
+                              icon: Icons.clear_all_rounded,
+                              iconColor: Colors.red,
+                              onPressed:
+                                  () => _taggingBloc.add(ClearTagSelection()),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
 
-                  // Right sidebar
-                  const SidebarWidget(),
-                ],
-              );
-            },
+                    // Bottom action buttons row
+                    Positioned(
+                      bottom: 120,
+                      right: 16,
+                      child: Column(
+                        children: [
+                          // Refresh tagging button
+                          _buildActionButton(
+                            icon: Icons.sync,
+                            iconColor: Colors.deepOrange,
+                            onPressed: () {
+                              _getTaggingInsideBounds();
+                            },
+                            child:
+                                state.data.isTaggingInsideBoundsLoading
+                                    ? Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        const SizedBox(
+                                          child: CircularProgressIndicator(
+                                            color: Colors.deepOrange,
+                                            strokeWidth: 2.5,
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.sync,
+                                          color: Colors.deepOrange,
+                                          size: 14,
+                                        ),
+                                      ],
+                                    )
+                                    : const Icon(
+                                      Icons.sync,
+                                      color: Colors.deepOrange,
+                                      size: 22,
+                                    ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // My location button
+                          _buildActionButton(
+                            icon: Icons.my_location_rounded,
+                            iconColor: Colors.deepOrange,
+                            isEnabled: !state.data.isLoadingCurrentLocation,
+                            onPressed:
+                                () => _taggingBloc.add(
+                                  const GetCurrentLocation(),
+                                ),
+                            child:
+                                state.data.isLoadingCurrentLocation
+                                    ? Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        const SizedBox(
+                                          child: CircularProgressIndicator(
+                                            color: Colors.deepOrange,
+                                            strokeWidth: 2.5,
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.my_location_rounded,
+                                          color: Colors.deepOrange,
+                                          size: 14,
+                                        ),
+                                      ],
+                                    )
+                                    : const Icon(
+                                      Icons.my_location_rounded,
+                                      color: Colors.deepOrange,
+                                      size: 22,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Main tag location button
+                    Positioned(
+                      bottom: 32,
+                      left: 16,
+                      right: 16,
+                      child: Container(
+                        height: 64,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          gradient: const LinearGradient(
+                            colors: [Colors.orange, Colors.deepOrange],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withValues(alpha: 0.4),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(32),
+                            splashColor: Colors.white.withValues(alpha: 0.2),
+                            highlightColor: Colors.white.withValues(alpha: 0.1),
+                            onTap:
+                                state.data.isLoadingCurrentLocation ||
+                                        state.data.isLoadingTag
+                                    ? null
+                                    : () =>
+                                        _taggingBloc.add(RecordTagLocation()),
+                            child: Center(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (state.data.isLoadingCurrentLocation ||
+                                      state.data.isLoadingTag)
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      margin: const EdgeInsets.only(right: 12),
+                                      child: const CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  else
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      margin: const EdgeInsets.only(right: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.add_location_alt_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  Text(
+                                    state.data.isLoadingCurrentLocation
+                                        ? 'Mengambil Lokasi...'
+                                        : state.data.isLoadingTag
+                                        ? 'Tagging...'
+                                        : 'Tag Usaha',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Sidebar overlay
+                    if (state.data.isSideBarOpen)
+                      GestureDetector(
+                        onTap: () => _toggleSidebar(false),
+                        child: Container(
+                          color: Colors.black.withValues(alpha: 0.3),
+                        ),
+                      ),
+
+                    // Right sidebar
+                    const SidebarWidget(),
+                  ],
+                );
+              },
+            ),
           ),
         );
       },

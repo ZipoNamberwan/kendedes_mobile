@@ -4,12 +4,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 // adb shell "run-as kendedes.douwes.dekker cat /data/user/0/kendedes.douwes.dekker/app_flutter/tagging_app.db" > my_local_db.db
-class LocalDatabaseProvider {
-  static final LocalDatabaseProvider _instance =
-      LocalDatabaseProvider._internal();
-  factory LocalDatabaseProvider() => _instance;
+class LocalDbProvider {
+  static final LocalDbProvider _instance = LocalDbProvider._internal();
+  factory LocalDbProvider() => _instance;
 
-  LocalDatabaseProvider._internal();
+  LocalDbProvider._internal();
 
   bool _initialized = false;
   late Database _database;

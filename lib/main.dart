@@ -9,12 +9,14 @@ import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
-import 'package:kendedes_mobile/classes/repositories/local_database_repository.dart';
-import 'package:kendedes_mobile/classes/repositories/organization_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/local_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/organization_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/project_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
-import 'package:kendedes_mobile/classes/repositories/user_repository.dart';
-import 'package:kendedes_mobile/classes/repositories/user_role_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/user_role_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/version_checking_repository.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
 import 'pages/login_page.dart';
@@ -55,10 +57,12 @@ Future<void> _initializeApp() async {
   await ProjectRepository().init();
   await TaggingRepository().init();
   await VersionCheckingRepository().init();
-  await LocalDatabaseRepository().init();
-  await OrganizationRepository().init();
-  await UserRoleRepository().init();
-  await UserRepository().init();
+  await LocalDbRepository().init();
+  await OrganizationDbRepository().init();
+  await UserRoleDbRepository().init();
+  await UserDbRepository().init();
+  await ProjectDbRepository().init();
+  await TaggingDbRepository().init();
 }
 
 class MyApp extends StatelessWidget {

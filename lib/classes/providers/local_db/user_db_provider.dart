@@ -1,19 +1,19 @@
-import 'package:kendedes_mobile/classes/providers/local_database_provider.dart';
+import 'package:kendedes_mobile/classes/providers/local_db/local_db_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-class UserProvider {
-  static final UserProvider _instance = UserProvider._internal();
-  factory UserProvider() => _instance;
+class UserDbProvider {
+  static final UserDbProvider _instance = UserDbProvider._internal();
+  factory UserDbProvider() => _instance;
 
-  UserProvider._internal();
+  UserDbProvider._internal();
 
-  late LocalDatabaseProvider _dbProvider;
+  late LocalDbProvider _dbProvider;
   bool _initialized = false;
 
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
-    _dbProvider = LocalDatabaseProvider();
+    _dbProvider = LocalDbProvider();
     await _dbProvider.init();
   }
 

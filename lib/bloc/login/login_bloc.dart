@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
-import 'package:kendedes_mobile/classes/repositories/user_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'login_event.dart';
 import 'login_state.dart';
@@ -120,7 +120,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
             email: email!,
             password: password!,
           );
-          await UserRepository().insert(user);
+          await UserDbRepository().insert(user);
           emit(
             LoginSuccess(
               data: state.data.copyWith(isSuccess: true, isSubmitting: false),
@@ -169,7 +169,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         await AuthRepository().saveToken(event.token);
         final User user = User.fromJson(event.user);
         await AuthRepository().saveUser(user);
-        await UserRepository().insert(user);
+        await UserDbRepository().insert(user);
 
         emit(LoginSuccess(data: state.data.copyWith(isSuccess: true)));
       } catch (e) {

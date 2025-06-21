@@ -3,8 +3,9 @@ import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/project_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
-import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:uuid/uuid.dart';
 
@@ -19,26 +20,37 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             saveLoading: false,
             initLoading: false,
             deleteLoading: false,
+            currentUser: null,
           ),
         ),
       ) {
     on<Initialize>((event, emit) async {
       try {
-        emit(InitializingStarted(data: state.data.copyWith(initLoading: true)));
-
         final user = AuthRepository().getUser();
-        final projects = await ProjectRepository()
-            .getAllProjectByUserIdFromLocalDb(user?.id ?? '');
+
+        emit(
+          InitializingStarted(
+            data: state.data.copyWith(initLoading: true, currentUser: user),
+          ),
+        );
+
+        final projects = await ProjectDbRepository().getAllProjectByUser(
+          user?.id ?? '',
+        );
 
         if (projects.isEmpty) {
           await ApiServerHandler.run(
             action: () async {
               if (user?.id != null) {
-                final projects = await ProjectRepository().getProjects(
+                final map = await ProjectRepository().getProjectsWithTags(
                   user?.id ?? '',
                 );
+                final projects = map['projects'];
+                final tags = map['tags'];
 
-                await ProjectRepository().insertAllToLocalDb(projects);
+                await ProjectDbRepository().insertAll(projects);
+                await TaggingDbRepository().insertAll(tags);
+
                 emit(
                   InitializingSuccess(
                     data: state.data.copyWith(
@@ -114,7 +126,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
           action: () async {
             emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
             await ProjectRepository().createProject(newProject.toJson());
-            await ProjectRepository().insertToLocalDb(newProject);
+            await ProjectDbRepository().insert(newProject);
             emit(
               ProjectAddedSuccess(
                 data: state.data.copyWith(
@@ -201,7 +213,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
                       : project;
                 }).toList();
 
-            await ProjectRepository().insertToLocalDb(updatedProject);
+            await ProjectDbRepository().insert(updatedProject);
             emit(
               ProjectUpdatedSuccess(
                 data: state.data.copyWith(
@@ -253,8 +265,8 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             emit(ProjectState(data: state.data.copyWith(deleteLoading: true)));
             await ProjectRepository().deleteProject(event.id);
 
-            await ProjectRepository().deleteFromLocalDb(event.id);
-            await TaggingRepository().deleteAllByProjectId(event.id);
+            await ProjectDbRepository().delete(event.id);
+            await TaggingDbRepository().deleteAllByProjectId(event.id);
 
             emit(
               ProjectDeletedSuccess(

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/user.dart';
 
 class ProjectState extends Equatable {
   final ProjectStateData data;
@@ -79,6 +80,7 @@ class ProjectFormFieldState<T> {
 class ProjectStateData {
   final List<Project> projects;
   final Map<String, ProjectFormFieldState<dynamic>> formFields;
+  final User? currentUser;
 
   final bool saveLoading;
   final bool initLoading;
@@ -86,6 +88,7 @@ class ProjectStateData {
 
   ProjectStateData({
     required this.projects,
+    this.currentUser,
     required this.saveLoading,
     required this.initLoading,
     required this.deleteLoading,
@@ -105,6 +108,7 @@ class ProjectStateData {
 
   ProjectStateData copyWith({
     List<Project>? projects,
+    User? currentUser,
     Map<String, ProjectFormFieldState<dynamic>>? formFields,
     bool? resetForm,
     bool? saveLoading,
@@ -113,6 +117,7 @@ class ProjectStateData {
   }) {
     return ProjectStateData(
       projects: projects ?? this.projects,
+      currentUser: currentUser ?? this.currentUser,
       formFields:
           (resetForm ?? false)
               ? _generateFormFields()

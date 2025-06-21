@@ -1,29 +1,29 @@
-import 'package:kendedes_mobile/classes/providers/organization_provider.dart';
-import 'package:kendedes_mobile/classes/providers/user_provider.dart';
-import 'package:kendedes_mobile/classes/providers/user_role_provider.dart';
+import 'package:kendedes_mobile/classes/providers/local_db/organization_db_provider.dart';
+import 'package:kendedes_mobile/classes/providers/local_db/user_db_provider.dart';
+import 'package:kendedes_mobile/classes/providers/local_db/user_role_db_provider.dart';
 import 'package:kendedes_mobile/models/organization.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/models/user_role.dart';
 
-class UserRepository {
-  static final UserRepository _instance = UserRepository._internal();
-  factory UserRepository() => _instance;
+class UserDbRepository {
+  static final UserDbRepository _instance = UserDbRepository._internal();
+  factory UserDbRepository() => _instance;
 
-  UserRepository._internal();
+  UserDbRepository._internal();
 
-  late UserProvider _provider;
-  late OrganizationProvider _orgProvider;
-  late UserRoleProvider _roleProvider;
+  late UserDbProvider _provider;
+  late OrganizationDbProvider _orgProvider;
+  late UserRoleDbProvider _roleProvider;
   bool _initialized = false;
 
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
-    _provider = UserProvider();
+    _provider = UserDbProvider();
     await _provider.init();
-    _orgProvider = OrganizationProvider();
+    _orgProvider = OrganizationDbProvider();
     await _orgProvider.init();
-    _roleProvider = UserRoleProvider();
+    _roleProvider = UserRoleDbProvider();
     await _roleProvider.init();
   }
 

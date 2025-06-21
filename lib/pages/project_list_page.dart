@@ -6,8 +6,9 @@ import 'package:kendedes_mobile/bloc/project/project_state.dart';
 import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_event.dart';
 import 'package:kendedes_mobile/bloc/version/version_state.dart';
-import 'package:kendedes_mobile/classes/helpers.dart';
+import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/models/version.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/pages/tagging_page.dart';
@@ -17,6 +18,7 @@ import 'package:kendedes_mobile/widgets/project_form_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_project_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
+import 'package:kendedes_mobile/widgets/project_list_app_bar.dart';
 import 'package:kendedes_mobile/widgets/version_update_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -84,6 +86,161 @@ class _ProjectListPageState extends State<ProjectListPage>
     );
   }
 
+  void _showUserInfo(User user) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.orange.shade100,
+                  child: Icon(Icons.person, color: Colors.orange.shade600),
+                ),
+                const SizedBox(width: 12),
+                const Text('Informasi Pengguna'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoRow('Nama', user.firstname),
+                const SizedBox(height: 12),
+                _buildInfoRow('Email', user.email),
+                const SizedBox(height: 12),
+                _buildInfoRow(
+                  'Role',
+                  user.roles.isNotEmpty
+                      ? user.roles.map((e) => e.name).join(', ')
+                      : '-',
+                ),
+                const SizedBox(height: 12),
+                _buildInfoRow('Satker', user.organization?.name ?? '-'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Tutup'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _showLogoutConfirmation();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Logout'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showAppBarPopupMenu(BuildContext context, Offset position) async {
+    final value = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx,
+        position.dy,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      items: [
+        PopupMenuItem(
+          value: 'help',
+          child: Row(
+            children: [
+              Icon(Icons.help_rounded, size: 18, color: Colors.grey[600]),
+              const SizedBox(width: 12),
+              const Text(
+                'Panduan',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'feedback',
+          child: Row(
+            children: [
+              Icon(Icons.feedback_rounded, size: 18, color: Colors.grey[600]),
+              const SizedBox(width: 12),
+              const Text(
+                'Saran & Masukan',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'logout',
+          child: Row(
+            children: [
+              Icon(Icons.logout_rounded, size: 18, color: Colors.red[600]),
+              const SizedBox(width: 12),
+              Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.red[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    switch (value) {
+      case 'help':
+        _openUrl(AppConfig.helpUrl);
+        break;
+      case 'feedback':
+        _openUrl(AppConfig.feedbackUrl);
+        break;
+      case 'logout':
+        _showLogoutConfirmation();
+        break;
+    }
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ),
+        const Text(': '),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showVersionUpdateDialog(BuildContext context, Version? version) {
     if (version != null) {
       showDialog(
@@ -93,18 +250,18 @@ class _ProjectListPageState extends State<ProjectListPage>
             (ctx) => VersionUpdateDialog(
               version: version,
               onUpdate: () async {
-                final updateUrl = version.url ?? AppHelper.updateUrl;
-
-                if (await canLaunchUrl(Uri.parse(updateUrl))) {
-                  await launchUrl(
-                    Uri.parse(updateUrl),
-                    mode: LaunchMode.externalApplication,
-                  );
-                } else {}
+                final updateUrl = version.url ?? AppConfig.updateUrl;
+                _openUrl(updateUrl);
               },
             ),
       );
     }
+  }
+
+  Future<void> _openUrl(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {}
   }
 
   @override
@@ -154,127 +311,23 @@ class _ProjectListPageState extends State<ProjectListPage>
           }
           return Scaffold(
             backgroundColor: Colors.grey[50],
+            appBar: ProjectListAppBar(
+              onLeadingTap:
+                  () => _showUserInfo(
+                    state.data.currentUser ??
+                        User(
+                          email: '',
+                          firstname: '',
+                          id: '',
+                          organization: null,
+                          roles: [],
+                        ),
+                  ),
+              onMoreTap:
+                  (tapPosition) => _showAppBarPopupMenu(context, tapPosition),
+            ),
             body: Column(
               children: [
-                // Enhanced Header with glassmorphism effect
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.deepOrange.shade700,
-                        Colors.deepOrange.shade400,
-                        Colors.orange.shade700,
-                        Colors.orange.shade500,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.orange.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        offset: const Offset(0, 12),
-                        spreadRadius: 2,
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.folder_special_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Projek',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                Text(
-                                  'Kelola projek updating usaha',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          InkWell(
-                            onTap: _showLogoutConfirmation,
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.logout_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          InkWell(
-                            onTap: () => _showProjectForm(),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.add_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
                 // Enhanced Statistics Card
                 Container(
                   margin: const EdgeInsets.all(20),
@@ -341,39 +394,6 @@ class _ProjectListPageState extends State<ProjectListPage>
                           ],
                         ),
                       ),
-                      // Container(
-                      //   padding: const EdgeInsets.symmetric(
-                      //     horizontal: 16,
-                      //     vertical: 8,
-                      //   ),
-                      //   decoration: BoxDecoration(
-                      //     gradient: LinearGradient(
-                      //       colors: [
-                      //         Colors.orange.shade400,
-                      //         Colors.deepOrange.shade400,
-                      //       ],
-                      //       begin: Alignment.topLeft,
-                      //       end: Alignment.bottomRight,
-                      //     ),
-                      //     borderRadius: BorderRadius.circular(20),
-                      //     boxShadow: [
-                      //       BoxShadow(
-                      //         color: Colors.orange.withValues(alpha: 0.3),
-                      //         blurRadius: 8,
-                      //         offset: const Offset(0, 4),
-                      //       ),
-                      //     ],
-                      //   ),
-                      //   child: Text(
-                      //     state.data.projects.isEmpty ? 'Empty' : 'Active',
-                      //     style: const TextStyle(
-                      //       color: Colors.white,
-                      //       fontWeight: FontWeight.w600,
-                      //       fontSize: 12,
-                      //       letterSpacing: 0.5,
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -755,29 +775,32 @@ class _ProjectListPageState extends State<ProjectListPage>
                 ),
               ],
             ),
-            // floatingActionButton: Container(
-            //   decoration: BoxDecoration(
-            //     borderRadius: BorderRadius.circular(20),
-            //     boxShadow: [
-            //       BoxShadow(
-            //         color: Colors.orange.withValues(alpha: 0.4),
-            //         blurRadius: 20,
-            //         offset: const Offset(0, 8),
-            //       ),
-            //     ],
-            //   ),
-            //   child: FloatingActionButton.extended(
-            //     onPressed: () => _showProjectForm(),
-            //     backgroundColor: Colors.orange,
-            //     foregroundColor: Colors.white,
-            //     elevation: 0,
-            //     icon: const Icon(Icons.add_rounded),
-            //     label: const Text(
-            //       'New Project',
-            //       style: TextStyle(fontWeight: FontWeight.w600),
-            //     ),
-            //   ),
-            // ),
+            floatingActionButton:
+                state.data.projects.isNotEmpty
+                    ? Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.orange.withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: FloatingActionButton.extended(
+                        onPressed: () => _showProjectForm(),
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text(
+                          'Buat Projek',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    )
+                    : null,
           );
         },
       ),

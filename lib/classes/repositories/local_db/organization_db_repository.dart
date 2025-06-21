@@ -1,20 +1,20 @@
-import 'package:kendedes_mobile/classes/providers/organization_provider.dart';
+import 'package:kendedes_mobile/classes/providers/local_db/organization_db_provider.dart';
 import 'package:kendedes_mobile/models/organization.dart';
 
-class OrganizationRepository {
-  static final OrganizationRepository _instance =
-      OrganizationRepository._internal();
-  factory OrganizationRepository() => _instance;
+class OrganizationDbRepository {
+  static final OrganizationDbRepository _instance =
+      OrganizationDbRepository._internal();
+  factory OrganizationDbRepository() => _instance;
 
-  OrganizationRepository._internal();
+  OrganizationDbRepository._internal();
 
-  late OrganizationProvider _provider;
+  late OrganizationDbProvider _provider;
   bool _initialized = false;
 
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
-    _provider = OrganizationProvider();
+    _provider = OrganizationDbProvider();
     await _provider.init();
   }
 

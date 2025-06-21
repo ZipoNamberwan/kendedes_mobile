@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -20,9 +21,8 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       emit(InitializingStarted());
       try {
         // Open the Hive box for tag data
-        final List<TagData> tags = await TaggingRepository().getAllByProjectId(
-          event.project.id,
-        );
+        final List<TagData> tags = await TaggingDbRepository()
+            .getAllByProjectId(event.project.id);
 
         final User? currentUser = AuthRepository().getUser();
 
@@ -94,7 +94,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             );
 
             await TaggingRepository().deleteTagging(event.tagData.id);
-            await TaggingRepository().deleteById(event.tagData.id);
+            await TaggingDbRepository().deleteById(event.tagData.id);
             final updatedTags = List<TagData>.from(state.data.tags)
               ..removeWhere((tag) => tag.id == event.tagData.id);
 
@@ -168,7 +168,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             );
 
             if (result) {
-              await TaggingRepository().deleteByIds(deletedTagIds);
+              await TaggingDbRepository().deleteByIds(deletedTagIds);
 
               emit(
                 DeleteMultipleTagsSuccess(
@@ -270,7 +270,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                   hasSentToServer: true,
                 );
                 //TODO: can be optimized by using a batch operation
-                await TaggingRepository().insertOrUpdate(updatedTag);
+                await TaggingDbRepository().insertOrUpdate(updatedTag);
               }
             }
 
@@ -469,7 +469,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         );
 
         // 🔐 Save to SQL Lite
-        await TaggingRepository().insertOrUpdate(newTag);
+        await TaggingDbRepository().insertOrUpdate(newTag);
 
         final updatedTags = [...state.data.tags, newTag];
 
@@ -492,7 +492,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               hasChanged: false,
               hasSentToServer: true,
             );
-            await TaggingRepository().insertOrUpdate(savedTag);
+            await TaggingDbRepository().insertOrUpdate(savedTag);
 
             final updatedTags =
                 state.data.tags
@@ -564,7 +564,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         );
 
         // 🔐 Save to db
-        await TaggingRepository().insertOrUpdate(updatedTag);
+        await TaggingDbRepository().insertOrUpdate(updatedTag);
 
         // Update tags list
         final updatedTags =
@@ -597,7 +597,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               hasChanged: false,
               hasSentToServer: true,
             );
-            await TaggingRepository().insertOrUpdate(savedTag);
+            await TaggingDbRepository().insertOrUpdate(savedTag);
 
             final updatedTags =
                 state.data.tags
@@ -608,7 +608,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 state.data.selectedTags
                     .map((tag) => tag.id == savedTag.id ? savedTag : tag)
                     .toList();
-                    
+
             emit(
               TaggingState(
                 data: state.data.copyWith(

@@ -1,26 +1,25 @@
-import 'package:kendedes_mobile/classes/providers/local_database_provider.dart';
+import 'package:kendedes_mobile/classes/providers/local_db/local_db_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-class OrganizationProvider {
-  static final OrganizationProvider _instance =
-      OrganizationProvider._internal();
-  factory OrganizationProvider() => _instance;
+class UserRoleDbProvider {
+  static final UserRoleDbProvider _instance = UserRoleDbProvider._internal();
+  factory UserRoleDbProvider() => _instance;
 
-  OrganizationProvider._internal();
+  UserRoleDbProvider._internal();
 
-  late LocalDatabaseProvider _dbProvider;
+  late LocalDbProvider _dbProvider;
   bool _initialized = false;
 
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
-    _dbProvider = LocalDatabaseProvider();
+    _dbProvider = LocalDbProvider();
     await _dbProvider.init();
   }
 
   Future<void> insert(Map<String, dynamic> data) async {
     await _dbProvider.db.insert(
-      'organizations',
+      'user_roles',
       data,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -28,7 +27,7 @@ class OrganizationProvider {
 
   Future<Map<String, dynamic>?> getById(String id) async {
     final result = await _dbProvider.db.query(
-      'organizations',
+      'user_roles',
       where: 'id = ?',
       whereArgs: [id],
       limit: 1,
@@ -37,14 +36,10 @@ class OrganizationProvider {
   }
 
   Future<List<Map<String, dynamic>>> getAll() async {
-    return await _dbProvider.db.query('organizations');
+    return await _dbProvider.db.query('user_roles');
   }
 
   Future<void> delete(String id) async {
-    await _dbProvider.db.delete(
-      'organizations',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await _dbProvider.db.delete('user_roles', where: 'id = ?', whereArgs: [id]);
   }
 }

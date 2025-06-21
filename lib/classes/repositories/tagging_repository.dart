@@ -60,4 +60,6 @@ class TaggingRepository {
     final response = await _taggingProvider.uploadMultipleTags(tagJsonList);
     return List<String>.from(response['uploaded_ids']);
   }
+
+ 
 }

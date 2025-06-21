@@ -1,6 +1,7 @@
 import 'package:kendedes_mobile/classes/providers/project_povider.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 
 class ProjectRepository {
   static final ProjectRepository _instance = ProjectRepository._internal();
@@ -18,9 +19,29 @@ class ProjectRepository {
     await _projectProvider.init();
   }
 
-  Future<List<Project>> getProjects(String userId) async {
-    final response = await _projectProvider.getProjects(userId);
-    return response.map((data) => Project.fromJson(data)).toList();
+  Future<Map<String, dynamic>> getProjectsWithTags(String userId) async {
+    final response = await _projectProvider.getProjectsWithTags(userId);
+    final projects = <Project>[];
+    final tags = <TagData>[];
+
+    for (final projectJson in response) {
+      // Parse project without businesses
+      final project = Project.fromJson({
+        ...projectJson,
+        'businesses': null, // ignore businesses
+      });
+      projects.add(project);
+
+      // Extract businesses separately
+      final tagList = projectJson['businesses'] as List<dynamic>? ?? [];
+      tags.addAll(
+        tagList
+            .map((tagJson) => TagData.fromJson(tagJson as Map<String, dynamic>))
+            .toList(),
+      );
+    }
+
+    return {'projects': projects, 'tags': tags};
   }
 
   Future<Project> createProject(Map<String, dynamic> projectData) async {

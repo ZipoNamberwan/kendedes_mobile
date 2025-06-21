@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/login_state.dart';
-import 'package:kendedes_mobile/classes/helpers.dart';
+import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
@@ -69,13 +69,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _openSSOLogin() async {
-    final ssoUrl = AppHelper.majapahitLoginUrl;
+    final ssoUrl = AppConfig.majapahitLoginUrl;
 
-    // final ssoUrl = 'https://google.com';
+    // const chromePackage = 'com.android.chrome';
+
     if (await canLaunchUrl(Uri.parse(ssoUrl))) {
-      await launchUrl(Uri.parse(ssoUrl), mode: LaunchMode.externalApplication);
+      await launchUrl(
+        Uri.parse(ssoUrl),
+        mode: LaunchMode.externalApplication,
+        // webOnlyWindowName: chromePackage,
+      );
     } else {
-      _loginBloc.add(ThrowLoginError('Could not launch SSO login'));
+      _loginBloc.add(ThrowLoginError('Pastikan menggunakan Google Chrome'));
     }
   }
 

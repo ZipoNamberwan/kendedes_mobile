@@ -1,3 +1,4 @@
+import 'package:kendedes_mobile/classes/providers/local_db/local_db_provider.dart';
 import 'package:kendedes_mobile/classes/services/dio_service.dart';
 
 class TaggingProvider {
@@ -7,6 +8,7 @@ class TaggingProvider {
   TaggingProvider._internal();
 
   late DioService _dioService;
+  late LocalDbProvider _dbProvider;
   bool _initialized = false;
 
   Future<void> init() async {
@@ -14,6 +16,8 @@ class TaggingProvider {
     _initialized = true;
     _dioService = DioService();
     await _dioService.init();
+    _dbProvider = LocalDbProvider();
+    await _dbProvider.init();
   }
 
   Future<List<Map<String, dynamic>>> getTaggingInBox(
@@ -73,4 +77,5 @@ class TaggingProvider {
     );
     return response.data['data'];
   }
+
 }

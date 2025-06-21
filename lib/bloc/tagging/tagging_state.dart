@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:hive_ce/hive.dart';
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
@@ -313,9 +312,6 @@ class TaggingStateData {
   final bool isSubmitting;
   final Map<String, TaggingFormFieldState<dynamic>> formFields;
 
-  //Hive Box attribute
-  final Box<TagData>? tagDataBox;
-
   //User attribute
   final User? currentUser;
 
@@ -355,8 +351,6 @@ class TaggingStateData {
     Map<String, TaggingFormFieldState<dynamic>>? formFields,
     required this.isDeletingTag,
     required this.isUploadingMultipleTags,
-
-    this.tagDataBox,
   }) : formFields = formFields ?? _generateFormFields();
 
   static Map<String, TaggingFormFieldState<dynamic>> _generateFormFields() {
@@ -413,8 +407,6 @@ class TaggingStateData {
     LabelType? selectedLabelType,
     MapType? selectedMapType,
     User? currentUser,
-
-    Box<TagData>? tagDataBox,
   }) {
     return TaggingStateData(
       project: project ?? this.project,
@@ -459,7 +451,6 @@ class TaggingStateData {
               : formFields ?? this.formFields,
       selectedLabelType: selectedLabelType ?? this.selectedLabelType,
       selectedMapType: selectedMapType ?? this.selectedMapType,
-      tagDataBox: tagDataBox ?? this.tagDataBox,
       northEastCorner: northEastCorner ?? this.northEastCorner,
       southWestCorner: southWestCorner ?? this.southWestCorner,
       isTaggingInsideBoundsLoading:

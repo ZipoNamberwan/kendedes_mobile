@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:kendedes_mobile/classes/helpers.dart';
+import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/classes/services/shared_preference_service.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
 
@@ -11,7 +11,7 @@ class DioService {
 
   DioService._internal();
 
-  static const String _baseUrl = AppHelper.apiUrl;
+  static const String _baseUrl = AppConfig.apiUrl;
 
   late Dio dio;
   late SharedPreferenceService _sharedPreferenceService;

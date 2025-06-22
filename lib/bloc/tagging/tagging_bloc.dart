@@ -66,6 +66,15 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       try {
         Position position = await _getCurrentPosition();
 
+        if (position.isMocked) {
+          emit(
+            MockupLocationDetected(
+              data: state.data.copyWith(isLoadingCurrentLocation: false),
+            ),
+          );
+          return;
+        }
+
         // Update current location in state
         emit(
           MovedCurrentLocation(
@@ -642,6 +651,15 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
       try {
         Position position = await _getCurrentPosition();
+
+        if (position.isMocked) {
+          emit(
+            MockupLocationDetected(
+              data: state.data.copyWith(isLoadingTag: false),
+            ),
+          );
+          return;
+        }
 
         final updatedFormFields = {
           ...state.data.formFields,

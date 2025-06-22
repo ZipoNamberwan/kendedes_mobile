@@ -230,33 +230,33 @@ class ProjectInfoDialog extends StatelessWidget {
                       const SizedBox(height: 12),
 
                       // Additional Info
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.blue.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: Colors.blue.shade600,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                'Data tagging akan disimpan secara lokal dan terupload dengan server jika dikirim.',
-                                style: TextStyle(
-                                  color: Colors.blue.shade700,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // Container(
+                      //   padding: const EdgeInsets.all(10),
+                      //   decoration: BoxDecoration(
+                      //     color: Colors.blue.shade50,
+                      //     borderRadius: BorderRadius.circular(6),
+                      //     border: Border.all(color: Colors.blue.shade200),
+                      //   ),
+                      //   child: Row(
+                      //     children: [
+                      //       Icon(
+                      //         Icons.info_outline,
+                      //         color: Colors.blue.shade600,
+                      //         size: 16,
+                      //       ),
+                      //       const SizedBox(width: 8),
+                      //       Expanded(
+                      //         child: Text(
+                      //           'Data tagging akan disimpan secara lokal dan terupload dengan server jika dikirim.',
+                      //           style: TextStyle(
+                      //             color: Colors.blue.shade700,
+                      //             fontSize: 13,
+                      //           ),
+                      //         ),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -275,48 +275,39 @@ class ProjectInfoDialog extends StatelessWidget {
     required Color iconColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon and title column
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                Icon(icon, size: 14, color: iconColor),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+          Row(
+            children: [
+              Icon(icon, size: 18, color: iconColor),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          // Content column
-          Expanded(
-            flex: 3,
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 2, right: 2),
             child: Text(
               content,
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 color: Colors.black87,
-                height: 1.3,
+                height: 1.4,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -327,16 +318,16 @@ class ProjectInfoDialog extends StatelessWidget {
   Widget _buildStatRow(String label, String value, Color color, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 6),
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
@@ -344,7 +335,7 @@ class ProjectInfoDialog extends StatelessWidget {
           child: Text(
             value,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: color,
             ),

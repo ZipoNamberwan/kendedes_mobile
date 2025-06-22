@@ -22,6 +22,7 @@ import 'package:kendedes_mobile/widgets/complex_marker_widget.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/simple_marker_widget.dart';
 import 'package:kendedes_mobile/widgets/tagging_form_dialog.dart';
@@ -443,6 +444,18 @@ class _TaggingPageState extends State<TaggingPage>
           );
         } else if (state is ZoomLevelNotification) {
           _showZoomLevelNotificationDialog(state.message);
+        } else if (state is MockupLocationDetected) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => MessageDialog(
+                  title: 'Fake GPS Terdeteksi',
+                  message: 'Kami mendeteksi bahwa Anda menggunakan aplikasi Fake GPS. '
+                      'Silakan matikan aplikasi tersebut untuk melanjutkan tagging.',
+                  type: MessageType.error,
+                  buttonText: 'Tutup',
+                ),
+          );
         }
       },
       builder: (context, state) {

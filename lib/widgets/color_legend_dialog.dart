@@ -102,12 +102,12 @@ class ColorLegendDialog extends StatelessWidget {
                   // Legend items
                   _buildLegendItem(
                     color: Colors.purple,
-                    title: 'Market SWMAPS',
+                    title: 'Sentra Ekonomi SWMAPS',
                     description: 'Tagging dari projek sentra ekonomi SWMAPS',
                   ),
                   _buildLegendItem(
                     color: Colors.indigo,
-                    title: 'Supplement SWMAPS',
+                    title: 'Suplemen SWMAPS',
                     description: 'Tagging dari projek suplemen SWMAPS',
                   ),
                   _buildLegendItem(

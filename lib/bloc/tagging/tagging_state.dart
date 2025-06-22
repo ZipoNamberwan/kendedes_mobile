@@ -275,6 +275,13 @@ class DeleteMultipleTagsSuccess extends TaggingState {
   List<Object> get props => [successMessage, data];
 }
 
+class MockupLocationDetected extends TaggingState {
+  const MockupLocationDetected({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class TaggingStateData {
   final Project project;
   final List<TagData> tags;

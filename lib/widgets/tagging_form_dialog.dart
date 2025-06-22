@@ -82,7 +82,37 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
     int maxLines = 1,
     int delay = 0,
     String? error,
+    bool mandatory = false,
   }) {
+    final labelWidget =
+        mandatory
+            ? RichText(
+              text: TextSpan(
+                text: label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black54,
+                ),
+                children: const [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            )
+            : Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black54,
+              ),
+            );
     return TweenAnimationBuilder<double>(
       duration: Duration(milliseconds: 300 + (delay * 100)),
       tween: Tween(begin: 0.0, end: 1.0),
@@ -100,9 +130,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
               maxLines: maxLines,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
-                hintText:
-                    'Masukkan ${label.toLowerCase().replaceAll(' *', '')}',
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
+                label: labelWidget,
                 filled: true,
                 fillColor: Colors.grey[50],
                 border: OutlineInputBorder(
@@ -151,7 +179,37 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
     required IconData icon,
     int delay = 0,
     String? error,
+    bool mandatory = false,
   }) {
+    final labelWidget =
+        mandatory
+            ? RichText(
+              text: TextSpan(
+                text: label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black54,
+                ),
+                children: const [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            )
+            : Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black54,
+              ),
+            );
     return TweenAnimationBuilder<double>(
       duration: Duration(milliseconds: 300 + (delay * 100)),
       tween: Tween(begin: 0.0, end: 1.0),
@@ -200,7 +258,6 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                 fontWeight: FontWeight.w500,
                 color: Colors.black87,
               ),
-              // Handle text overflow in the selected value display
               selectedItemBuilder: (BuildContext context) {
                 return items.map<Widget>((DropdownMenuItem<T> item) {
                   return Container(
@@ -222,8 +279,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                 }).toList();
               },
               decoration: InputDecoration(
-                hintText: 'Pilih ${label.toLowerCase().replaceAll(' *', '')}',
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
+                label: labelWidget,
                 filled: true,
                 fillColor: Colors.grey[50],
                 border: OutlineInputBorder(
@@ -261,7 +317,6 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
               borderRadius: BorderRadius.circular(12),
               isExpanded: true, // This helps with text clipping
               isDense: true,
-              // menuMaxHeight: 300, // Optional: limit dropdown height
             ),
           ),
         );
@@ -583,17 +638,18 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                           _buildAnimatedTextField(
                             fieldKey: 'name',
                             controller: _businessNameController,
-                            label: 'Nama Usaha *',
+                            label: 'Nama Usaha',
                             icon: Icons.business_rounded,
                             delay: 0,
                             error: state.data.formFields['name']?.error,
+                            mandatory: true,
                           ),
                           const SizedBox(height: 16),
 
                           _buildAnimatedTextField(
                             fieldKey: 'owner',
                             controller: _businessOwnerController,
-                            label: 'Pemilik Usaha (Opsional)',
+                            label: 'Pemilik Usaha',
                             icon: Icons.person_rounded,
                             delay: 1,
                             error: state.data.formFields['owner']?.error,
@@ -603,7 +659,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                           _buildAnimatedTextField(
                             fieldKey: 'address',
                             controller: _businessAddressController,
-                            label: 'Alamat Usaha (Opsional)',
+                            label: 'Alamat Usaha',
                             icon: Icons.home_rounded,
                             maxLines: 2,
                             delay: 2,
@@ -614,7 +670,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                           _buildAnimatedDropdown<BuildingStatus?>(
                             fieldKey: 'building',
                             value: state.data.formFields['building']?.value,
-                            label: 'Status bangunan *',
+                            label: 'Status bangunan',
                             icon: Icons.apartment_rounded,
                             delay: 3,
                             error: state.data.formFields['building']?.error,
@@ -625,24 +681,26 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                     child: Text(status.text),
                                   );
                                 }).toList(),
+                            mandatory: true,
                           ),
                           const SizedBox(height: 16),
 
                           _buildAnimatedTextField(
                             fieldKey: 'description',
                             controller: _descriptionController,
-                            label: 'Deskripsi Aktivitas Usaha *',
+                            label: 'Deskripsi Aktivitas Usaha',
                             icon: Icons.description_rounded,
                             maxLines: 3,
                             delay: 4,
                             error: state.data.formFields['description']?.error,
+                            mandatory: true,
                           ),
                           const SizedBox(height: 16),
 
                           _buildAnimatedDropdown<Sector?>(
                             fieldKey: 'sector',
                             value: state.data.formFields['sector']?.value,
-                            label: 'Sektor *',
+                            label: 'Sektor',
                             icon: Icons.category_rounded,
                             delay: 5,
                             error: state.data.formFields['sector']?.error,
@@ -653,19 +711,20 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                                     child: Text(sector.text),
                                   );
                                 }).toList(),
+                            mandatory: true,
                           ),
                           const SizedBox(height: 16),
 
                           _buildAnimatedTextField(
                             fieldKey: 'note',
                             controller: _noteController,
-                            label: 'Catatan Tambahan (Opsional)',
+                            label: 'Catatan Tambahan',
                             icon: Icons.note_rounded,
                             maxLines: 2,
                             delay: 6,
                             error: state.data.formFields['note']?.error,
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 16),
                         ],
                       ),
                     ),

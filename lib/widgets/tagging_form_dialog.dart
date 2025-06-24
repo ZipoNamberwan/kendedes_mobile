@@ -546,6 +546,39 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Enhanced Position info
+                          if (state.data.isForceTagging) ...[
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 24),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Colors.orange.shade200,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: Colors.orange.shade700,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Tagging di sekitar area ini belum pernah dimuat sebelumnya, sehingga belum ada pengecekan duplikasi usaha. Abaikan warning ini jika mode offline (tidak ada internet).',
+                                      style: TextStyle(
+                                        color: Colors.orange.shade800,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           TweenAnimationBuilder<double>(
                             duration: const Duration(milliseconds: 400),
                             tween: Tween(begin: 0.0, end: 1.0),

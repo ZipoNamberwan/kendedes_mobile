@@ -52,6 +52,7 @@ class InitializingStarted extends TaggingState {
           isFilterCurrentProject: false,
           isFilterSentToServer: false,
           requestedAreas: [],
+          isForceTagging: false,
         ),
       );
 
@@ -311,6 +312,7 @@ class TaggingStateData {
   final LatLng? northEastCorner;
   final LatLng? southWestCorner;
   final List<RequestedArea> requestedAreas;
+  final bool isForceTagging;
 
   // UI attributes
   final bool isMultiSelectMode;
@@ -352,6 +354,7 @@ class TaggingStateData {
     this.northEastCorner,
     this.southWestCorner,
     required this.requestedAreas,
+    required this.isForceTagging,
     required this.rotation,
     required this.selectedTags,
     required this.isMultiSelectMode,
@@ -403,6 +406,7 @@ class TaggingStateData {
     LatLng? northEastCorner,
     LatLng? southWestCorner,
     List<RequestedArea>? requestedAreas,
+    bool? isForceTagging,
     double? currentZoom,
     double? rotation,
     List<TagData>? selectedTags,
@@ -472,6 +476,10 @@ class TaggingStateData {
           (resetForm ?? false)
               ? _generateFormFields()
               : formFields ?? this.formFields,
+      isForceTagging:
+          (resetForm ?? false)
+              ? true
+              : isForceTagging ?? this.isForceTagging,
       selectedLabelType: selectedLabelType ?? this.selectedLabelType,
       selectedMapType: selectedMapType ?? this.selectedMapType,
       northEastCorner: northEastCorner ?? this.northEastCorner,

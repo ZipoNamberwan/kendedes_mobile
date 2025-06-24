@@ -390,11 +390,9 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       );
     });
 
-    on<CreateForm>((event, emit) {
-      emit(TaggingState(data: state.data.copyWith(resetForm: true)));
-    });
-
     on<EditForm>((event, emit) {
+      emit(TaggingState(data: state.data.copyWith(isForceTagging: false)));
+
       final TagData tagData = event.tagData;
       final formFields = {
         'id': TaggingFormFieldState<String?>(value: tagData.id),
@@ -664,12 +662,9 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         }
 
         if (!event.forceTagging) {
-          final paddedBounds = MapHelper.paddedAreaFromPoint(
-            center: LatLng(position.latitude, position.longitude),
-          );
-
-          final bool alreadyRequested = state.data.requestedAreas.any(
-            (area) => area.containsBounds(paddedBounds),
+          final bool alreadyRequested = _hasAlreadyRequestedArea(
+            position: LatLng(position.latitude, position.longitude),
+            requestedAreas: state.data.requestedAreas,
           );
 
           if (!alreadyRequested) {
@@ -699,6 +694,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             data: state.data.copyWith(
               isLoadingTag: false,
               formFields: {...updatedFormFields},
+              isForceTagging: event.forceTagging,
             ),
           ),
         );
@@ -1136,6 +1132,15 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
     // Get current position
     return await Geolocator.getCurrentPosition();
+  }
+
+  bool _hasAlreadyRequestedArea({
+    required LatLng position,
+    required List<RequestedArea> requestedAreas,
+  }) {
+    final paddedBounds = MapHelper.paddedAreaFromPoint(center: position);
+
+    return requestedAreas.any((area) => area.containsBounds(paddedBounds));
   }
 }
 

@@ -13,6 +13,7 @@ import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
+import 'package:kendedes_mobile/widgets/area_not_requested_dialog.dart';
 import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/color_legend_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_tag_confirmation_dialog.dart';
@@ -63,6 +64,7 @@ class _TaggingPageState extends State<TaggingPage>
   // ];
 
   bool _confirmToZoom = false;
+  bool _forceGetTaggingInsideBounds = false;
 
   @override
   void initState() {
@@ -110,8 +112,9 @@ class _TaggingPageState extends State<TaggingPage>
       _logCurrentBounds();
 
       if (event is MapEventMove) {
-        if (_confirmToZoom) {
+        if (_confirmToZoom | _forceGetTaggingInsideBounds) {
           _confirmToZoom = false;
+          _forceGetTaggingInsideBounds = false;
           _getTaggingInsideBounds();
           return;
         }
@@ -125,6 +128,27 @@ class _TaggingPageState extends State<TaggingPage>
     _taggingBloc.add(CloseProject());
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _checkNearbyTagging(
+    MapController mapController,
+    LatLng targetLocation,
+    double targetZoom,
+  ) {
+    final currentCenter = mapController.camera.center;
+    final currentZoom = mapController.camera.zoom;
+
+    final needsMove =
+        currentCenter.latitude != targetLocation.latitude ||
+        currentCenter.longitude != targetLocation.longitude ||
+        currentZoom != targetZoom;
+
+    if (needsMove) {
+      _forceGetTaggingInsideBounds = true;
+      mapController.move(targetLocation, targetZoom);
+    } else {
+      _getTaggingInsideBounds();
+    }
   }
 
   void _getTaggingInsideBounds() {
@@ -450,10 +474,29 @@ class _TaggingPageState extends State<TaggingPage>
             builder:
                 (context) => MessageDialog(
                   title: 'Fake GPS Terdeteksi',
-                  message: 'Kami mendeteksi bahwa Anda menggunakan aplikasi Fake GPS. '
+                  message:
+                      'Kami mendeteksi bahwa Anda menggunakan aplikasi Fake GPS. '
                       'Silakan matikan aplikasi tersebut untuk melanjutkan tagging.',
                   type: MessageType.error,
                   buttonText: 'Tutup',
+                ),
+          );
+        } else if (state is AreaNotRequestedNotification) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AreaNotRequestedDialog(
+                  onContinue: () {
+                    _taggingBloc.add(RecordTagLocation(forceTagging: true));
+                  },
+                  onCheckNearby: () {
+                    _checkNearbyTagging(
+                      _mapController,
+                      state.recordedLocation,
+                      MapConfig.minimumZoomToGetTaggingInsideBounds,
+                    );
+                    Navigator.of(context).pop();
+                  },
                 ),
           );
         }
@@ -1209,8 +1252,9 @@ class _TaggingPageState extends State<TaggingPage>
                                 state.data.isLoadingCurrentLocation ||
                                         state.data.isLoadingTag
                                     ? null
-                                    : () =>
-                                        _taggingBloc.add(RecordTagLocation()),
+                                    : () => _taggingBloc.add(
+                                      RecordTagLocation(forceTagging: false),
+                                    ),
                             child: Center(
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,

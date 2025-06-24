@@ -4,6 +4,7 @@ import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/poligon_data.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/requested_area.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:latlong2/latlong.dart';
@@ -50,6 +51,7 @@ class InitializingStarted extends TaggingState {
           isUploadingMultipleTags: false,
           isFilterCurrentProject: false,
           isFilterSentToServer: false,
+          requestedAreas: [],
         ),
       );
 
@@ -282,6 +284,17 @@ class MockupLocationDetected extends TaggingState {
   List<Object> get props => [data];
 }
 
+class AreaNotRequestedNotification extends TaggingState {
+  final LatLng recordedLocation;
+  const AreaNotRequestedNotification({
+    required this.recordedLocation,
+    required super.data,
+  });
+
+  @override
+  List<Object> get props => [data];
+}
+
 class TaggingStateData {
   final Project project;
   final List<TagData> tags;
@@ -297,6 +310,7 @@ class TaggingStateData {
   final LatLng? currentLocation;
   final LatLng? northEastCorner;
   final LatLng? southWestCorner;
+  final List<RequestedArea> requestedAreas;
 
   // UI attributes
   final bool isMultiSelectMode;
@@ -337,6 +351,7 @@ class TaggingStateData {
     required this.currentZoom,
     this.northEastCorner,
     this.southWestCorner,
+    required this.requestedAreas,
     required this.rotation,
     required this.selectedTags,
     required this.isMultiSelectMode,
@@ -387,6 +402,7 @@ class TaggingStateData {
     LatLng? currentLocation,
     LatLng? northEastCorner,
     LatLng? southWestCorner,
+    List<RequestedArea>? requestedAreas,
     double? currentZoom,
     double? rotation,
     List<TagData>? selectedTags,
@@ -476,6 +492,7 @@ class TaggingStateData {
           resetAllFilter ?? false
               ? false
               : isFilterSentToServer ?? this.isFilterSentToServer,
+      requestedAreas: requestedAreas ?? this.requestedAreas,
     );
   }
 }

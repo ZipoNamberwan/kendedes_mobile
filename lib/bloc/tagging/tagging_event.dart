@@ -89,7 +89,8 @@ class DeleteSelectedTags extends TaggingEvent {
 }
 
 class RecordTagLocation extends TaggingEvent {
-  const RecordTagLocation();
+  final bool forceTagging;
+  const RecordTagLocation({required this.forceTagging});
 }
 
 class CreateForm extends TaggingEvent {

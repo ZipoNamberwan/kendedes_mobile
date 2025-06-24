@@ -1,11 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
+import 'package:kendedes_mobile/classes/helpers.dart';
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/requested_area.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:latlong2/latlong.dart';
@@ -661,6 +663,26 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           return;
         }
 
+        if (!event.forceTagging) {
+          final paddedBounds = MapHelper.paddedAreaFromPoint(
+            center: LatLng(position.latitude, position.longitude),
+          );
+
+          final bool alreadyRequested = state.data.requestedAreas.any(
+            (area) => area.containsBounds(paddedBounds),
+          );
+
+          if (!alreadyRequested) {
+            emit(
+              AreaNotRequestedNotification(
+                recordedLocation: LatLng(position.latitude, position.longitude),
+                data: state.data.copyWith(isLoadingTag: false),
+              ),
+            );
+            return;
+          }
+        }
+
         final updatedFormFields = {
           ...state.data.formFields,
           'positionLat': state.data.formFields['positionLat']!.copyWith(
@@ -910,6 +932,13 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 data: state.data.copyWith(
                   isTaggingInsideBoundsLoading: false,
                   tags: updatedNearByTags,
+                  requestedAreas: [
+                    ...state.data.requestedAreas,
+                    RequestedArea(
+                      northeast: ne ?? LatLng(0, 0),
+                      southwest: sw ?? LatLng(0, 0),
+                    ),
+                  ],
                 ),
               ),
             );

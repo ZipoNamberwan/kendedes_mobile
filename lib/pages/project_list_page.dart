@@ -20,6 +20,7 @@ import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/project_list_app_bar.dart';
 import 'package:kendedes_mobile/widgets/version_update_dialog.dart';
+import 'package:kendedes_mobile/widgets/sync_project_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProjectListPage extends StatefulWidget {
@@ -125,7 +126,7 @@ class _ProjectListPageState extends State<ProjectListPage>
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Tutup'),
+                child: const Text('Kembali'),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -146,7 +147,11 @@ class _ProjectListPageState extends State<ProjectListPage>
     );
   }
 
-  void _showAppBarPopupMenu(BuildContext context, Offset position) async {
+  void _showAppBarPopupMenu(
+    BuildContext context,
+    Offset position,
+    bool noProject,
+  ) async {
     final value = await showMenu<String>(
       context: context,
       position: RelativeRect.fromLTRB(
@@ -157,6 +162,20 @@ class _ProjectListPageState extends State<ProjectListPage>
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       items: [
+        // if (noProject)
+        PopupMenuItem(
+          value: 'sync',
+          child: Row(
+            children: [
+              Icon(Icons.sync, size: 18, color: Colors.grey[600]),
+              const SizedBox(width: 12),
+              const Text(
+                'Download Project Dari Server',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
         PopupMenuItem(
           value: 'help',
           child: Row(
@@ -204,6 +223,9 @@ class _ProjectListPageState extends State<ProjectListPage>
     );
 
     switch (value) {
+      case 'sync':
+        _sync();
+        break;
       case 'help':
         _openUrl(AppConfig.helpUrl);
         break;
@@ -262,6 +284,21 @@ class _ProjectListPageState extends State<ProjectListPage>
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {}
+  }
+
+  void _sync() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => SyncProjectDialog(
+            onConfirm: () {
+              _projectBloc.add(SyncProjects());
+            },
+            onCancel: () {
+              Navigator.of(context).pop();
+            },
+          ),
+    );
   }
 
   @override
@@ -324,7 +361,11 @@ class _ProjectListPageState extends State<ProjectListPage>
                         ),
                   ),
               onMoreTap:
-                  (tapPosition) => _showAppBarPopupMenu(context, tapPosition),
+                  (tapPosition) => _showAppBarPopupMenu(
+                    context,
+                    tapPosition,
+                    state.data.projects.isEmpty,
+                  ),
             ),
             body: Column(
               children: [

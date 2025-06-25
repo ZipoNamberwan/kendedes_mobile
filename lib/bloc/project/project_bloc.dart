@@ -20,6 +20,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             saveLoading: false,
             initLoading: false,
             deleteLoading: false,
+            isSyncing: false,
             currentUser: null,
           ),
         ),
@@ -341,6 +342,50 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       );
       emit(
         ProjectState(data: state.data.copyWith(formFields: updatedFormFields)),
+      );
+    });
+
+    on<SyncProjects>((event, emit) async {
+      emit(ProjectState(data: state.data.copyWith(isSyncing: true)));
+
+      await ApiServerHandler.run(
+        action: () async {
+          final user = AuthRepository().getUser();
+
+          final map = await ProjectRepository().getProjectsWithTags(
+            user?.id ?? '',
+          );
+          final projects = map['projects'];
+          final tags = map['tags'];
+
+          await ProjectDbRepository().insertAll(projects);
+          await TaggingDbRepository().insertAll(tags);
+
+          emit(
+            SyncSuccess(
+              data: state.data.copyWith(projects: projects, isSyncing: false),
+            ),
+          );
+        },
+        onLoginExpired: (e) {
+          emit(TokenExpired(data: state.data.copyWith(isSyncing: false)));
+        },
+        onDataProviderError: (e) {
+          emit(
+            SyncFailed(
+              errorMessage: e.message,
+              data: state.data.copyWith(isSyncing: false),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          emit(
+            SyncFailed(
+              errorMessage: e.toString(),
+              data: state.data.copyWith(isSyncing: false),
+            ),
+          );
+        },
       );
     });
 

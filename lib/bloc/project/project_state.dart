@@ -64,6 +64,15 @@ class ProjectLoadError extends ProjectState {
   const ProjectLoadError({required this.errorMessage, required super.data});
 }
 
+class SyncSuccess extends ProjectState {
+  const SyncSuccess({required super.data});
+}
+
+class SyncFailed extends ProjectState {
+  final String errorMessage;
+  const SyncFailed({required this.errorMessage, required super.data});
+}
+
 class ProjectFormFieldState<T> {
   final T? value;
   final String? error;
@@ -85,6 +94,7 @@ class ProjectStateData {
   final bool saveLoading;
   final bool initLoading;
   final bool deleteLoading;
+  final bool isSyncing;
 
   ProjectStateData({
     required this.projects,
@@ -92,6 +102,7 @@ class ProjectStateData {
     required this.saveLoading,
     required this.initLoading,
     required this.deleteLoading,
+    required this.isSyncing,
     Map<String, ProjectFormFieldState<dynamic>>? formFields,
   }) : formFields = formFields ?? _generateFormFields();
 
@@ -114,6 +125,7 @@ class ProjectStateData {
     bool? saveLoading,
     bool? initLoading,
     bool? deleteLoading,
+    bool? isSyncing,
   }) {
     return ProjectStateData(
       projects: projects ?? this.projects,
@@ -125,6 +137,7 @@ class ProjectStateData {
       saveLoading: saveLoading ?? this.saveLoading,
       initLoading: initLoading ?? this.initLoading,
       deleteLoading: deleteLoading ?? this.deleteLoading,
+      isSyncing: isSyncing ?? this.isSyncing,
     );
   }
 }

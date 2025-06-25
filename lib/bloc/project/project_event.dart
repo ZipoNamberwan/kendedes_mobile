@@ -60,3 +60,10 @@ class ResetProjectForm extends ProjectEvent {
   @override
   List<Object?> get props => [];
 }
+
+class SyncProjects extends ProjectEvent {
+  const SyncProjects();
+
+  @override
+  List<Object?> get props => [];
+}

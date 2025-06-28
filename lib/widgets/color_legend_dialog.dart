@@ -90,7 +90,7 @@ class ColorLegendDialog extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Warna marker menunjukkan jenis dan status tagging:',
+                    'Warna marker menunjukkan jenis tagging:',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade700,
@@ -109,6 +109,12 @@ class ColorLegendDialog extends StatelessWidget {
                     color: Colors.indigo,
                     title: 'Suplemen SWMAPS',
                     description: 'Tagging dari projek suplemen SWMAPS',
+                  ),
+                  _buildLegendItem(
+                    color: Colors.pink,
+                    title: 'Survei BPS',
+                    description:
+                        'Tagging yang dihimpun dari berbagai Survei BPS',
                   ),
                   _buildLegendItem(
                     color: Colors.deepOrange,

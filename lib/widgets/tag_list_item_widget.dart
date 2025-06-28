@@ -88,7 +88,7 @@ class TagListItemWidget extends StatelessWidget {
                         isSelected && isMultiSelectMode
                             ? Icon(Icons.check, color: Colors.white, size: 20)
                             : Text(
-                              tag.sector.key,
+                              tag.sector?.key ?? '-',
                               style: TextStyle(
                                 color: isSelected ? Colors.white : projectColor,
                                 fontSize: 16,

@@ -550,7 +550,12 @@ class _TaggingPageState extends State<TaggingPage>
                                 MapType.openStreetMapDefault.url,
                             userAgentPackageName: 'com.example.kendedes_mobile',
                           ),
-
+                          // SimpleAttributionWidget(
+                          //   source: Text(
+                          //     'OpenStreetMap contributors',
+                          //     style: TextStyle(fontSize: 9),
+                          //   ),
+                          // ),
                           // // Polygon layer
                           // PolygonLayer(
                           //   polygons:

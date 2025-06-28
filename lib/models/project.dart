@@ -96,8 +96,20 @@ class ProjectType {
     'kendedes mobile',
     'Suplemen Mobile',
   );
+  static const wilkerstat = ProjectType._('wilkerstat', 'Suplemen Wilkerstat');
+  static const jenggala = ProjectType._('jenggala', 'Jenggala');
+  static const survey = ProjectType._('survey', 'Survei BPS');
+  static const other = ProjectType._('other', 'Lainnya');
 
-  static const values = [marketSwmaps, supplementSwmaps, supplementMobile];
+  static const values = [
+    marketSwmaps,
+    supplementSwmaps,
+    supplementMobile,
+    wilkerstat,
+    jenggala,
+    survey,
+    other,
+  ];
 
   static ProjectType? fromKey(String key) {
     return values.where((item) => item.key == key).firstOrNull;

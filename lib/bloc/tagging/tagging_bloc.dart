@@ -1007,7 +1007,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               false) ||
           tag.description.toLowerCase().contains(normalizedQuery);
 
-      final matchesSector = sector == null || tag.sector.key == sector.key;
+      final matchesSector = sector == null || tag.sector?.key == sector.key;
 
       final matchesProjectType =
           projectType == null || tag.project.type.key == projectType.key;
@@ -1131,7 +1131,11 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     }
 
     // Get current position
-    return await Geolocator.getCurrentPosition();
+    return await Geolocator.getCurrentPosition(
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.best,
+      ),
+    );
   }
 
   bool _hasAlreadyRequestedArea({

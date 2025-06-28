@@ -29,7 +29,7 @@ class ApiServerHandler {
       try {
         final fullTrace = stackTrace.toString();
         final truncatedTrace =
-            fullTrace.length > 1000 ? fullTrace.substring(0, 1000) : fullTrace;
+            fullTrace.length > 500 ? fullTrace.substring(0, 500) : fullTrace;
 
         final logMessage = '''
         🚨 *Unhandled Error*

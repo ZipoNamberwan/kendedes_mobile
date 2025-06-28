@@ -221,7 +221,7 @@ class TagData {
         buildingStatus:
             json['status'] != null
                 ? BuildingStatus.fromKey(
-                  json['status'].toString().toLowerCase(),
+                  json['status'].toString().toLowerCase().replaceAll(' ', '_'),
                 )
                 : null,
         description: json['description'] as String,
@@ -370,7 +370,7 @@ class BuildingStatus extends Equatable {
   const BuildingStatus._(this.key, this.text);
 
   static const fixed = BuildingStatus._('tetap', 'Tetap');
-  static const notFixed = BuildingStatus._('tidak tetap', 'Tidak Tetap');
+  static const notFixed = BuildingStatus._('tidak_tetap', 'Tidak Tetap');
 
   static const values = [fixed, notFixed];
 

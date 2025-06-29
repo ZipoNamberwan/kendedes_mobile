@@ -86,11 +86,13 @@ class MarkerDialog extends StatelessWidget {
                     if (tagData.businessAddress != null)
                       _buildInfoRow('Alamat', tagData.businessAddress!),
                     _buildInfoRow('Deskripsi', tagData.description),
-                    _buildInfoRow(
-                      'Status Bangunan',
-                      tagData.buildingStatus.text,
-                    ),
-                    _buildInfoRow('Sektor', tagData.sector.text),
+                    if (tagData.buildingStatus != null)
+                      _buildInfoRow(
+                        'Status Bangunan',
+                        tagData.buildingStatus!.text,
+                      ),
+                    if (tagData.sector != null)
+                      _buildInfoRow('Sektor', tagData.sector!.text),
                     _buildInfoRow('Tipe Projek', tagData.project.type.text),
                     if (tagData.note != null && tagData.note!.isNotEmpty)
                       _buildInfoRow('Catatan', tagData.note!),
@@ -98,7 +100,10 @@ class MarkerDialog extends StatelessWidget {
                       'Posisi',
                       '${tagData.positionLat.toStringAsFixed(6)}, ${tagData.positionLng.toStringAsFixed(6)}',
                     ),
-                    _buildInfoRow('Ditagging oleh', tagData.user.firstname),
+                    if (tagData.user != null)
+                      _buildInfoRow('Ditagging oleh', tagData.user!.firstname),
+                    if (tagData.survey != null)
+                      _buildInfoRow('Survei', tagData.survey!.name),
                     // if (tagData.createdAt != null)
                     //   _buildInfoRow(
                     //     'Dibuat pada',

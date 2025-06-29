@@ -12,6 +12,7 @@ import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/models/version.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/pages/tagging_page.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/about_app_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/project_form_dialog.dart';
@@ -85,6 +86,10 @@ class _ProjectListPageState extends State<ProjectListPage>
       context: context,
       builder: (context) => LogoutConfirmationDialog(),
     );
+  }
+
+  void _showAboutDialog() {
+    showDialog(context: context, builder: (context) => const AboutAppDialog());
   }
 
   void _showUserInfo(User user) {
@@ -202,6 +207,19 @@ class _ProjectListPageState extends State<ProjectListPage>
             ],
           ),
         ),
+        PopupMenuItem(
+          value: 'about',
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 18, color: Colors.grey[600]),
+              const SizedBox(width: 12),
+              const Text(
+                'Tentang Aplikasi',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: 'logout',
@@ -235,6 +253,9 @@ class _ProjectListPageState extends State<ProjectListPage>
       case 'logout':
         _showLogoutConfirmation();
         break;
+      case 'about':
+        _showAboutDialog();
+        break;
     }
   }
 
@@ -263,16 +284,16 @@ class _ProjectListPageState extends State<ProjectListPage>
     );
   }
 
-  void _showVersionUpdateDialog(BuildContext context, Version? version) {
-    if (version != null) {
+  void _showVersionUpdateDialog(BuildContext context, Version? newVersion) {
+    if (newVersion != null) {
       showDialog(
         context: context,
-        barrierDismissible: !version.isMandatory,
+        barrierDismissible: !newVersion.isMandatory,
         builder:
             (ctx) => VersionUpdateDialog(
-              version: version,
+              version: newVersion,
               onUpdate: () async {
-                final updateUrl = version.url ?? AppConfig.updateUrl;
+                final updateUrl = newVersion.url ?? AppConfig.updateUrl;
                 _openUrl(updateUrl);
               },
             ),
@@ -304,9 +325,9 @@ class _ProjectListPageState extends State<ProjectListPage>
   @override
   Widget build(BuildContext context) {
     return BlocListener<VersionBloc, VersionState>(
-      listener: (context, state) {
-        if (state is UpdateNotification) {
-          _showVersionUpdateDialog(context, state.data.version);
+      listener: (context, versionState) {
+        if (versionState is UpdateNotification) {
+          _showVersionUpdateDialog(context, versionState.data.newVersion);
         }
       },
       child: BlocConsumer<ProjectBloc, ProjectState>(

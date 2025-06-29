@@ -11,7 +11,7 @@ class TelegramLogger {
     try {
       await _dio.post(
         'https://api.telegram.org/bot$_token/sendMessage',
-        data: {'chat_id': _chatId, 'text': message, 'parse_mode': 'Markdown'},
+        data: {'chat_id': _chatId, 'text': message},
       );
     } catch (e) {
       // silent failure, do not throw

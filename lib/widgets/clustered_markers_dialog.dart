@@ -70,7 +70,7 @@ class ClusteredMarkersDialog extends StatelessWidget {
                               isSelected ? Colors.green : Colors.grey[700],
                           radius: 16,
                           child: Text(
-                            tag.sector.key,
+                            tag.sector?.key ?? '-',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

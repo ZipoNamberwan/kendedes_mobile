@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/survey.dart';
 import 'package:kendedes_mobile/models/user.dart';
 
 class TagData {
@@ -23,11 +24,12 @@ class TagData {
   final String businessName;
   final String? businessOwner;
   final String? businessAddress;
-  final BuildingStatus buildingStatus;
+  final BuildingStatus? buildingStatus;
   final String description;
-  final Sector sector;
+  final Sector? sector;
   final String? note;
-  final User user;
+  final User? user;
+  final Survey? survey;
 
   TagData({
     required this.id,
@@ -54,6 +56,7 @@ class TagData {
     required this.description,
     required this.sector,
     this.note,
+    this.survey,
   });
 
   TagData copyWith({
@@ -79,6 +82,7 @@ class TagData {
     String? description,
     Sector? sector,
     String? note,
+    Survey? survey,
   }) {
     return TagData(
       id: id ?? this.id,
@@ -103,6 +107,7 @@ class TagData {
       description: description ?? this.description,
       sector: sector ?? this.sector,
       note: note ?? this.note,
+      survey: survey ?? this.survey,
     );
   }
 
@@ -116,7 +121,7 @@ class TagData {
       case 'owner':
         return businessOwner ?? '';
       case 'sector':
-        return sector.key;
+        return sector?.key ?? '';
       default:
         return businessName +
             (businessOwner != null ? ' <$businessOwner>' : '');
@@ -128,10 +133,12 @@ class TagData {
       return Colors.purple;
     } else if (project.type.key == ProjectType.supplementSwmaps.key) {
       return Colors.indigo;
+    } else if (project.type.key == ProjectType.survey.key) {
+      return Colors.pink;
     } else if (project.type.key == ProjectType.supplementMobile.key) {
       if (currentProjectId == project.id) {
         return Colors.deepOrange;
-      } else if (currentUserId == user.id) {
+      } else if (currentUserId == user?.id) {
         return Colors.amber;
       }
 
@@ -171,17 +178,17 @@ class TagData {
       'name': businessName,
       'owner': businessOwner,
       'address': businessAddress,
-      'building': buildingStatus.text,
+      'building': buildingStatus?.text,
       'description': description,
-      'sector': sector.text,
+      'sector': sector?.text,
       'note': note,
       'project': {
         'id': project.id,
         'name': project.name,
         'description': project.description,
       },
-      'user': user.id,
-      'organization': user.organization?.id,
+      'user': user?.id,
+      'organization': user?.organization?.id,
     };
   }
 
@@ -217,13 +224,28 @@ class TagData {
         businessOwner: json['owner'] as String?,
         businessAddress: json['address'] as String?,
         buildingStatus:
-            BuildingStatus.fromKey(json['status']) ?? BuildingStatus.fixed,
+            json['status'] != null
+                ? BuildingStatus.fromKey(
+                  json['status'].toString().toLowerCase().replaceAll(' ', '_'),
+                )
+                : null,
         description: json['description'] as String,
         sector:
-            Sector.fromKey((json['sector'] as String)[0].toUpperCase()) ??
-            Sector.G,
+            (() {
+              final sectorStr = json['sector']?.toString();
+              return sectorStr != null && sectorStr.isNotEmpty
+                  ? Sector.fromKey(sectorStr[0].toUpperCase())
+                  : null;
+            })(),
         note: json['note'] as String?,
-        user: User.fromJson(json['user'] as Map<String, dynamic>),
+        user:
+            json['user'] != null
+                ? User.fromJson(json['user'] as Map<String, dynamic>)
+                : null,
+        survey:
+            json['survey'] != null
+                ? Survey.fromJson(json['survey'] as Map<String, dynamic>)
+                : null,
       );
     } catch (e) {
       throw Exception('Failed to parse TagData: $e');
@@ -243,11 +265,7 @@ class TagData {
   String toString() => 'TagData(id: $id, businessName: $businessName)';
 }
 
-enum TagType {
-  auto,
-  manual,
-  move,
-}
+enum TagType { auto, manual, move }
 
 class Sector extends Equatable {
   final String key;

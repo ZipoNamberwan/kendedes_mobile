@@ -85,11 +85,11 @@ class TaggingDbRepository {
       'business_name': tag.businessName,
       'business_owner': tag.businessOwner,
       'business_address': tag.businessAddress,
-      'building_status': tag.buildingStatus.key,
+      'building_status': tag.buildingStatus?.key,
       'description': tag.description,
-      'sector': tag.sector.key,
+      'sector': tag.sector?.key,
       'note': tag.note,
-      'user_id': tag.user.id,
+      'user_id': tag.user?.id,
     });
   }
 
@@ -238,11 +238,11 @@ class TaggingDbRepository {
             'business_name': tag.businessName,
             'business_owner': tag.businessOwner,
             'business_address': tag.businessAddress,
-            'building_status': tag.buildingStatus.key,
+            'building_status': tag.buildingStatus?.key,
             'description': tag.description,
-            'sector': tag.sector.key,
+            'sector': tag.sector?.key,
             'note': tag.note,
-            'user_id': tag.user.id,
+            'user_id': tag.user?.id,
           };
         }).toList();
 

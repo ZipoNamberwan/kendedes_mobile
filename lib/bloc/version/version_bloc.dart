@@ -12,6 +12,16 @@ class VersionBloc extends Bloc<VersionEvent, VersionState> {
       await ApiServerHandler.run(
         action: () async {
           PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+          // Emit the current version name
+          final currentVersionName = packageInfo.version;
+          emit(
+            VersionState(
+              data: state.data.copyWith(currentVersionName: currentVersionName),
+            ),
+          );
+
+          // Check for updates
           int buildNumber = int.parse(packageInfo.buildNumber);
           final organization =
               AuthRepository().getUser()?.organization?.id ?? '3500';
@@ -24,7 +34,7 @@ class VersionBloc extends Bloc<VersionEvent, VersionState> {
               UpdateNotification(
                 data: VersionStateData(
                   shouldUpdate: true,
-                  version: response['version'],
+                  newVersion: response['version'],
                 ),
               ),
             );

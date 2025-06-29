@@ -4,6 +4,7 @@ class Version {
   final int versionCode;
   final String? url;
   final bool isMandatory;
+  final String? versionName;
 
   Version({
     required this.title,
@@ -11,6 +12,7 @@ class Version {
     required this.versionCode,
     this.url,
     required this.isMandatory,
+    this.versionName,
   });
 
   //make fromJson method
@@ -21,6 +23,7 @@ class Version {
       versionCode: json['version_code'] as int,
       url: json['url'] as String?,
       isMandatory: json['is_mandatory'] == 1,
+      versionName: json['version_name'] as String?,
     );
   }
 

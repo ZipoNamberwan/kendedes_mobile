@@ -91,26 +91,28 @@ class VersionUpdateDialog extends StatelessWidget {
                   ),
                 ),
 
-              // // Version number
-              // const SizedBox(height: 8),
-              // Container(
-              //   padding: const EdgeInsets.symmetric(
-              //     horizontal: 16,
-              //     vertical: 8,
-              //   ),
-              //   decoration: BoxDecoration(
-              //     color: Colors.orange.shade100,
-              //     borderRadius: BorderRadius.circular(20),
-              //   ),
-              //   child: Text(
-              //     'Versi ${version.versionCode}',
-              //     style: TextStyle(
-              //       color: Colors.orange.shade800,
-              //       fontSize: 11,
-              //       fontWeight: FontWeight.w600,
-              //     ),
-              //   ),
-              // ),
+              // Version name
+              if (version.versionName != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Versi ${version.versionName}',
+                    style: TextStyle(
+                      color: Colors.orange.shade800,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Action buttons

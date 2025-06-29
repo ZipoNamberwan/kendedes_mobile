@@ -105,10 +105,10 @@ class ProjectType {
     marketSwmaps,
     supplementSwmaps,
     supplementMobile,
-    wilkerstat,
-    jenggala,
+    // wilkerstat,
+    // jenggala,
     survey,
-    other,
+    // other,
   ];
 
   static ProjectType? fromKey(String key) {

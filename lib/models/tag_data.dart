@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/survey.dart';
 import 'package:kendedes_mobile/models/user.dart';
 
 class TagData {
@@ -28,6 +29,7 @@ class TagData {
   final Sector? sector;
   final String? note;
   final User? user;
+  final Survey? survey;
 
   TagData({
     required this.id,
@@ -54,6 +56,7 @@ class TagData {
     required this.description,
     required this.sector,
     this.note,
+    this.survey,
   });
 
   TagData copyWith({
@@ -79,6 +82,7 @@ class TagData {
     String? description,
     Sector? sector,
     String? note,
+    Survey? survey,
   }) {
     return TagData(
       id: id ?? this.id,
@@ -103,6 +107,7 @@ class TagData {
       description: description ?? this.description,
       sector: sector ?? this.sector,
       note: note ?? this.note,
+      survey: survey ?? this.survey,
     );
   }
 
@@ -236,6 +241,10 @@ class TagData {
         user:
             json['user'] != null
                 ? User.fromJson(json['user'] as Map<String, dynamic>)
+                : null,
+        survey:
+            json['survey'] != null
+                ? Survey.fromJson(json['survey'] as Map<String, dynamic>)
                 : null,
       );
     } catch (e) {

@@ -102,6 +102,8 @@ class MarkerDialog extends StatelessWidget {
                     ),
                     if (tagData.user != null)
                       _buildInfoRow('Ditagging oleh', tagData.user!.firstname),
+                    if (tagData.survey != null)
+                      _buildInfoRow('Survei', tagData.survey!.name),
                     // if (tagData.createdAt != null)
                     //   _buildInfoRow(
                     //     'Dibuat pada',

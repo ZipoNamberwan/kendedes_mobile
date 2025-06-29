@@ -12,7 +12,7 @@ class VersionState extends Equatable {
 
 class CheckVersionInitializing extends VersionState {
   CheckVersionInitializing()
-    : super(data: VersionStateData(shouldUpdate: null, version: null));
+    : super(data: VersionStateData(shouldUpdate: null, newVersion: null));
 }
 
 class UpdateNotification extends VersionState {
@@ -21,14 +21,20 @@ class UpdateNotification extends VersionState {
 
 class VersionStateData {
   final bool? shouldUpdate;
-  final Version? version;
+  final Version? newVersion;
+  final String? currentVersionName;
 
-  VersionStateData({this.version, this.shouldUpdate});
+  VersionStateData({this.newVersion, this.shouldUpdate, this.currentVersionName});
 
-  VersionStateData copyWith({Version? version, bool? shouldUpdate}) {
+  VersionStateData copyWith({
+    Version? newVersion,
+    bool? shouldUpdate,
+    String? currentVersionName,
+  }) {
     return VersionStateData(
-      version: version ?? this.version,
+      newVersion: newVersion ?? this.newVersion,
       shouldUpdate: shouldUpdate ?? this.shouldUpdate,
+      currentVersionName: currentVersionName ?? this.currentVersionName,
     );
   }
 }

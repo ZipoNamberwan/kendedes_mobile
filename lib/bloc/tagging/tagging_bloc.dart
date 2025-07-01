@@ -549,6 +549,10 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       }
 
       try {
+        final User user =
+            AuthRepository().getUser() ??
+            User(id: '', email: '', firstname: '', roles: []);
+
         final updatedTag = TagData(
           id: event.tagData.id,
           positionLat: formFields['positionLat']!.value as double,
@@ -569,7 +573,10 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           createdAt: event.tagData.createdAt,
           updatedAt: DateTime.now(),
           project: state.data.project,
-          user: event.tagData.user,
+          user:
+              (event.tagData.user == null || event.tagData.user?.id == '')
+                  ? user
+                  : event.tagData.user,
         );
 
         // 🔐 Save to db
@@ -1065,6 +1072,11 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         error: 'Nama Usaha Tidak Boleh Kosong',
       );
       hasErrors = true;
+    } else if (name.length < 3) {
+      updatedFields['name'] = updatedFields['name']!.copyWith(
+        error: 'Nama usaha minimal 3 karakter',
+      );
+      hasErrors = true;
     } else {
       updatedFields['name'] = updatedFields['name']!.clearError();
     }
@@ -1074,6 +1086,11 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     if (description.isEmpty) {
       updatedFields['description'] = updatedFields['description']!.copyWith(
         error: 'Deskripsi Aktivitas Usaha Tidak Boleh Kosong',
+      );
+      hasErrors = true;
+    } else if (description.length < 5) {
+      updatedFields['description'] = updatedFields['description']!.copyWith(
+        error: 'Deskripsi Aktivitas Usaha minimal 5 karakter',
       );
       hasErrors = true;
     } else {
@@ -1132,9 +1149,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
     // Get current position
     return await Geolocator.getCurrentPosition(
-      locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.best,
-      ),
+      locationSettings: LocationSettings(accuracy: LocationAccuracy.best),
     );
   }
 

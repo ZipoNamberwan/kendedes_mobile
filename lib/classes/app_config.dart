@@ -9,4 +9,6 @@ class AppConfig {
 
   static const String helpUrl = 'http://s.bps.go.id/kendedes_panduan';
   static const String feedbackUrl = 'http://s.bps.go.id/kendedes_feedback';
+
+  static const int stackTraceLimitCharacter = 200;
 }

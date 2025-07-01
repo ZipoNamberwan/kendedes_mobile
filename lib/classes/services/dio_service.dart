@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
+import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/services/shared_preference_service.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
 
@@ -122,9 +123,15 @@ void _safeSendLog(DioException error, String userMessage) {
     final responseBody = error.response?.data.toString() ?? 'null';
     final stackTrace = (error.stackTrace.toString()).trim();
     final trimmedStack =
-        stackTrace.length > 1000
-            ? '${stackTrace.substring(0, 1000)}...'
+        stackTrace.length > AppConfig.stackTraceLimitCharacter
+            ? '${stackTrace.substring(0, AppConfig.stackTraceLimitCharacter)}...'
             : stackTrace;
+
+    final user = AuthRepository().getUser();
+    final userInfo =
+        user != null
+            ? 'ID: ${user.id}, Name: ${user.firstname}, Email: ${user.email}, Organization: ${user.organization?.name ?? 'N/A'}'
+            : 'User is null';
 
     final logMessage = '''
         🚨 *Dio Error Report*
@@ -134,6 +141,7 @@ void _safeSendLog(DioException error, String userMessage) {
         *URL:* `${request.uri}`
         *Status Code:* `$statusCode`
         *User Message:* `$userMessage`
+        *User Info:* $userInfo
 
         *Response Body:*
         $responseBody

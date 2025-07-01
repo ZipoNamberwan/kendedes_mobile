@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:kendedes_mobile/classes/app_config.dart';
+import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/services/dio_service.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
 
@@ -29,12 +31,22 @@ class ApiServerHandler {
       try {
         final fullTrace = stackTrace.toString();
         final truncatedTrace =
-            fullTrace.length > 500 ? fullTrace.substring(0, 500) : fullTrace;
+            fullTrace.length > AppConfig.stackTraceLimitCharacter
+                ? fullTrace.substring(0, AppConfig.stackTraceLimitCharacter)
+                : fullTrace;
+
+        final user = AuthRepository().getUser();
+        final userInfo =
+            user != null
+                ? 'ID: ${user.id}, Name: ${user.firstname}, Email: ${user.email}, Organization: ${user.organization?.name ?? 'N/A'}'
+                : 'User is null';
 
         final logMessage = '''
         🚨 *Unhandled Error*
 
         *Error:* `${e.toString()}`
+        *User Info: $userInfo*
+        $userInfo
         *Stack Trace:*
         $truncatedTrace
         ''';

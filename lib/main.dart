@@ -8,6 +8,7 @@ import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
+import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/local_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/organization_db_repository.dart';
@@ -41,13 +42,32 @@ void main() {
       runApp(MyApp());
     },
     (Object error, StackTrace stack) {
-      TelegramLogger.send('''🚨 *Unhandled Dart Error*
+      try {
+        final fullTrace = stack.toString();
+        final truncatedTrace =
+            fullTrace.length > AppConfig.stackTraceLimitCharacter
+                ? fullTrace.substring(0, AppConfig.stackTraceLimitCharacter)
+                : fullTrace;
+
+        final user = AuthRepository().getUser();
+        final userInfo =
+            user != null
+                ? 'ID: ${user.id}, Name: ${user.firstname}, Email: ${user.email}, Organization: ${user.organization?.name ?? 'N/A'}'
+                : 'User is null';
+
+        final logMessage = '''
+      🚨 *Unhandled Dart Error*
 
       *Error:* `${error.toString()}`
+      *User Info:* $userInfo
       *Stack Trace:*
-      ${stack.toString().substring(0, 1000)}
+      $truncatedTrace
+      ''';
 
-      ''');
+        TelegramLogger.send(logMessage);
+      } catch (_) {
+        // Fail silently so it never blocks real error flow
+      }
     },
   );
 }

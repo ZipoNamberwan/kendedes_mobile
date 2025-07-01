@@ -24,14 +24,25 @@ import 'pages/login_page.dart';
 
 void main() {
   FlutterError.onError = (FlutterErrorDetails details) {
-    TelegramLogger.send('''🚨 *Flutter Error*
+    try {
+      final fullStack = details.stack.toString();
+      final truncatedStack =
+          fullStack.length > AppConfig.stackTraceLimitCharacter
+              ? fullStack.substring(0, AppConfig.stackTraceLimitCharacter)
+              : fullStack;
+
+      TelegramLogger.send('''🚨 *Flutter Error*
 
     *Exception:* `${details.exception}`
     *Library:* `${details.library}`
     *Stack Trace:*
-    ${details.stack.toString().substring(0, 1000)}
+    $truncatedStack
 
     ''');
+    } catch (_) {
+      // Fail silently so it never blocks real error flow
+    }
+
     FlutterError.presentError(details);
   };
 

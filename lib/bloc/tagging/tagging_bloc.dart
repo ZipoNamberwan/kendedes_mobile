@@ -573,10 +573,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           createdAt: event.tagData.createdAt,
           updatedAt: DateTime.now(),
           project: state.data.project,
-          user:
-              (event.tagData.user == null || event.tagData.user?.id == '')
-                  ? user
-                  : event.tagData.user,
+          user: user,
         );
 
         // 🔐 Save to db

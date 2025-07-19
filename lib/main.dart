@@ -31,14 +31,26 @@ void main() {
               ? fullStack.substring(0, AppConfig.stackTraceLimitCharacter)
               : fullStack;
 
+      final exceptionMessage = details.exception.toString();
+
+      // Define your ignore keywords
+      final ignoreKeywords = ['tile.openstreetmap.org', 'www.google.com/maps'];
+
+      // Check if any keyword is present in the exception message
+      final shouldIgnore = ignoreKeywords.any(
+        (keyword) => exceptionMessage.contains(keyword),
+      );
+
+      if (shouldIgnore) return;
+
       TelegramLogger.send('''🚨 *Flutter Error*
 
-    *Exception:* `${details.exception}`
-    *Library:* `${details.library}`
-    *Stack Trace:*
-    $truncatedStack
+      *Exception:* `$exceptionMessage`
+      *Library:* `${details.library}`
+      *Stack Trace:*
+      $truncatedStack
 
-    ''');
+      ''');
     } catch (_) {
       // Fail silently so it never blocks real error flow
     }
@@ -62,7 +74,7 @@ void main() {
 
         final user = AuthRepository().getUser();
         final userInfo =
-            user != null
+            user.id != ''
                 ? 'ID: ${user.id}, Name: ${user.firstname}, Email: ${user.email}, Organization: ${user.organization?.name ?? 'N/A'}'
                 : 'User is null';
 

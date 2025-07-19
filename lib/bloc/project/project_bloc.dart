@@ -36,15 +36,15 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         );
 
         final projects = await ProjectDbRepository().getAllProjectByUser(
-          user?.id ?? '',
+          user.id,
         );
 
         if (projects.isEmpty) {
           await ApiServerHandler.run(
             action: () async {
-              if (user?.id != null) {
+              if (user.id != '') {
                 final map = await ProjectRepository().getProjectsWithTags(
-                  user?.id ?? '',
+                  user.id,
                 );
                 final projects = map['projects'];
                 final tags = map['tags'];
@@ -352,9 +352,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         action: () async {
           final user = AuthRepository().getUser();
 
-          final map = await ProjectRepository().getProjectsWithTags(
-            user?.id ?? '',
-          );
+          final map = await ProjectRepository().getProjectsWithTags(user.id);
           final projects = map['projects'];
           final tags = map['tags'];
 

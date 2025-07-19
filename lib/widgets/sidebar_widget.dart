@@ -717,11 +717,14 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                                     );
                                   });
                               return ElevatedButton.icon(
-                                onPressed: () {
-                                  _showDeleteConfirmationDialog(
-                                    canBeDeletedSelectedTags.length,
-                                  );
-                                },
+                                onPressed:
+                                    canBeDeletedSelectedTags.isNotEmpty
+                                        ? () {
+                                          _showDeleteConfirmationDialog(
+                                            canBeDeletedSelectedTags.length,
+                                          );
+                                        }
+                                        : null,
                                 icon: const Icon(Icons.delete, size: 16),
                                 label: const Text(
                                   'Hapus',

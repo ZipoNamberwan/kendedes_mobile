@@ -53,6 +53,7 @@ class InitializingStarted extends TaggingState {
           isFilterSentToServer: false,
           requestedAreas: [],
           isForceTagging: false,
+          isMoveMode: false,
         ),
       );
 
@@ -296,6 +297,28 @@ class AreaNotRequestedNotification extends TaggingState {
   List<Object> get props => [data];
 }
 
+class OutsideMoveRadius extends TaggingState {
+  const OutsideMoveRadius({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class MoveTagError extends TaggingState {
+  final String errorMessage;
+  const MoveTagError({required this.errorMessage, required super.data});
+
+  @override
+  List<Object> get props => [data, errorMessage];
+}
+
+class MoveTagSuccess extends TaggingState {
+  const MoveTagSuccess({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class TaggingStateData {
   final Project project;
   final List<TagData> tags;
@@ -304,6 +327,8 @@ class TaggingStateData {
   final bool isLoadingPolygon;
   final bool isLoadingCurrentLocation;
   final List<TagData> selectedTags;
+  final TagData? originalMovedTag;
+  final TagData? newMovedTag;
 
   // Map attributes
   final double currentZoom;
@@ -313,6 +338,7 @@ class TaggingStateData {
   final LatLng? southWestCorner;
   final List<RequestedArea> requestedAreas;
   final bool isForceTagging;
+  final bool isMoveMode;
 
   // UI attributes
   final bool isMultiSelectMode;
@@ -355,6 +381,9 @@ class TaggingStateData {
     this.southWestCorner,
     required this.requestedAreas,
     required this.isForceTagging,
+    required this.isMoveMode,
+    this.originalMovedTag,
+    this.newMovedTag,
     required this.rotation,
     required this.selectedTags,
     required this.isMultiSelectMode,
@@ -407,6 +436,11 @@ class TaggingStateData {
     LatLng? southWestCorner,
     List<RequestedArea>? requestedAreas,
     bool? isForceTagging,
+    bool? isMoveMode,
+    TagData? originalMovedTag,
+    TagData? newMovedTag,
+    bool? clearOriginalMovedTag,
+    bool? clearNewMovedTag,
     double? currentZoom,
     double? rotation,
     List<TagData>? selectedTags,
@@ -477,9 +511,7 @@ class TaggingStateData {
               ? _generateFormFields()
               : formFields ?? this.formFields,
       isForceTagging:
-          (resetForm ?? false)
-              ? true
-              : isForceTagging ?? this.isForceTagging,
+          (resetForm ?? false) ? true : isForceTagging ?? this.isForceTagging,
       selectedLabelType: selectedLabelType ?? this.selectedLabelType,
       selectedMapType: selectedMapType ?? this.selectedMapType,
       northEastCorner: northEastCorner ?? this.northEastCorner,
@@ -501,6 +533,13 @@ class TaggingStateData {
               ? false
               : isFilterSentToServer ?? this.isFilterSentToServer,
       requestedAreas: requestedAreas ?? this.requestedAreas,
+      isMoveMode: isMoveMode ?? this.isMoveMode,
+      originalMovedTag:
+          clearOriginalMovedTag ?? false
+              ? null
+              : originalMovedTag ?? this.originalMovedTag,
+      newMovedTag:
+          clearNewMovedTag ?? false ? null : newMovedTag ?? this.newMovedTag,
     );
   }
 }

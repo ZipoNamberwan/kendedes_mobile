@@ -180,3 +180,22 @@ class UpdateVisibleMapBounds extends TaggingEvent {
 class GetTaggingInsideBounds extends TaggingEvent {
   const GetTaggingInsideBounds();
 }
+
+//Move tag to new location Event
+class StartMoveMode extends TaggingEvent {
+  final TagData tagData;
+  const StartMoveMode({required this.tagData});
+}
+
+class MoveTag extends TaggingEvent {
+  final LatLng newPosition;
+  const MoveTag({required this.newPosition});
+}
+
+class CancelMoveMode extends TaggingEvent {
+  const CancelMoveMode();
+}
+
+class SaveMoveTag extends TaggingEvent {
+  const SaveMoveTag();
+}

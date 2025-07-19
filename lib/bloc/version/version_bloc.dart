@@ -24,7 +24,7 @@ class VersionBloc extends Bloc<VersionEvent, VersionState> {
           // Check for updates
           int buildNumber = int.parse(packageInfo.buildNumber);
           final organization =
-              AuthRepository().getUser()?.organization?.id ?? '3500';
+              AuthRepository().getUser().organization?.id ?? '3500';
           final response = await VersionCheckingRepository().checkForUpdates(
             buildNumber,
             organization,

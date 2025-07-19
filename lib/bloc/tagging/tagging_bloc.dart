@@ -26,7 +26,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         final List<TagData> tags = await TaggingDbRepository()
             .getAllByProjectId(event.project.id);
 
-        final User? currentUser = AuthRepository().getUser();
+        final User currentUser = AuthRepository().getUser();
 
         // Emit success state with initial data
         emit(
@@ -268,6 +268,13 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 }).toList();
           }
 
+          final User user = AuthRepository().getUser();
+
+          uploadedTags =
+              uploadedTags.map((tag) {
+                return tag.copyWith(user: user);
+              }).toList();
+
           final ids = await TaggingRepository().uploadMultipleTags(
             uploadedTags.toList(),
           );
@@ -279,6 +286,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 final updatedTag = tag.copyWith(
                   hasChanged: false,
                   hasSentToServer: true,
+                  user: user,
                 );
                 //TODO: can be optimized by using a batch operation
                 await TaggingDbRepository().insertOrUpdate(updatedTag);
@@ -450,9 +458,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       }
 
       try {
-        final User user =
-            AuthRepository().getUser() ??
-            User(id: '', email: '', firstname: '', roles: []);
+        final User user = AuthRepository().getUser();
 
         final newTag = TagData(
           id: _uuid.v4(),
@@ -549,9 +555,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       }
 
       try {
-        final User user =
-            AuthRepository().getUser() ??
-            User(id: '', email: '', firstname: '', roles: []);
+        final User user = AuthRepository().getUser();
 
         final updatedTag = TagData(
           id: event.tagData.id,
@@ -978,6 +982,142 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         );
       }
     });
+
+    // Move mode logic
+    on<StartMoveMode>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            isMoveMode: true,
+            originalMovedTag: event.tagData,
+          ),
+        ),
+      );
+    });
+
+    on<SaveMoveTag>((event, emit) async {
+      try {
+        emit(TaggingState(data: state.data));
+
+        final User user = AuthRepository().getUser();
+
+        final updatedTag = state.data.newMovedTag?.copyWith(
+          user: user,
+          hasChanged: true,
+          hasSentToServer: false,
+          updatedAt: DateTime.now(),
+        );
+
+        if (updatedTag == null) {
+          throw Exception('Anda belum memilih lokasi baru');
+        }
+
+        // save new moved tag to database
+        await TaggingDbRepository().insertOrUpdate(updatedTag);
+        // Update the tag in the list
+        final updatedTags =
+            state.data.tags.map((tag) {
+              return tag.id == updatedTag.id ? updatedTag : tag;
+            }).toList();
+        // Update the selected tags if the moved tag is selected
+        final updatedSelectedTags =
+            state.data.selectedTags.map((tag) {
+              return tag.id == updatedTag.id ? updatedTag : tag;
+            }).toList();
+
+        emit(
+          MoveTagSuccess(
+            data: state.data.copyWith(
+              tags: updatedTags,
+              selectedTags: updatedSelectedTags,
+              isMoveMode: false,
+              clearOriginalMovedTag: true,
+              clearNewMovedTag: true,
+            ),
+          ),
+        );
+
+        await ApiServerHandler.run(
+          action: () async {
+            await TaggingRepository().updateTagging(updatedTag);
+            final savedTag = updatedTag.copyWith(
+              hasChanged: false,
+              hasSentToServer: true,
+            );
+            await TaggingDbRepository().insertOrUpdate(savedTag);
+
+            final updatedTags =
+                state.data.tags
+                    .map((tag) => tag.id == savedTag.id ? savedTag : tag)
+                    .toList();
+
+            final updatedSelectedTags =
+                state.data.selectedTags
+                    .map((tag) => tag.id == savedTag.id ? savedTag : tag)
+                    .toList();
+
+            emit(
+              TaggingState(
+                data: state.data.copyWith(
+                  tags: updatedTags,
+                  selectedTags: updatedSelectedTags,
+                  filteredTags: updatedTags,
+                ),
+              ),
+            );
+          },
+          onLoginExpired: (e) {},
+          onDataProviderError: (e) {},
+          onOtherError: (e) {},
+        );
+      } catch (e) {
+        emit(MoveTagError(errorMessage: e.toString(), data: state.data));
+      }
+    });
+
+    on<MoveTag>((event, emit) {
+      final originalTag = state.data.originalMovedTag;
+      if (originalTag == null) return;
+
+      // Calculate distance between original position and new position
+      final Distance distance = Distance();
+      final originalPosition = LatLng(
+        originalTag.positionLat,
+        originalTag.positionLng,
+      );
+      final newPosition = event.newPosition;
+
+      final distanceInMeters = distance.as(
+        LengthUnit.Meter,
+        originalPosition,
+        newPosition,
+      );
+
+      // Check if the new position is outside the allowed move radius (30m)
+      if (distanceInMeters > MapConfig.moveRadius) {
+        emit(OutsideMoveRadius(data: state.data.copyWith()));
+        return;
+      }
+
+      final newMovedTag = originalTag.copyWith(
+        positionLat: event.newPosition.latitude,
+        positionLng: event.newPosition.longitude,
+      );
+
+      emit(TaggingState(data: state.data.copyWith(newMovedTag: newMovedTag)));
+    });
+
+    on<CancelMoveMode>((event, emit) {
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            isMoveMode: false,
+            clearOriginalMovedTag: true,
+            clearNewMovedTag: true,
+          ),
+        ),
+      );
+    });
   }
 
   List<TagData> _applyFilters({
@@ -1130,6 +1270,29 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     return ValidationResult(updatedFields, hasErrors);
   }
 
+  // Future<Position> _getAccuratePosition({
+  //   int maxRetry = 5,
+  //   int attempt = 1,
+  //   double desiredAccuracy = MapConfig.desiredAccuracy,
+  // }) async {
+  //   Position position = await _getCurrentPosition();
+
+  //   if (position.accuracy <= desiredAccuracy) {
+  //     return position;
+  //   }
+
+  //   if (attempt >= maxRetry) {
+  //     // Return the last known position, even if not accurate enough
+  //     return position;
+  //   }
+
+  //   return await _getAccuratePosition(
+  //     maxRetry: maxRetry,
+  //     attempt: attempt + 1,
+  //     desiredAccuracy: desiredAccuracy,
+  //   );
+  // }
+
   Future<Position> _getCurrentPosition() async {
     // Check location permission
     LocationPermission permission = await Geolocator.checkPermission();
@@ -1145,9 +1308,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     }
 
     // Get current position
-    return await Geolocator.getCurrentPosition(
-      locationSettings: LocationSettings(accuracy: LocationAccuracy.best),
-    );
+    return await Geolocator.getCurrentPosition();
   }
 
   bool _hasAlreadyRequestedArea({

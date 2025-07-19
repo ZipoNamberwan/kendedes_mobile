@@ -37,7 +37,7 @@ class ApiServerHandler {
 
         final user = AuthRepository().getUser();
         final userInfo =
-            user != null
+            user.id != ''
                 ? 'ID: ${user.id}, Name: ${user.firstname}, Email: ${user.email}, Organization: ${user.organization?.name ?? 'N/A'}'
                 : 'User is null';
 

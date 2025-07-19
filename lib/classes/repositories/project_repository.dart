@@ -45,7 +45,7 @@ class ProjectRepository {
   }
 
   Future<Project> createProject(Map<String, dynamic> projectData) async {
-    final sentData = {...projectData, 'user': AuthRepository().getUser()?.id};
+    final sentData = {...projectData, 'user': AuthRepository().getUser().id};
     final response = await _projectProvider.createProject(sentData);
     return Project.fromJson(response);
   }

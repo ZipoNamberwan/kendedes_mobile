@@ -25,12 +25,12 @@ class AuthRepository {
     return _authProvider.getToken();
   }
 
-  User? getUser() {
+  User getUser() {
     final userJson = _authProvider.getUser();
     if (userJson != null) {
       return User.fromJson(userJson);
     }
-    return null;
+    return User(id: '', email: '', firstname: '', roles: []);
   }
 
   Future<void> clearToken() async {

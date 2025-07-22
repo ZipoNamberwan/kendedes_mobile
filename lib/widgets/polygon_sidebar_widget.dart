@@ -102,8 +102,11 @@ class _PolygonSidebarWidgetState extends State<PolygonSidebarWidget> {
                           width: double.infinity,
                           height: 40,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Colors.green, Colors.teal],
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.purple.shade400,
+                                Colors.purple.shade600,
+                              ],
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                             ),

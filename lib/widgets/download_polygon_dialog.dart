@@ -57,18 +57,18 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
         return Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: Colors.purple,
             elevation: 0,
             leading: IconButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close, color: Colors.grey, size: 24),
+              icon: const Icon(Icons.close, color: Colors.white, size: 24),
             ),
             title: const Text(
               'Download Poligon',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Colors.white,
               ),
             ),
           ),

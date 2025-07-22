@@ -5,15 +5,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
+import 'package:kendedes_mobile/bloc/polygon/polygon_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/area_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/local_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/organization_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/polygon_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/project_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/polygon_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository.dart';
@@ -106,6 +110,9 @@ Future<void> _initializeApp() async {
   await UserDbRepository().init();
   await ProjectDbRepository().init();
   await TaggingDbRepository().init();
+  await PolygonDbRepository().init();
+  await AreaDbRepository().init();
+  await PolygonRepository().init();
 }
 
 class MyApp extends StatelessWidget {
@@ -122,6 +129,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<TaggingBloc>(create: (context) => TaggingBloc()),
         BlocProvider<LogoutBloc>(create: (context) => LogoutBloc()),
         BlocProvider<VersionBloc>(create: (context) => VersionBloc()),
+        BlocProvider<PolygonBloc>(create: (context) => PolygonBloc()),
       ],
       child: MaterialApp(
         title: 'Kendedes Mobile',

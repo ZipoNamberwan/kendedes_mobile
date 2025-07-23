@@ -25,7 +25,8 @@ import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/move_mode_hint_widget.dart';
-import 'package:kendedes_mobile/widgets/sidebar_widget.dart';
+import 'package:kendedes_mobile/widgets/polygon_sidebar_widget.dart';
+import 'package:kendedes_mobile/widgets/tagging_sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/simple_marker_widget.dart';
 import 'package:kendedes_mobile/widgets/tagging_form_dialog.dart';
 import 'package:kendedes_mobile/widgets/map_type_selection_dialog.dart';
@@ -282,8 +283,12 @@ class _TaggingPageState extends State<TaggingPage>
     );
   }
 
-  void _toggleSidebar(bool isOpen) {
-    _taggingBloc.add(SetSideBarOpen(isOpen));
+  void _toggleTaggingSidebar(bool isOpen) {
+    _taggingBloc.add(SetTaggingSideBarOpen(isOpen));
+  }
+
+  void _togglePolygonSidebar(bool isOpen) {
+    _taggingBloc.add(SetPolygonSideBarOpen(isOpen));
   }
 
   // Helper: pixel distance between two points
@@ -439,8 +444,8 @@ class _TaggingPageState extends State<TaggingPage>
     bool isEnabled = true,
   }) {
     return Container(
-      width: 52,
-      height: 52,
+      width: 45,
+      height: 45,
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.white,
         shape: BoxShape.circle,
@@ -511,7 +516,7 @@ class _TaggingPageState extends State<TaggingPage>
               LatLng(selectedTag.positionLat, selectedTag.positionLng),
               state.data.currentZoom,
             );
-            _toggleSidebar(false);
+            _toggleTaggingSidebar(false);
           }
         } else if (state is RecordedLocation) {
           _mapController.move(state.recordedLocation, state.data.currentZoom);
@@ -590,6 +595,17 @@ class _TaggingPageState extends State<TaggingPage>
                   buttonText: 'Tutup',
                 ),
           );
+        } else if (state is PolygonSelected) {
+          _mapController.move(
+            LatLng(state.polygonCenter.latitude, state.polygonCenter.longitude),
+            state.data.currentZoom,
+          );
+        } else if (state is PolygonDeleted) {
+          CustomSnackBar.show(
+            context,
+            message: 'Poligon berhasil dihapus',
+            type: SnackBarType.success,
+          );
         }
       },
       builder: (context, state) {
@@ -611,6 +627,7 @@ class _TaggingPageState extends State<TaggingPage>
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
           body: SafeArea(
+            top: false,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final mapSize = Size(
@@ -619,236 +636,238 @@ class _TaggingPageState extends State<TaggingPage>
                 );
                 return Stack(
                   children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
+                    FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: LatLng(-7.9666, 112.6326),
+                        initialZoom: state.data.currentZoom,
+                        onLongPress: (tapPosition, point) => {},
+                        onMapReady: () {
+                          _onMapReady();
+                        },
+                        onTap: (tapPosition, latLng) {
+                          if (state.data.isMoveMode) {
+                            _taggingBloc.add(MoveTag(newPosition: latLng));
+                          }
+                        },
                       ),
-                      child: FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: LatLng(-7.9666, 112.6326),
-                          initialZoom: state.data.currentZoom,
-                          onLongPress: (tapPosition, point) => {},
-                          onMapReady: () {
-                            _onMapReady();
-                          },
-                          onTap: (tapPosition, latLng) {
-                            if (state.data.isMoveMode) {
-                              _taggingBloc.add(MoveTag(newPosition: latLng));
-                            }
-                          },
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              state.data.selectedMapType?.url ??
+                              MapType.openStreetMapDefault.url,
+                          userAgentPackageName: 'com.example.kendedes_mobile',
                         ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                state.data.selectedMapType?.url ??
-                                MapType.openStreetMapDefault.url,
-                            userAgentPackageName: 'com.example.kendedes_mobile',
-                          ),
-                          // SimpleAttributionWidget(
-                          //   source: Text(
-                          //     'OpenStreetMap contributors',
-                          //     style: TextStyle(fontSize: 9),
-                          //   ),
-                          // ),
-                          // // Polygon layer
-                          // PolygonLayer(
-                          //   polygons:
-                          //       _polygonData
-                          //           .map(
-                          //             (polygonData) => Polygon(
-                          //               points: polygonData.points,
-                          //               color: Colors.orange.withValues(alpha: 0.3),
-                          //               borderStrokeWidth: 2,
-                          //               borderColor: Colors.orange,
-                          //             ),
-                          //           )
-                          //           .toList(),
-                          // ),
-
-                          // Circle layer for move mode (50m radius)
-                          if (state.data.isMoveMode &&
-                              state.data.originalMovedTag != null)
-                            CircleLayer(
-                              circles: [
-                                CircleMarker(
-                                  point: LatLng(
-                                    state.data.originalMovedTag!.positionLat,
-                                    state.data.originalMovedTag!.positionLng,
-                                  ),
-                                  radius: MapConfig.moveRadius, // 30 meters
-                                  useRadiusInMeter: true,
-                                  color: Colors.orange.withValues(alpha: 0.1),
-                                  borderStrokeWidth: 2,
-                                  borderColor: Colors.orange,
-                                ),
-                              ],
-                            ),
-
-                          // Marker layer from bloc state
-                          MarkerLayer(
-                            markers: [
-                              // User tags: show selected tags above non-selected tags
-                              ...[
-                                ...state.data.tags.where(
-                                  (tag) =>
-                                      !state.data.selectedTags.contains(tag),
-                                ),
-                                ...state.data.selectedTags,
-                              ].map((tagData) {
-                                return _buildTagMarker(
-                                  tagData,
-                                  state.data.selectedTags.contains(tagData),
-                                  state.data.selectedLabelType?.key,
-                                  state.data.currentUser,
-                                  state.data.project,
-                                  state.data.isMoveMode,
-                                  state.data.currentZoom,
-                                  mapSize,
-                                );
-                              }),
-
-                              // Current location marker
-                              if (state.data.currentLocation != null)
-                                Marker(
-                                  point: state.data.currentLocation!,
-                                  width: 70,
-                                  height: 70,
-                                  child: IgnorePointer(
-                                    ignoring: true,
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        // Animated ripple effect
-                                        AnimatedBuilder(
-                                          animation: _rippleAnimation,
-                                          builder: (context, child) {
-                                            return Container(
-                                              width:
-                                                  70 * _rippleAnimation.value,
-                                              height:
-                                                  70 * _rippleAnimation.value,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Colors.blue.withValues(
-                                                  alpha:
-                                                      (1 -
-                                                          _rippleAnimation
-                                                              .value) *
-                                                      0.3,
-                                                ),
-                                                border: Border.all(
-                                                  color: Colors.blue.withValues(
-                                                    alpha:
-                                                        1 -
-                                                        _rippleAnimation.value,
-                                                  ),
-                                                  width: 2,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                        // Main location dot
-                                        Container(
-                                          width: 20,
-                                          height: 20,
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: Colors.white,
-                                              width: 3,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.4,
-                                                ),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 3),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
+                        // SimpleAttributionWidget(
+                        //   source: Text(
+                        //     'OpenStreetMap contributors',
+                        //     style: TextStyle(fontSize: 9),
+                        //   ),
+                        // ),
+                        // // Polygon layer
+                        PolygonLayer(
+                          polygons:
+                              state.data.polygons
+                                  .map(
+                                    (polygonData) => Polygon(
+                                      points: polygonData.points,
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderStrokeWidth: 2,
+                                      borderColor: Colors.orange,
+                                      label:
+                                          '${polygonData.id}\n${polygonData.fullName}',
+                                      labelStyle: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 12,
+                                        backgroundColor: Colors.white70,
+                                      ),
+                                      labelPlacement:
+                                          PolygonLabelPlacement.centroid,
                                     ),
-                                  ),
-                                ),
+                                  )
+                                  .toList(),
+                        ),
 
-                              // Original Moved Marker
-                              if (state.data.isMoveMode &&
-                                  state.data.originalMovedTag != null)
-                                _buildTagMarker(
-                                  state.data.originalMovedTag!,
-                                  false,
-                                  state.data.selectedLabelType?.key,
-                                  state.data.currentUser,
-                                  state.data.project,
-                                  false,
-                                  state.data.currentZoom,
-                                  mapSize,
+                        // Circle layer for move mode (50m radius)
+                        if (state.data.isMoveMode &&
+                            state.data.originalMovedTag != null)
+                          CircleLayer(
+                            circles: [
+                              CircleMarker(
+                                point: LatLng(
+                                  state.data.originalMovedTag!.positionLat,
+                                  state.data.originalMovedTag!.positionLng,
                                 ),
-
-                              // New Moved Marker
-                              if (state.data.isMoveMode &&
-                                  state.data.newMovedTag != null)
-                                _buildTagMarker(
-                                  state.data.newMovedTag!,
-                                  false,
-                                  state.data.selectedLabelType?.key,
-                                  state.data.currentUser,
-                                  state.data.project,
-                                  false,
-                                  state.data.currentZoom,
-                                  mapSize,
-                                ),
+                                radius: MapConfig.moveRadius, // 30 meters
+                                useRadiusInMeter: true,
+                                color: Colors.orange.withValues(alpha: 0.1),
+                                borderStrokeWidth: 2,
+                                borderColor: Colors.orange,
+                              ),
                             ],
                           ),
 
-                          if (state.data.isMoveMode &&
-                              state.data.originalMovedTag != null &&
-                              state.data.newMovedTag != null)
-                            PolylineLayer(
-                              polylines: [
-                                Polyline(
-                                  points: [
-                                    LatLng(
-                                      state.data.originalMovedTag!.positionLat,
-                                      state.data.originalMovedTag!.positionLng,
-                                    ),
-                                    LatLng(
-                                      state.data.newMovedTag!.positionLat,
-                                      state.data.newMovedTag!.positionLng,
-                                    ),
-                                  ],
-                                  pattern: StrokePattern.dashed(
-                                    segments: const [10, 10],
-                                  ),
-                                  strokeWidth: 4.0,
-                                  color: Colors.orange,
-                                ),
-                              ],
-                            ),
+                        // Marker layer from bloc state
+                        MarkerLayer(
+                          markers: [
+                            // User tags: show selected tags above non-selected tags
+                            ...[
+                              ...state.data.tags.where(
+                                (tag) => !state.data.selectedTags.contains(tag),
+                              ),
+                              ...state.data.selectedTags,
+                            ].map((tagData) {
+                              return _buildTagMarker(
+                                tagData,
+                                state.data.selectedTags.contains(tagData),
+                                state.data.selectedLabelType?.key,
+                                state.data.currentUser,
+                                state.data.project,
+                                state.data.isMoveMode,
+                                state.data.currentZoom,
+                                mapSize,
+                              );
+                            }),
 
-                          Scalebar(
-                            textStyle: TextStyle(
-                              color: Colors.grey.shade700,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            padding: const EdgeInsets.only(
-                              right: 10,
-                              left: 50,
-                              bottom: 120,
-                            ),
-                            lineColor: Colors.grey.shade700,
-                            alignment: Alignment.bottomLeft,
-                            length: ScalebarLength.l,
+                            // Current location marker
+                            if (state.data.currentLocation != null)
+                              Marker(
+                                point: state.data.currentLocation!,
+                                width: 70,
+                                height: 70,
+                                child: IgnorePointer(
+                                  ignoring: true,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      // Animated ripple effect
+                                      AnimatedBuilder(
+                                        animation: _rippleAnimation,
+                                        builder: (context, child) {
+                                          return Container(
+                                            width: 70 * _rippleAnimation.value,
+                                            height: 70 * _rippleAnimation.value,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: Colors.blue.withValues(
+                                                alpha:
+                                                    (1 -
+                                                        _rippleAnimation
+                                                            .value) *
+                                                    0.3,
+                                              ),
+                                              border: Border.all(
+                                                color: Colors.blue.withValues(
+                                                  alpha:
+                                                      1 -
+                                                      _rippleAnimation.value,
+                                                ),
+                                                width: 2,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      // Main location dot
+                                      Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 3,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.4,
+                                              ),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                            // Original Moved Marker
+                            if (state.data.isMoveMode &&
+                                state.data.originalMovedTag != null)
+                              _buildTagMarker(
+                                state.data.originalMovedTag!,
+                                false,
+                                state.data.selectedLabelType?.key,
+                                state.data.currentUser,
+                                state.data.project,
+                                false,
+                                state.data.currentZoom,
+                                mapSize,
+                              ),
+
+                            // New Moved Marker
+                            if (state.data.isMoveMode &&
+                                state.data.newMovedTag != null)
+                              _buildTagMarker(
+                                state.data.newMovedTag!,
+                                false,
+                                state.data.selectedLabelType?.key,
+                                state.data.currentUser,
+                                state.data.project,
+                                false,
+                                state.data.currentZoom,
+                                mapSize,
+                              ),
+                          ],
+                        ),
+
+                        if (state.data.isMoveMode &&
+                            state.data.originalMovedTag != null &&
+                            state.data.newMovedTag != null)
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                points: [
+                                  LatLng(
+                                    state.data.originalMovedTag!.positionLat,
+                                    state.data.originalMovedTag!.positionLng,
+                                  ),
+                                  LatLng(
+                                    state.data.newMovedTag!.positionLat,
+                                    state.data.newMovedTag!.positionLng,
+                                  ),
+                                ],
+                                pattern: StrokePattern.dashed(
+                                  segments: const [10, 10],
+                                ),
+                                strokeWidth: 4.0,
+                                color: Colors.orange,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+
+                        Scalebar(
+                          textStyle: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          padding: const EdgeInsets.only(
+                            right: 10,
+                            left: 50,
+                            bottom: 120,
+                          ),
+                          lineColor: Colors.grey.shade700,
+                          alignment: Alignment.bottomLeft,
+                          length: ScalebarLength.l,
+                        ),
+                      ],
                     ),
 
                     // Zoom level indicator
@@ -1179,7 +1198,7 @@ class _TaggingPageState extends State<TaggingPage>
                                     color: Colors.transparent,
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(14),
-                                      onTap: () => _toggleSidebar(true),
+                                      onTap: () => _toggleTaggingSidebar(true),
                                       child: const Padding(
                                         padding: EdgeInsets.all(12),
                                         child: Icon(
@@ -1242,6 +1261,17 @@ class _TaggingPageState extends State<TaggingPage>
                             iconColor: Colors.blue.shade600,
                             onPressed: () {
                               _showMapTypeDialog(state.data.selectedMapType);
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Polygon button
+                          _buildActionButton(
+                            icon: Icons.pentagon_outlined,
+                            iconColor: Colors.purple.shade600,
+                            onPressed: () {
+                              _togglePolygonSidebar(true);
                             },
                           ),
 
@@ -1627,16 +1657,22 @@ class _TaggingPageState extends State<TaggingPage>
                     ),
 
                     // Sidebar overlay
-                    if (state.data.isSideBarOpen)
+                    if (state.data.isTaggingSideBarOpen ||
+                        state.data.isPolygonSideBarOpen)
                       GestureDetector(
-                        onTap: () => _toggleSidebar(false),
+                        onTap: () {
+                          _toggleTaggingSidebar(false);
+                          _togglePolygonSidebar(false);
+                        },
                         child: Container(
                           color: Colors.black.withValues(alpha: 0.3),
                         ),
                       ),
 
-                    // Right sidebar
-                    const SidebarWidget(),
+                    // Tagging sidebar
+                    const TaggingSidebarWidget(),
+                    // Polygon sidebar
+                    PolygonSidebarWidget(projectId: state.data.project.id),
                   ],
                 );
               },

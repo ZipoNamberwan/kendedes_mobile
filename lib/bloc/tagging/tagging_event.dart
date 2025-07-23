@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
+import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:latlong2/latlong.dart';
@@ -75,9 +76,14 @@ class ToggleMultiSelectMode extends TaggingEvent {
   const ToggleMultiSelectMode();
 }
 
-class SetSideBarOpen extends TaggingEvent {
+class SetTaggingSideBarOpen extends TaggingEvent {
   final bool isOpen;
-  const SetSideBarOpen(this.isOpen);
+  const SetTaggingSideBarOpen(this.isOpen);
+}
+
+class SetPolygonSideBarOpen extends TaggingEvent {
+  final bool isOpen;
+  const SetPolygonSideBarOpen(this.isOpen);
 }
 
 class ClearTagSelection extends TaggingEvent {
@@ -198,4 +204,18 @@ class CancelMoveMode extends TaggingEvent {
 
 class SaveMoveTag extends TaggingEvent {
   const SaveMoveTag();
+}
+
+class UpdatePolygon extends TaggingEvent {
+  const UpdatePolygon();
+}
+
+class SelectPolygon extends TaggingEvent {
+  final Polygon polygon;
+  const SelectPolygon({required this.polygon});
+}
+
+class DeletePolygon extends TaggingEvent {
+  final Polygon polygon;
+  const DeletePolygon({required this.polygon});
 }

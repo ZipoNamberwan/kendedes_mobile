@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
-import 'package:kendedes_mobile/models/poligon_data.dart';
+import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -39,7 +39,8 @@ class InitializingStarted extends TaggingState {
           rotation: 0.0,
           selectedTags: [],
           isMultiSelectMode: false,
-          isSideBarOpen: false,
+          isTaggingSideBarOpen: false,
+          isPolygonSideBarOpen: false,
           isSubmitting: false,
           filteredTags: [],
           isTaggingInsideBoundsError: false,
@@ -54,6 +55,7 @@ class InitializingStarted extends TaggingState {
           requestedAreas: [],
           isForceTagging: false,
           isMoveMode: false,
+          isDeletingPolygon: false,
         ),
       );
 
@@ -167,15 +169,29 @@ class SaveFormError extends TaggingState {
   List<Object> get props => [errorMessage, data];
 }
 
-class SideBarOpened extends TaggingState {
-  const SideBarOpened({required super.data});
+class TaggingSideBarOpened extends TaggingState {
+  const TaggingSideBarOpened({required super.data});
 
   @override
   List<Object> get props => [data];
 }
 
-class SideBarClosed extends TaggingState {
-  const SideBarClosed({required super.data});
+class TaggingSideBarClosed extends TaggingState {
+  const TaggingSideBarClosed({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class PolygonSideBarOpened extends TaggingState {
+  const PolygonSideBarOpened({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class PolygonSideBarClosed extends TaggingState {
+  const PolygonSideBarClosed({required super.data});
 
   @override
   List<Object> get props => [data];
@@ -319,12 +335,25 @@ class MoveTagSuccess extends TaggingState {
   List<Object> get props => [data];
 }
 
+class PolygonSelected extends TaggingState {
+  final LatLng polygonCenter;
+  const PolygonSelected(this.polygonCenter, {required super.data});
+
+  @override
+  List<Object> get props => [data, polygonCenter];
+}
+
+class PolygonDeleted extends TaggingState {
+  const PolygonDeleted({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class TaggingStateData {
   final Project project;
   final List<TagData> tags;
-  final List<PoligonData> polygons;
   final bool isLoadingTag;
-  final bool isLoadingPolygon;
   final bool isLoadingCurrentLocation;
   final List<TagData> selectedTags;
   final TagData? originalMovedTag;
@@ -342,7 +371,8 @@ class TaggingStateData {
 
   // UI attributes
   final bool isMultiSelectMode;
-  final bool isSideBarOpen;
+  final bool isTaggingSideBarOpen;
+  final bool isPolygonSideBarOpen;
   final LabelType? selectedLabelType;
   final MapType? selectedMapType;
   final bool isTaggingInsideBoundsLoading;
@@ -368,12 +398,18 @@ class TaggingStateData {
   final bool isDeletingTag;
   final bool isUploadingMultipleTags;
 
+  //Polygon attribute
+  final List<Polygon> polygons;
+  final bool isLoadingPolygon;
+  final bool isDeletingPolygon;
+
   TaggingStateData({
     required this.project,
     required this.tags,
     required this.polygons,
     required this.isLoadingTag,
     required this.isLoadingPolygon,
+    required this.isDeletingPolygon,
     required this.isLoadingCurrentLocation,
     this.currentLocation,
     required this.currentZoom,
@@ -387,7 +423,8 @@ class TaggingStateData {
     required this.rotation,
     required this.selectedTags,
     required this.isMultiSelectMode,
-    required this.isSideBarOpen,
+    required this.isTaggingSideBarOpen,
+    required this.isPolygonSideBarOpen,
     required this.isTaggingInsideBoundsLoading,
     required this.isTaggingInsideBoundsError,
     required this.isFirstTimeMapLoading,
@@ -427,9 +464,10 @@ class TaggingStateData {
   TaggingStateData copyWith({
     Project? project,
     List<TagData>? tags,
-    List<PoligonData>? polygons,
+    List<Polygon>? polygons,
     bool? isLoadingTag,
     bool? isLoadingPolygon,
+    bool? isDeletingPolygon,
     bool? isLoadingCurrentLocation,
     LatLng? currentLocation,
     LatLng? northEastCorner,
@@ -445,7 +483,8 @@ class TaggingStateData {
     double? rotation,
     List<TagData>? selectedTags,
     bool? isMultiSelectMode,
-    bool? isSideBarOpen,
+    bool? isTaggingSideBarOpen,
+    bool? isPolygonSideBarOpen,
     bool? isTaggingInsideBoundsLoading,
     bool? isTaggingInsideBoundsError,
     bool? isFirstTimeMapLoading,
@@ -475,6 +514,7 @@ class TaggingStateData {
       polygons: polygons ?? this.polygons,
       isLoadingTag: isLoadingTag ?? this.isLoadingTag,
       isLoadingPolygon: isLoadingPolygon ?? this.isLoadingPolygon,
+      isDeletingPolygon: isDeletingPolygon ?? this.isDeletingPolygon,
       isLoadingCurrentLocation:
           isLoadingCurrentLocation ?? this.isLoadingCurrentLocation,
       currentLocation: currentLocation ?? this.currentLocation,
@@ -482,7 +522,8 @@ class TaggingStateData {
       rotation: rotation ?? this.rotation,
       selectedTags: selectedTags ?? this.selectedTags,
       isMultiSelectMode: isMultiSelectMode ?? this.isMultiSelectMode,
-      isSideBarOpen: isSideBarOpen ?? this.isSideBarOpen,
+      isTaggingSideBarOpen: isTaggingSideBarOpen ?? this.isTaggingSideBarOpen,
+      isPolygonSideBarOpen: isPolygonSideBarOpen ?? this.isPolygonSideBarOpen,
       isFirstTimeMapLoading:
           isFirstTimeMapLoading ?? this.isFirstTimeMapLoading,
 

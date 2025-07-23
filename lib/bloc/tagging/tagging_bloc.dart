@@ -4,6 +4,7 @@ import 'package:kendedes_mobile/classes/api_server_handler.dart';
 import 'package:kendedes_mobile/classes/helpers.dart';
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/polygon_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/models/project.dart';
@@ -28,6 +29,9 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
         final User currentUser = AuthRepository().getUser();
 
+        final polygons = await PolygonDbRepository().getPolygonsForProject(
+          event.project.id,
+        );
         // Emit success state with initial data
         emit(
           InitializingSuccess(
@@ -35,6 +39,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               project: event.project,
               tags: tags,
               currentUser: currentUser,
+              polygons: polygons,
             ),
           ),
         );
@@ -716,17 +721,28 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       }
     });
 
-    on<SetSideBarOpen>((event, emit) {
+    on<SetTaggingSideBarOpen>((event, emit) {
       final newDataState = state.data.copyWith(
-        isSideBarOpen: event.isOpen,
+        isTaggingSideBarOpen: event.isOpen,
         filteredTags: event.isOpen ? state.data.tags : state.data.filteredTags,
         resetAllFilter: event.isOpen,
         isMultiSelectMode: false,
       );
       if (event.isOpen) {
-        emit(SideBarOpened(data: newDataState));
+        emit(TaggingSideBarOpened(data: newDataState));
       } else {
-        emit(SideBarClosed(data: newDataState));
+        emit(TaggingSideBarClosed(data: newDataState));
+      }
+    });
+
+    on<SetPolygonSideBarOpen>((event, emit) {
+      final newDataState = state.data.copyWith(
+        isPolygonSideBarOpen: event.isOpen,
+      );
+      if (event.isOpen) {
+        emit(PolygonSideBarOpened(data: newDataState));
+      } else {
+        emit(PolygonSideBarClosed(data: newDataState));
       }
     });
 
@@ -1118,6 +1134,52 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         ),
       );
     });
+
+    on<UpdatePolygon>((event, emit) async {
+      emit(TaggingState(data: state.data.copyWith(isLoadingPolygon: true)));
+      final polygons = await PolygonDbRepository().getPolygonsForProject(
+        state.data.project.id,
+      );
+      emit(
+        TaggingState(
+          data: state.data.copyWith(
+            polygons: polygons,
+            isLoadingPolygon: false,
+          ),
+        ),
+      );
+    });
+
+    on<SelectPolygon>((event, emit) async {
+      // Calculate the centroid (center) of the polygon from its points
+      final center = _calculatePolygonCentroid(event.polygon.points);
+      emit(
+        PolygonSelected(
+          center,
+          data: state.data.copyWith(isPolygonSideBarOpen: false),
+        ),
+      );
+    });
+
+    on<DeletePolygon>((event, emit) async {
+      emit(TaggingState(data: state.data.copyWith(isDeletingPolygon: true)));
+      await PolygonDbRepository().removeProjectPolygonPair(
+        state.data.project.id,
+        event.polygon.id,
+      );
+      final polygons = await PolygonDbRepository().getPolygonsForProject(
+        state.data.project.id,
+      );
+
+      emit(
+        PolygonDeleted(
+          data: state.data.copyWith(
+            polygons: polygons,
+            isDeletingPolygon: false,
+          ),
+        ),
+      );
+    });
   }
 
   List<TagData> _applyFilters({
@@ -1318,6 +1380,54 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     final paddedBounds = MapHelper.paddedAreaFromPoint(center: position);
 
     return requestedAreas.any((area) => area.containsBounds(paddedBounds));
+  }
+
+  /// Calculate the centroid (geometric center) of a polygon from its points
+  /// Returns the center point
+  LatLng _calculatePolygonCentroid(List<LatLng> points) {
+    if (points.isEmpty) {
+      return LatLng(0, 0);
+    }
+
+    if (points.length == 1) {
+      return points.first;
+    }
+
+    // Calculate centroid
+    double centroidLat = 0;
+    double centroidLng = 0;
+    double signedArea = 0;
+
+    // Calculate using the polygon centroid formula
+    for (int i = 0; i < points.length; i++) {
+      final current = points[i];
+      final next = points[(i + 1) % points.length];
+
+      final a =
+          current.latitude * next.longitude - next.latitude * current.longitude;
+      signedArea += a;
+      centroidLat += (current.latitude + next.latitude) * a;
+      centroidLng += (current.longitude + next.longitude) * a;
+    }
+
+    signedArea *= 0.5;
+
+    LatLng center;
+    if (signedArea.abs() < 1e-10) {
+      // Fallback to simple average if the polygon is degenerate
+      final avgLat =
+          points.map((p) => p.latitude).reduce((a, b) => a + b) / points.length;
+      final avgLng =
+          points.map((p) => p.longitude).reduce((a, b) => a + b) /
+          points.length;
+      center = LatLng(avgLat, avgLng);
+    } else {
+      centroidLat /= (6.0 * signedArea);
+      centroidLng /= (6.0 * signedArea);
+      center = LatLng(centroidLat, centroidLng);
+    }
+
+    return center;
   }
 }
 

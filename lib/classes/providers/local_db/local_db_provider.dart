@@ -18,7 +18,12 @@ class LocalDbProvider {
     final Directory documentsDirectory =
         await getApplicationDocumentsDirectory();
     final String path = '${documentsDirectory.path}/tagging_app.db';
-    _database = await openDatabase(path, version: 1, onCreate: _onCreate);
+    _database = await openDatabase(
+      path,
+      version: 2,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
     _initialized = true;
   }
 
@@ -114,5 +119,91 @@ class LocalDbProvider {
       FOREIGN KEY(user_id) REFERENCES users(id)
     )
   ''');
+  }
+
+  static Future<void> _onUpgrade(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      // Create polygons table
+      await db.execute('''
+        CREATE TABLE polygons (
+          id TEXT PRIMARY KEY,
+          full_name TEXT,
+          short_name TEXT,
+          type TEXT
+        )
+      ''');
+
+      // Create polygon_points table
+      await db.execute('''
+        CREATE TABLE polygon_points (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          latitude REAL,
+          longitude REAL,
+          polygon_id TEXT,
+          FOREIGN KEY(polygon_id) REFERENCES polygons(id)
+        )
+      ''');
+
+      // Create project_polygons many-to-many table
+      await db.execute('''
+        CREATE TABLE project_polygons (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          project_id TEXT,
+          polygon_id TEXT,
+          FOREIGN KEY(project_id) REFERENCES projects(id),
+          FOREIGN KEY(polygon_id) REFERENCES polygons(id)
+        )
+      ''');
+
+      // Create regencies table
+      await db.execute('''
+        CREATE TABLE regencies (
+          id TEXT PRIMARY KEY,
+          short_code TEXT,
+          long_code TEXT,
+          name TEXT
+        )
+      ''');
+
+      // Create subdistricts table
+      await db.execute('''
+        CREATE TABLE subdistricts (
+          id TEXT PRIMARY KEY,
+          short_code TEXT,
+          long_code TEXT,
+          name TEXT,
+          regency_id TEXT,
+          FOREIGN KEY(regency_id) REFERENCES regencies(id)
+        )
+      ''');
+
+      // Create villages table
+      await db.execute('''
+        CREATE TABLE villages (
+          id TEXT PRIMARY KEY,
+          short_code TEXT,
+          long_code TEXT,
+          name TEXT,
+          subdistrict_id TEXT,
+          FOREIGN KEY(subdistrict_id) REFERENCES subdistricts(id)
+        )
+      ''');
+
+      // Create sls table
+      await db.execute('''
+        CREATE TABLE sls (
+          id TEXT PRIMARY KEY,
+          short_code TEXT,
+          long_code TEXT,
+          name TEXT,
+          village_id TEXT,
+          FOREIGN KEY(village_id) REFERENCES villages(id)
+        )
+      ''');
+    }
   }
 }

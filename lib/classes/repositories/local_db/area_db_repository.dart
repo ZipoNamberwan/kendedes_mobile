@@ -74,6 +74,16 @@ class AreaDbRepository {
     return slsData != null ? Sls.fromJson(slsData) : null;
   }
 
+  /// Check if regencies table is empty
+  Future<bool> isRegenciesEmpty() async {
+    return await _provider.isRegenciesEmpty();
+  }
+
+  /// Check if subdistricts table is empty
+  Future<bool> isSubdistrictsEmpty() async {
+    return await _provider.isSubdistrictsEmpty();
+  }
+
   /// Insert batch of regencies
   Future<void> insertBatchRegencies(List<Regency> regencies) async {
     final regenciesData = regencies.map((regency) => regency.toJson()).toList();

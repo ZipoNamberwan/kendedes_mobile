@@ -17,8 +17,29 @@ class AreaDbProvider {
     await _dbProvider.init();
   }
 
-  /// Get database instance
-  Database get db => _dbProvider.db;
+  /// Check if regencies table is empty
+  Future<bool> isRegenciesEmpty() async {
+    final Database db = _dbProvider.db;
+
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM regencies',
+    );
+
+    final int count = result.first['count'] as int;
+    return count == 0;
+  }
+
+  /// Check if subdistricts table is empty
+  Future<bool> isSubdistrictsEmpty() async {
+    final Database db = _dbProvider.db;
+
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM subdistricts',
+    );
+
+    final int count = result.first['count'] as int;
+    return count == 0;
+  }
 
   /// Get all regencies
   Future<List<Map<String, dynamic>>> getRegencies() async {

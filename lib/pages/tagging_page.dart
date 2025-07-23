@@ -664,15 +664,52 @@ class _TaggingPageState extends State<TaggingPage>
                         //     style: TextStyle(fontSize: 9),
                         //   ),
                         // ),
-                        // // Polygon layer
+
+                        // SLS Polygon layer
                         PolygonLayer(
                           polygons:
                               state.data.polygons
+                                  .where(
+                                    (polygonData) =>
+                                        polygonData.type.name.toLowerCase() ==
+                                        'sls',
+                                  )
+                                  .map(
+                                    (polygonData) => Polygon(
+                                      points: polygonData.points,
+                                      color: Colors.purple.withValues(
+                                        alpha: 0.05,
+                                      ),
+                                      borderStrokeWidth: 2,
+                                      borderColor: Colors.purple,
+                                      label:
+                                          '${polygonData.id}\n${polygonData.fullName}',
+                                      labelStyle: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 12,
+                                        backgroundColor: Colors.white70,
+                                      ),
+                                      labelPlacement:
+                                          PolygonLabelPlacement.centroid,
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+
+                        // Village Polygon layer
+                        PolygonLayer(
+                          polygons:
+                              state.data.polygons
+                                  .where(
+                                    (polygonData) =>
+                                        polygonData.type.name.toLowerCase() ==
+                                        'village',
+                                  )
                                   .map(
                                     (polygonData) => Polygon(
                                       points: polygonData.points,
                                       color: Colors.orange.withValues(
-                                        alpha: 0.1,
+                                        alpha: 0.05,
                                       ),
                                       borderStrokeWidth: 2,
                                       borderColor: Colors.orange,

@@ -18,16 +18,18 @@ class PolygonBloc extends Bloc<PolygonEvent, PolygonState> {
       emit(Initialized());
       emit(PolygonState(data: state.data.copyWith(isInitializing: true)));
 
-      List<Regency> regencies = await AreaDbRepository().getRegencies();
-      if (regencies.isEmpty) {
+      final bool isRegenciesEmpty = await AreaDbRepository().isRegenciesEmpty();
+      final bool isSubdistrictsEmpty =
+          await AreaDbRepository().isSubdistrictsEmpty();
+      if (isRegenciesEmpty || isSubdistrictsEmpty) {
         await AreaDbRepository().insertBatchRegencies(
           Regency.getPredefinedRegencies(),
         );
         await AreaDbRepository().insertBatchSubdistricts(
           Subdistrict.getPredefinedSubdistricts(),
         );
-        regencies = await AreaDbRepository().getRegencies();
       }
+      final regencies = await AreaDbRepository().getRegencies();
       emit(
         PolygonState(
           data: state.data.copyWith(

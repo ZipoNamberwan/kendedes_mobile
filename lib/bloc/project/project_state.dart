@@ -95,6 +95,7 @@ class ProjectStateData {
   final bool initLoading;
   final bool deleteLoading;
   final bool isSyncing;
+  final Map<String, Map<String, int>> tagCounts;
 
   ProjectStateData({
     required this.projects,
@@ -103,6 +104,7 @@ class ProjectStateData {
     required this.initLoading,
     required this.deleteLoading,
     required this.isSyncing,
+    required this.tagCounts,
     Map<String, ProjectFormFieldState<dynamic>>? formFields,
   }) : formFields = formFields ?? _generateFormFields();
 
@@ -126,6 +128,7 @@ class ProjectStateData {
     bool? initLoading,
     bool? deleteLoading,
     bool? isSyncing,
+    Map<String, Map<String, int>>? tagCounts,
   }) {
     return ProjectStateData(
       projects: projects ?? this.projects,
@@ -138,6 +141,7 @@ class ProjectStateData {
       initLoading: initLoading ?? this.initLoading,
       deleteLoading: deleteLoading ?? this.deleteLoading,
       isSyncing: isSyncing ?? this.isSyncing,
+      tagCounts: tagCounts ?? this.tagCounts,
     );
   }
 }

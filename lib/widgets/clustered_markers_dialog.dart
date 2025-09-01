@@ -109,8 +109,8 @@ class ClusteredMarkersDialog extends StatelessWidget {
                     ),
                     subtitle: Text(
                       '${tag.description}\n'
-                      'Posisi: ${tag.positionLat.toStringAsFixed(6)}, '
-                      ', ${tag.positionLng.toStringAsFixed(6)}',
+                      'Posisi: ${tag.positionLat.toStringAsFixed(6)}; '
+                      '${tag.positionLng.toStringAsFixed(6)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: isSelected ? Colors.green : null,

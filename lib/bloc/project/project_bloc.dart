@@ -22,6 +22,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             deleteLoading: false,
             isSyncing: false,
             currentUser: null,
+            tagCounts: {},
           ),
         ),
       ) {
@@ -52,11 +53,16 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
                 await ProjectDbRepository().insertAll(projects);
                 await TaggingDbRepository().insertAll(tags);
 
+                final tagCounts =
+                    await ProjectDbRepository()
+                        .getTagCountsByProjectAndSyncStatus();
+
                 emit(
                   InitializingSuccess(
                     data: state.data.copyWith(
                       projects: projects,
                       initLoading: false,
+                      tagCounts: tagCounts,
                     ),
                   ),
                 );
@@ -83,9 +89,15 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             },
           );
         } else {
+          final tagCounts =
+              await ProjectDbRepository().getTagCountsByProjectAndSyncStatus();
           emit(
             InitializingSuccess(
-              data: state.data.copyWith(projects: projects, initLoading: false),
+              data: state.data.copyWith(
+                projects: projects,
+                initLoading: false,
+                tagCounts: tagCounts,
+              ),
             ),
           );
         }
@@ -358,10 +370,16 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
 
           await ProjectDbRepository().insertAll(projects);
           await TaggingDbRepository().insertAll(tags);
+          final tagCounts =
+              await ProjectDbRepository().getTagCountsByProjectAndSyncStatus();
 
           emit(
             SyncSuccess(
-              data: state.data.copyWith(projects: projects, isSyncing: false),
+              data: state.data.copyWith(
+                projects: projects,
+                isSyncing: false,
+                tagCounts: tagCounts,
+              ),
             ),
           );
         },
@@ -417,6 +435,12 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
 
     on<ResetProjectForm>((event, emit) {
       emit(ProjectState(data: state.data.copyWith(resetForm: true)));
+    });
+
+    on<RecalculateTags>((event, emit) async {
+      final tagCounts =
+          await ProjectDbRepository().getTagCountsByProjectAndSyncStatus();
+      emit(ProjectState(data: state.data.copyWith(tagCounts: tagCounts)));
     });
   }
 

@@ -442,7 +442,6 @@ class _TaggingPageState extends State<TaggingPage>
     Color? backgroundColor,
     Widget? child,
     bool isEnabled = true,
-    bool enhancedShadow = false,
   }) {
     return Container(
       width: 45,
@@ -450,37 +449,18 @@ class _TaggingPageState extends State<TaggingPage>
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.white,
         shape: BoxShape.circle,
-        boxShadow:
-            enhancedShadow
-                ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-                : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -547,6 +527,8 @@ class _TaggingPageState extends State<TaggingPage>
             message:
                 'Gagal mengambil data tagging di area ini. ${state.errorMessage}',
           );
+        } else if (state is NoTaggingInsideBounds) {
+          CustomSnackBar.showInfo(context, message: state.message);
         } else if (state is TokenExpired) {
           Navigator.pushAndRemoveUntil(
             context,
@@ -1354,39 +1336,104 @@ class _TaggingPageState extends State<TaggingPage>
                       child: Column(
                         children: [
                           // Refresh tagging button
-                          _buildActionButton(
-                            icon: Icons.sync,
-                            iconColor: Colors.white,
-                            backgroundColor: Colors.deepOrange,
-                            enhancedShadow: true,
-                            onPressed: () {
-                              _getTaggingInsideBounds();
-                            },
-                            child:
-                                state.data.isTaggingInsideBoundsLoading
-                                    ? Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2.5,
-                                          ),
-                                        ),
-                                        const Icon(
+                          // _buildActionButton(
+                          //   icon: Icons.sync,
+                          //   iconColor: Colors.white,
+                          //   backgroundColor: Colors.deepOrange,
+                          //   onPressed: () {
+                          //     _getTaggingInsideBounds();
+                          //   },
+                          //   child:
+                          //       state.data.isTaggingInsideBoundsLoading
+                          //           ? Stack(
+                          //             alignment: Alignment.center,
+                          //             children: [
+                          //               const SizedBox(
+                          //                 child: CircularProgressIndicator(
+                          //                   color: Colors.white,
+                          //                   strokeWidth: 2.5,
+                          //                 ),
+                          //               ),
+                          //               const Icon(
+                          //                 Icons.sync,
+                          //                 color: Colors.white,
+                          //                 size: 14,
+                          //               ),
+                          //             ],
+                          //           )
+                          //           : const Icon(
+                          //             Icons.sync,
+                          //             color: Colors.white,
+                          //             size: 22,
+                          //           ),
+                          // ),
+
+                          // Refresh tagging button
+                          Container(
+                            width: 45,
+                            height: 45,
+                            decoration: BoxDecoration(
+                              color: Colors.deepOrange,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                                BoxShadow(
+                                  color: Colors.deepOrange.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 0),
+                                ),
+                                BoxShadow(
+                                  color: Colors.deepOrange.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 0),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(26),
+                                onTap: () {
+                                  _getTaggingInsideBounds();
+                                },
+                                child:
+                                    state.data.isTaggingInsideBoundsLoading
+                                        ? Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            const SizedBox(
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2.5,
+                                              ),
+                                            ),
+                                            const Icon(
+                                              Icons.sync,
+                                              color: Colors.white,
+                                              size: 14,
+                                            ),
+                                          ],
+                                        )
+                                        : const Icon(
                                           Icons.sync,
                                           color: Colors.white,
-                                          size: 12,
+                                          size: 22,
                                         ),
-                                      ],
-                                    )
-                                    : const Icon(
-                                      Icons.sync,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
+                              ),
+                            ),
                           ),
 
                           const SizedBox(height: 12),
@@ -1394,7 +1441,7 @@ class _TaggingPageState extends State<TaggingPage>
                           // My location button
                           _buildActionButton(
                             icon: Icons.my_location_rounded,
-                            iconColor: Colors.deepOrange,
+                            iconColor: Colors.grey.shade600,
                             isEnabled: !state.data.isLoadingCurrentLocation,
                             onPressed:
                                 () => _taggingBloc.add(
@@ -1405,22 +1452,22 @@ class _TaggingPageState extends State<TaggingPage>
                                     ? Stack(
                                       alignment: Alignment.center,
                                       children: [
-                                        const SizedBox(
+                                        SizedBox(
                                           child: CircularProgressIndicator(
-                                            color: Colors.deepOrange,
+                                            color: Colors.grey.shade600,
                                             strokeWidth: 2.5,
                                           ),
                                         ),
-                                        const Icon(
+                                        Icon(
                                           Icons.my_location_rounded,
-                                          color: Colors.deepOrange,
+                                          color: Colors.grey.shade600,
                                           size: 14,
                                         ),
                                       ],
                                     )
-                                    : const Icon(
+                                    : Icon(
                                       Icons.my_location_rounded,
-                                      color: Colors.deepOrange,
+                                      color: Colors.grey.shade600,
                                       size: 22,
                                     ),
                           ),

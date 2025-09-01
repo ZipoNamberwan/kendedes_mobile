@@ -208,7 +208,7 @@ class ProjectInfoDialog extends StatelessWidget {
 
                             // Synced Tags
                             _buildStatRow(
-                              'Terupload',
+                              'Sudah Diupload',
                               syncedCount.toString(),
                               Colors.green.shade600,
                               Icons.cloud_done,
@@ -218,7 +218,7 @@ class ProjectInfoDialog extends StatelessWidget {
 
                             // Unsynced Tags
                             _buildStatRow(
-                              'Belum Terupload',
+                              'Belum Diupload',
                               unsyncedCount.toString(),
                               Colors.red.shade600,
                               Icons.cloud_off,

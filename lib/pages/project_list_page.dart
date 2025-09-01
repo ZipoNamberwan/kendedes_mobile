@@ -429,7 +429,7 @@ class _ProjectListPageState extends State<ProjectListPage>
                   ],
                 ),
               ),
-    
+
               // Enhanced Project List
               Expanded(
                 child: FadeTransition(
@@ -437,9 +437,7 @@ class _ProjectListPageState extends State<ProjectListPage>
                   child:
                       state.data.projects.isEmpty
                           ? SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: ConstrainedBox(
                               constraints: BoxConstraints(
                                 minHeight:
@@ -494,9 +492,7 @@ class _ProjectListPageState extends State<ProjectListPage>
                                         vertical: 16,
                                       ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          16,
-                                        ),
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
                                       elevation: 8,
                                       shadowColor: Colors.orange.withValues(
@@ -506,9 +502,7 @@ class _ProjectListPageState extends State<ProjectListPage>
                                   ),
                                   SizedBox(
                                     height:
-                                        MediaQuery.of(
-                                          context,
-                                        ).padding.bottom +
+                                        MediaQuery.of(context).padding.bottom +
                                         20,
                                   ),
                                 ],
@@ -516,12 +510,7 @@ class _ProjectListPageState extends State<ProjectListPage>
                             ),
                           )
                           : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(
-                              20,
-                              0,
-                              20,
-                              100,
-                            ),
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                             itemCount: state.data.projects.length,
                             itemBuilder: (context, index) {
                               final project = state.data.projects[index];
@@ -562,8 +551,8 @@ class _ProjectListPageState extends State<ProjectListPage>
                                     color: Colors.transparent,
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(20),
-                                      onTap: () {
-                                        Navigator.push(
+                                      onTap: () async {
+                                        await Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder:
@@ -572,6 +561,8 @@ class _ProjectListPageState extends State<ProjectListPage>
                                                 ),
                                           ),
                                         );
+
+                                        _projectBloc.add(RecalculateTags());
                                       },
                                       child: Padding(
                                         padding: const EdgeInsets.all(20),
@@ -591,13 +582,10 @@ class _ProjectListPageState extends State<ProjectListPage>
                                                           .shade400,
                                                     ],
                                                     begin: Alignment.topLeft,
-                                                    end:
-                                                        Alignment.bottomRight,
+                                                    end: Alignment.bottomRight,
                                                   ),
                                                   borderRadius:
-                                                      BorderRadius.circular(
-                                                        18,
-                                                      ),
+                                                      BorderRadius.circular(18),
                                                   boxShadow: [
                                                     BoxShadow(
                                                       color: Colors.orange
@@ -641,66 +629,134 @@ class _ProjectListPageState extends State<ProjectListPage>
                                                       true) ...[
                                                     const SizedBox(height: 6),
                                                     Text(
-                                                      project.description ??
-                                                          '',
+                                                      project.description ?? '',
                                                       style: TextStyle(
                                                         fontSize: 14,
-                                                        color:
-                                                            Colors.grey[600],
+                                                        color: Colors.grey[600],
                                                         height: 1.4,
                                                       ),
                                                       maxLines: 2,
                                                       overflow:
-                                                          TextOverflow
-                                                              .ellipsis,
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ],
                                                   const SizedBox(height: 12),
-                                                  Container(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 6,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color:
-                                                          Colors
-                                                              .grey
-                                                              .shade100,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            20,
-                                                          ),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Icon(
-                                                          Icons
-                                                              .calendar_today_rounded,
-                                                          size: 14,
+                                                  Row(
+                                                    children: [
+                                                      // Synced tags container
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        decoration: BoxDecoration(
                                                           color:
                                                               Colors
-                                                                  .grey[600],
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 6,
-                                                        ),
-                                                        Text(
-                                                          'Created ${_formatDate(project.createdAt)}',
-                                                          style: TextStyle(
-                                                            fontSize: 12,
+                                                                  .green
+                                                                  .shade50,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                16,
+                                                              ),
+                                                          border: Border.all(
                                                             color:
                                                                 Colors
-                                                                    .grey[600],
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w500,
+                                                                    .green
+                                                                    .shade200,
+                                                            width: 1,
                                                           ),
                                                         ),
-                                                      ],
-                                                    ),
+                                                        child: Row(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .cloud_done_rounded,
+                                                              size: 14,
+                                                              color:
+                                                                  Colors
+                                                                      .green
+                                                                      .shade600,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 4,
+                                                            ),
+                                                            Text(
+                                                              '${state.data.tagCounts[project.id]?['synced'] ?? 0}',
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                color:
+                                                                    Colors
+                                                                        .green
+                                                                        .shade700,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      // Unsynced tags container
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              Colors
+                                                                  .orange
+                                                                  .shade50,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                16,
+                                                              ),
+                                                          border: Border.all(
+                                                            color:
+                                                                Colors
+                                                                    .orange
+                                                                    .shade200,
+                                                            width: 1,
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .cloud_off_rounded,
+                                                              size: 14,
+                                                              color:
+                                                                  Colors
+                                                                      .orange
+                                                                      .shade600,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 4,
+                                                            ),
+                                                            Text(
+                                                              '${state.data.tagCounts[project.id]?['unsynced'] ?? 0}',
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                color:
+                                                                    Colors
+                                                                        .orange
+                                                                        .shade700,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ],
                                               ),
@@ -730,9 +786,7 @@ class _ProjectListPageState extends State<ProjectListPage>
                                                 ),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
-                                                      BorderRadius.circular(
-                                                        12,
-                                                      ),
+                                                      BorderRadius.circular(12),
                                                 ),
                                                 itemBuilder:
                                                     (context) => [
@@ -836,9 +890,5 @@ class _ProjectListPageState extends State<ProjectListPage>
         );
       },
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 }

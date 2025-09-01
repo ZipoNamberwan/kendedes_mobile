@@ -211,6 +211,18 @@ class AllFilterCleared extends TaggingState {
   List<Object> get props => [data];
 }
 
+class NoTaggingInsideBounds extends TaggingState {
+  final String message;
+
+  const NoTaggingInsideBounds({
+    required this.message,
+    required super.data,
+  });
+
+  @override
+  List<Object> get props => [data, message];
+}
+
 class TaggingInsideBoundsFailed extends TaggingState {
   final String errorMessage;
   const TaggingInsideBoundsFailed({

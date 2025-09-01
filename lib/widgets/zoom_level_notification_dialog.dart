@@ -21,7 +21,7 @@ class ZoomLevelNotificationDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.zoom_in_map, color: Colors.orange, size: 36),
+            Icon(Icons.zoom_in, color: Colors.deepOrange, size: 36),
             const SizedBox(height: 12),
             Text(
               'Perbesar Peta',

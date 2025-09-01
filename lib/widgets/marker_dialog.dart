@@ -104,6 +104,17 @@ class MarkerDialog extends StatelessWidget {
                       _buildInfoRow('Ditagging oleh', tagData.user!.firstname),
                     if (tagData.survey != null)
                       _buildInfoRow('Survei', tagData.survey!.name),
+                    if (project.id == tagData.project.id)
+                      _buildInfoRowWithIcon(
+                        'Status Upload',
+                        tagData.hasSentToServer
+                            ? 'Sudah Upload'
+                            : 'Belum Upload',
+                        tagData.hasSentToServer
+                            ? Icons.cloud_done_rounded
+                            : Icons.cloud_off_rounded,
+                        tagData.hasSentToServer ? Colors.green : Colors.orange,
+                      ),
                     // if (tagData.createdAt != null)
                     //   _buildInfoRow(
                     //     'Dibuat pada',
@@ -192,6 +203,48 @@ class MarkerDialog extends StatelessWidget {
             child: Text(
               value,
               style: const TextStyle(fontSize: 13, color: Colors.black87),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRowWithIcon(
+    String label,
+    String value,
+    IconData icon,
+    Color iconColor,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Row(
+              children: [
+                Icon(icon, size: 16, color: iconColor),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

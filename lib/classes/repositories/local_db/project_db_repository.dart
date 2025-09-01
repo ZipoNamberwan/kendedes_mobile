@@ -137,9 +137,7 @@ class ProjectDbRepository {
   }
 
   Future<List<Project>> getAllProjectByUser(String userId) async {
-    final maps = await _projectDbProvider.getAllProjectByUser(
-      userId,
-    );
+    final maps = await _projectDbProvider.getAllProjectByUser(userId);
     final ids = maps.map((map) => map['id'] as String).toList();
 
     final List<Project> projects = [];
@@ -174,5 +172,10 @@ class ProjectDbRepository {
 
   Future<void> delete(String id) async {
     await _projectDbProvider.delete(id);
+  }
+
+  Future<Map<String, Map<String, int>>>
+  getTagCountsByProjectAndSyncStatus() async {
+    return await _projectDbProvider.getTagCountsByProjectAndSyncStatus();
   }
 }

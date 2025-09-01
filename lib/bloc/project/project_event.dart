@@ -67,3 +67,10 @@ class SyncProjects extends ProjectEvent {
   @override
   List<Object?> get props => [];
 }
+
+class RecalculateTags extends ProjectEvent {
+  const RecalculateTags();
+
+  @override
+  List<Object?> get props => [];
+}

@@ -938,30 +938,49 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               maxLng: ne?.longitude ?? 0.0,
             );
 
-            final updatedNearByTags = state.data.tags;
-            final existingIds = updatedNearByTags.map((e) => e.id).toSet();
-
-            for (final tag in tags) {
-              if (!existingIds.contains(tag.id)) {
-                updatedNearByTags.add(tag);
-              }
-            }
-
-            emit(
-              TaggingState(
-                data: state.data.copyWith(
-                  isTaggingInsideBoundsLoading: false,
-                  tags: updatedNearByTags,
-                  requestedAreas: [
-                    ...state.data.requestedAreas,
-                    RequestedArea(
-                      northeast: ne ?? LatLng(0, 0),
-                      southwest: sw ?? LatLng(0, 0),
-                    ),
-                  ],
-                ),
-              ),
+            final requestedArea = RequestedArea(
+              northeast: ne ?? const LatLng(0, 0),
+              southwest: sw ?? const LatLng(0, 0),
             );
+
+            if (tags.isEmpty) {
+              emit(
+                NoTaggingInsideBounds(
+                  message: 'Belum ada tagging di area ini',
+                  data: state.data.copyWith(
+                    isTaggingInsideBoundsLoading: false,
+                    requestedAreas: [
+                      ...state.data.requestedAreas,
+                      requestedArea,
+                    ],
+                  ),
+                ),
+              );
+            } else {
+              // Create a copy of the current tags list
+              final updatedNearByTags = List.of(state.data.tags);
+
+              // Use a Set for efficient duplicate checks
+              final existingIds = updatedNearByTags.map((e) => e.id).toSet();
+
+              // Add only new tags
+              updatedNearByTags.addAll(
+                tags.where((tag) => !existingIds.contains(tag.id)),
+              );
+
+              emit(
+                TaggingState(
+                  data: state.data.copyWith(
+                    isTaggingInsideBoundsLoading: false,
+                    tags: updatedNearByTags,
+                    requestedAreas: [
+                      ...state.data.requestedAreas,
+                      requestedArea,
+                    ],
+                  ),
+                ),
+              );
+            }
           },
           onLoginExpired: (e) {
             emit(

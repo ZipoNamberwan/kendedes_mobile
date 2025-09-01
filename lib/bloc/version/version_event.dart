@@ -7,3 +7,5 @@ abstract class VersionEvent extends Equatable {
 }
 
 class CheckVersion extends VersionEvent {}
+
+class ShowBrowserError extends VersionEvent {}

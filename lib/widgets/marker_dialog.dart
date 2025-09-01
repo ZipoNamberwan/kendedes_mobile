@@ -146,7 +146,6 @@ class MarkerDialog extends StatelessWidget {
                         icon: Icons.open_with,
                         label: 'Pindah',
                         color: Colors.blue,
-                        hasNewIndicator: true,
                         onPressed: () {
                           Navigator.of(context).pop();
                           onMove(tagData);

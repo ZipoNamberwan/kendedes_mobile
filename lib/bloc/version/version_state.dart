@@ -19,12 +19,26 @@ class UpdateNotification extends VersionState {
   const UpdateNotification({required super.data});
 }
 
+class BrowserWontOpen extends VersionState {
+  final String errorTitle;
+  final String errorSubtitle;
+  const BrowserWontOpen({
+    required this.errorTitle,
+    required this.errorSubtitle,
+    required super.data,
+  });
+}
+
 class VersionStateData {
   final bool? shouldUpdate;
   final Version? newVersion;
   final String? currentVersionName;
 
-  VersionStateData({this.newVersion, this.shouldUpdate, this.currentVersionName});
+  VersionStateData({
+    this.newVersion,
+    this.shouldUpdate,
+    this.currentVersionName,
+  });
 
   VersionStateData copyWith({
     Version? newVersion,

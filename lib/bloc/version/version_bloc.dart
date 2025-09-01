@@ -45,5 +45,21 @@ class VersionBloc extends Bloc<VersionEvent, VersionState> {
         onOtherError: (e) {},
       );
     });
+
+    on<ShowBrowserError>((event, emit) async {
+      emit(
+        BrowserWontOpen(
+          errorTitle: 'Chrome Tidak Mau Terbuka',
+          errorSubtitle:
+              'Silakan buka saja s.bps.go.id/kendedes, kemudian download apk nya dan install. Tidak perlu uninstall langsung timpa saja.',
+          data: state.data,
+        ),
+      );
+      emit(
+        VersionState(
+          data: state.data,
+        ),
+      );
+    });
   }
 }

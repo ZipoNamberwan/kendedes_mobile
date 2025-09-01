@@ -152,43 +152,6 @@ class _PolygonSidebarWidgetState extends State<PolygonSidebarWidget> {
 
                         const SizedBox(height: 16),
 
-                        // Search Field
-                        // Container(
-                        //   decoration: BoxDecoration(
-                        //     color: Colors.grey.shade100,
-                        //     borderRadius: BorderRadius.circular(8),
-                        //     border: Border.all(
-                        //       color: Colors.grey.shade300,
-                        //       width: 1,
-                        //     ),
-                        //   ),
-                        //   child: TextField(
-                        //     decoration: InputDecoration(
-                        //       hintText: 'Cari poligon...',
-                        //       hintStyle: TextStyle(
-                        //         color: Colors.grey.shade500,
-                        //         fontSize: 14,
-                        //       ),
-                        //       prefixIcon: Icon(
-                        //         Icons.search,
-                        //         color: Colors.grey.shade500,
-                        //         size: 20,
-                        //       ),
-                        //       border: InputBorder.none,
-                        //       contentPadding: const EdgeInsets.symmetric(
-                        //         horizontal: 16,
-                        //         vertical: 12,
-                        //       ),
-                        //     ),
-                        //     style: const TextStyle(fontSize: 14),
-                        //     onChanged: (value) {
-                        //       // TODO: Search polygon logic
-                        //     },
-                        //   ),
-                        // ),
-
-                        // const SizedBox(height: 16),
-
                         // Polygon List Header
                         Row(
                           children: [

@@ -9,6 +9,8 @@ import 'package:kendedes_mobile/bloc/polygon/polygon_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
+import 'package:kendedes_mobile/bloc/version/version_event.dart';
+import 'package:kendedes_mobile/bloc/version/version_state.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/area_db_repository.dart';
@@ -24,6 +26,10 @@ import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository
 import 'package:kendedes_mobile/classes/repositories/local_db/user_role_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/version_checking_repository.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
+import 'package:kendedes_mobile/models/version.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
+import 'package:kendedes_mobile/widgets/version_update_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'pages/login_page.dart';
 
 void main() {
@@ -115,8 +121,99 @@ Future<void> _initializeApp() async {
   await PolygonRepository().init();
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  late ProjectBloc _projectBloc;
+  late TaggingBloc _taggingBloc;
+  late LogoutBloc _logoutBloc;
+  late VersionBloc _versionBloc;
+  late PolygonBloc _polygonBloc;
+
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _projectBloc = ProjectBloc();
+    _taggingBloc = TaggingBloc();
+    _logoutBloc = LogoutBloc();
+    _versionBloc = VersionBloc();
+    _polygonBloc = PolygonBloc();
+
+    // Check once on cold start
+    _checkForUpdate();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkForUpdate();
+    }
+  }
+
+  void _checkForUpdate() {
+    _versionBloc.add(CheckVersion());
+  }
+
+  void _showVersionUpdateDialog(Version? newVersion) {
+    final globalContext = navigatorKey.currentContext;
+    if (globalContext == null) return;
+
+    if (newVersion != null) {
+      showDialog(
+        context: globalContext,
+        barrierDismissible: !newVersion.isMandatory,
+        builder:
+            (ctx) => PopScope(
+              canPop: !newVersion.isMandatory,
+              child: VersionUpdateDialog(
+                version: newVersion,
+                onUpdate: () async {
+                  final updateUrl = newVersion.url ?? AppConfig.updateUrl;
+                  _openUrl(updateUrl);
+                },
+              ),
+            ),
+      );
+    }
+  }
+
+  void _showBrowserErrorDialog(String title, String message) {
+    final globalContext = navigatorKey.currentContext;
+    if (globalContext == null) return;
+
+    showDialog(
+      context: globalContext,
+      builder:
+          (context) => MessageDialog(
+            title: title,
+            message: message,
+            type: MessageType.error,
+            buttonText: 'Ok',
+          ),
+    );
+  }
+
+  Future<void> _openUrl(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      _versionBloc.add(ShowBrowserError());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,18 +222,31 @@ class MyApp extends StatelessWidget {
         BlocProvider<LoginBloc>(
           create: (context) => LoginBloc()..add(InitLogin()),
         ),
-        BlocProvider<ProjectBloc>(create: (context) => ProjectBloc()),
-        BlocProvider<TaggingBloc>(create: (context) => TaggingBloc()),
-        BlocProvider<LogoutBloc>(create: (context) => LogoutBloc()),
-        BlocProvider<VersionBloc>(create: (context) => VersionBloc()),
-        BlocProvider<PolygonBloc>(create: (context) => PolygonBloc()),
+        BlocProvider<ProjectBloc>(create: (context) => _projectBloc),
+        BlocProvider<TaggingBloc>(create: (context) => _taggingBloc),
+        BlocProvider<LogoutBloc>(create: (context) => _logoutBloc),
+        BlocProvider<VersionBloc>(create: (context) => _versionBloc),
+        BlocProvider<PolygonBloc>(create: (context) => _polygonBloc),
       ],
-      child: MaterialApp(
-        title: 'Kendedes Mobile',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      child: BlocListener<VersionBloc, VersionState>(
+        listener: (context, versionState) {
+          if (versionState is UpdateNotification) {
+            _showVersionUpdateDialog(versionState.data.newVersion);
+          } else if (versionState is BrowserWontOpen) {
+            _showBrowserErrorDialog(
+              versionState.errorTitle,
+              versionState.errorSubtitle,
+            );
+          }
+        },
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          title: 'Kendedes Mobile',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          ),
+          home: const LoginPage(),
         ),
-        home: const LoginPage(),
       ),
     );
   }

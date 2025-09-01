@@ -442,6 +442,7 @@ class _TaggingPageState extends State<TaggingPage>
     Color? backgroundColor,
     Widget? child,
     bool isEnabled = true,
+    bool enhancedShadow = false,
   }) {
     return Container(
       width: 45,
@@ -449,18 +450,37 @@ class _TaggingPageState extends State<TaggingPage>
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.white,
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow:
+            enhancedShadow
+                ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+                : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -1336,7 +1356,9 @@ class _TaggingPageState extends State<TaggingPage>
                           // Refresh tagging button
                           _buildActionButton(
                             icon: Icons.sync,
-                            iconColor: Colors.deepOrange,
+                            iconColor: Colors.white,
+                            backgroundColor: Colors.deepOrange,
+                            enhancedShadow: true,
                             onPressed: () {
                               _getTaggingInsideBounds();
                             },
@@ -1346,22 +1368,24 @@ class _TaggingPageState extends State<TaggingPage>
                                       alignment: Alignment.center,
                                       children: [
                                         const SizedBox(
+                                          width: 20,
+                                          height: 20,
                                           child: CircularProgressIndicator(
-                                            color: Colors.deepOrange,
+                                            color: Colors.white,
                                             strokeWidth: 2.5,
                                           ),
                                         ),
                                         const Icon(
                                           Icons.sync,
-                                          color: Colors.deepOrange,
-                                          size: 14,
+                                          color: Colors.white,
+                                          size: 12,
                                         ),
                                       ],
                                     )
                                     : const Icon(
                                       Icons.sync,
-                                      color: Colors.deepOrange,
-                                      size: 22,
+                                      color: Colors.white,
+                                      size: 24,
                                     ),
                           ),
 

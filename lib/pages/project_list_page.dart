@@ -3,13 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
-import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
-import 'package:kendedes_mobile/bloc/version/version_event.dart';
-import 'package:kendedes_mobile/bloc/version/version_state.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/user.dart';
-import 'package:kendedes_mobile/models/version.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/pages/tagging_page.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/about_app_dialog.dart';
@@ -20,7 +16,6 @@ import 'package:kendedes_mobile/widgets/delete_project_confirmation_dialog.dart'
 import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/project_list_app_bar.dart';
-import 'package:kendedes_mobile/widgets/version_update_dialog.dart';
 import 'package:kendedes_mobile/widgets/sync_project_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -40,8 +35,6 @@ class _ProjectListPageState extends State<ProjectListPage>
   @override
   void initState() {
     super.initState();
-
-    context.read<VersionBloc>().add(CheckVersion());
 
     _projectBloc = context.read<ProjectBloc>()..add(Initialize());
     _fadeController = AnimationController(
@@ -284,23 +277,6 @@ class _ProjectListPageState extends State<ProjectListPage>
     );
   }
 
-  void _showVersionUpdateDialog(BuildContext context, Version? newVersion) {
-    if (newVersion != null) {
-      showDialog(
-        context: context,
-        barrierDismissible: !newVersion.isMandatory,
-        builder:
-            (ctx) => VersionUpdateDialog(
-              version: newVersion,
-              onUpdate: () async {
-                final updateUrl = newVersion.url ?? AppConfig.updateUrl;
-                _openUrl(updateUrl);
-              },
-            ),
-      );
-    }
-  }
-
   Future<void> _openUrl(String url) async {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
@@ -324,548 +300,541 @@ class _ProjectListPageState extends State<ProjectListPage>
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<VersionBloc, VersionState>(
-      listener: (context, versionState) {
-        if (versionState is UpdateNotification) {
-          _showVersionUpdateDialog(context, versionState.data.newVersion);
+    return BlocConsumer<ProjectBloc, ProjectState>(
+      listener: (context, state) {
+        if (state is TokenExpired) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+            (route) => false,
+          );
+        } else if (state is ProjectLoadError) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => MessageDialog(
+                  title: 'Gagal Memuat Project',
+                  message: state.errorMessage,
+                  type: MessageType.error,
+                  buttonText: 'Tutup',
+                ),
+          );
         }
       },
-      child: BlocConsumer<ProjectBloc, ProjectState>(
-        listener: (context, state) {
-          if (state is TokenExpired) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginPage()),
-              (route) => false,
-            );
-          } else if (state is ProjectLoadError) {
-            showDialog(
-              context: context,
-              builder:
-                  (context) => MessageDialog(
-                    title: 'Gagal Memuat Project',
-                    message: state.errorMessage,
-                    type: MessageType.error,
-                    buttonText: 'Tutup',
-                  ),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is InitializingStarted) {
-            return LoadingScaffold(
-              title: 'Menyiapkan halaman project...',
-              subtitle: 'Mohon tunggu sebentar',
-            );
-          } else if (state is InitializingError) {
-            return ErrorScaffold(
-              title: 'Gagal Memuat Halaman Project, Mengirim Log ke Server...',
-              errorMessage: state.errorMessage,
-              retryButtonText: 'Coba Lagi',
-              onRetry: () {
-                _projectBloc.add(Initialize());
-              },
-            );
-          }
-          return Scaffold(
-            backgroundColor: Colors.grey[50],
-            appBar: ProjectListAppBar(
-              onLeadingTap:
-                  () => _showUserInfo(
-                    state.data.currentUser ??
-                        User(
-                          email: '',
-                          firstname: '',
-                          id: '',
-                          organization: null,
-                          roles: [],
-                        ),
-                  ),
-              onMoreTap:
-                  (tapPosition) => _showAppBarPopupMenu(
-                    context,
-                    tapPosition,
-                    state.data.projects.isEmpty,
-                  ),
-            ),
-            body: Column(
-              children: [
-                // Enhanced Statistics Card
-                Container(
-                  margin: const EdgeInsets.all(20),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 20,
-                        offset: const Offset(0, 4),
+      builder: (context, state) {
+        if (state is InitializingStarted) {
+          return LoadingScaffold(
+            title: 'Menyiapkan halaman project...',
+            subtitle: 'Mohon tunggu sebentar',
+          );
+        } else if (state is InitializingError) {
+          return ErrorScaffold(
+            title: 'Gagal Memuat Halaman Project, Mengirim Log ke Server...',
+            errorMessage: state.errorMessage,
+            retryButtonText: 'Coba Lagi',
+            onRetry: () {
+              _projectBloc.add(Initialize());
+            },
+          );
+        }
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          appBar: ProjectListAppBar(
+            onLeadingTap:
+                () => _showUserInfo(
+                  state.data.currentUser ??
+                      User(
+                        email: '',
+                        firstname: '',
+                        id: '',
+                        organization: null,
+                        roles: [],
                       ),
-                    ],
-                    border: Border.all(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      width: 1,
+                ),
+            onMoreTap:
+                (tapPosition) => _showAppBarPopupMenu(
+                  context,
+                  tapPosition,
+                  state.data.projects.isEmpty,
+                ),
+          ),
+          body: Column(
+            children: [
+              // Enhanced Statistics Card
+              Container(
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.orange.shade100,
-                              Colors.orange.shade50,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          Icons.analytics_rounded,
-                          color: Colors.orange.shade600,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Total Projek',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[600],
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${state.data.projects.length}',
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  ],
+                  border: Border.all(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    width: 1,
                   ),
                 ),
-
-                // Enhanced Project List
-                Expanded(
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child:
-                        state.data.projects.isEmpty
-                            ? SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.orange.shade100,
+                            Colors.orange.shade50,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        Icons.analytics_rounded,
+                        color: Colors.orange.shade600,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total Projek',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${state.data.projects.length}',
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+    
+              // Enhanced Project List
+              Expanded(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child:
+                      state.data.projects.isEmpty
+                          ? SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                            ),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight:
+                                    MediaQuery.of(context).size.height * 0.5,
                               ),
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minHeight:
-                                      MediaQuery.of(context).size.height * 0.5,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(32),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade50,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.grey.shade200,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        Icons.folder_open_rounded,
-                                        size: 64,
-                                        color: Colors.grey.shade400,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    Text(
-                                      'Belum ada projek',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Buat projek untuk mulai tagging',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 32),
-                                    ElevatedButton.icon(
-                                      onPressed: () => _showProjectForm(),
-                                      icon: const Icon(Icons.add_rounded),
-                                      label: const Text('Buat Projek'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.orange,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 32,
-                                          vertical: 16,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-                                        elevation: 8,
-                                        shadowColor: Colors.orange.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height:
-                                          MediaQuery.of(
-                                            context,
-                                          ).padding.bottom +
-                                          20,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                            : ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(
-                                20,
-                                0,
-                                20,
-                                100,
-                              ),
-                              itemCount: state.data.projects.length,
-                              itemBuilder: (context, index) {
-                                final project = state.data.projects[index];
-                                return AnimatedContainer(
-                                  duration: Duration(
-                                    milliseconds: 100 + (index * 50),
-                                  ),
-                                  curve: Curves.easeOutQuart,
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  child: Container(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(32),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.06,
-                                          ),
-                                          blurRadius: 20,
-                                          offset: const Offset(0, 8),
-                                        ),
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.02,
-                                          ),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
+                                      color: Colors.grey.shade50,
+                                      shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: Colors.grey.withValues(
-                                          alpha: 0.08,
-                                        ),
-                                        width: 1,
+                                        color: Colors.grey.shade200,
+                                        width: 2,
                                       ),
                                     ),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(20),
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (context) => TaggingPage(
-                                                    project: project,
-                                                  ),
-                                            ),
-                                          );
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(20),
-                                          child: Row(
-                                            children: [
-                                              Hero(
-                                                tag: 'project_${project.id}',
-                                                child: Container(
-                                                  width: 56,
-                                                  height: 56,
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      colors: [
-                                                        Colors.orange.shade300,
-                                                        Colors
-                                                            .deepOrange
-                                                            .shade400,
-                                                      ],
-                                                      begin: Alignment.topLeft,
-                                                      end:
-                                                          Alignment.bottomRight,
-                                                    ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          18,
-                                                        ),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: Colors.orange
-                                                            .withValues(
-                                                              alpha: 0.3,
-                                                            ),
-                                                        blurRadius: 12,
-                                                        offset: const Offset(
-                                                          0,
-                                                          6,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  child: const Icon(
-                                                    Icons.folder_rounded,
-                                                    color: Colors.white,
-                                                    size: 28,
-                                                  ),
+                                    child: Icon(
+                                      Icons.folder_open_rounded,
+                                      size: 64,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'Belum ada projek',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Buat projek untuk mulai tagging',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
+                                  ElevatedButton.icon(
+                                    onPressed: () => _showProjectForm(),
+                                    icon: const Icon(Icons.add_rounded),
+                                    label: const Text('Buat Projek'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 32,
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          16,
+                                        ),
+                                      ),
+                                      elevation: 8,
+                                      shadowColor: Colors.orange.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height:
+                                        MediaQuery.of(
+                                          context,
+                                        ).padding.bottom +
+                                        20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(
+                              20,
+                              0,
+                              20,
+                              100,
+                            ),
+                            itemCount: state.data.projects.length,
+                            itemBuilder: (context, index) {
+                              final project = state.data.projects[index];
+                              return AnimatedContainer(
+                                duration: Duration(
+                                  milliseconds: 100 + (index * 50),
+                                ),
+                                curve: Curves.easeOutQuart,
+                                margin: const EdgeInsets.only(bottom: 16),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.06,
+                                        ),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.02,
+                                        ),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                    border: Border.all(
+                                      color: Colors.grey.withValues(
+                                        alpha: 0.08,
+                                      ),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(20),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => TaggingPage(
+                                                  project: project,
                                                 ),
-                                              ),
-                                              const SizedBox(width: 20),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      project.name,
-                                                      style: const TextStyle(
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: Colors.black87,
-                                                        letterSpacing: 0.3,
-                                                      ),
-                                                    ),
-                                                    if (project
-                                                            .description
-                                                            ?.isNotEmpty ==
-                                                        true) ...[
-                                                      const SizedBox(height: 6),
-                                                      Text(
-                                                        project.description ??
-                                                            '',
-                                                        style: TextStyle(
-                                                          fontSize: 14,
-                                                          color:
-                                                              Colors.grey[600],
-                                                          height: 1.4,
-                                                        ),
-                                                        maxLines: 2,
-                                                        overflow:
-                                                            TextOverflow
-                                                                .ellipsis,
-                                                      ),
+                                          ),
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Row(
+                                          children: [
+                                            Hero(
+                                              tag: 'project_${project.id}',
+                                              child: Container(
+                                                width: 56,
+                                                height: 56,
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: [
+                                                      Colors.orange.shade300,
+                                                      Colors
+                                                          .deepOrange
+                                                          .shade400,
                                                     ],
-                                                    const SizedBox(height: 12),
-                                                    Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 12,
-                                                            vertical: 6,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            Colors
-                                                                .grey
-                                                                .shade100,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              20,
-                                                            ),
+                                                    begin: Alignment.topLeft,
+                                                    end:
+                                                        Alignment.bottomRight,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        18,
                                                       ),
-                                                      child: Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          Icon(
-                                                            Icons
-                                                                .calendar_today_rounded,
-                                                            size: 14,
-                                                            color:
-                                                                Colors
-                                                                    .grey[600],
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.orange
+                                                          .withValues(
+                                                            alpha: 0.3,
                                                           ),
-                                                          const SizedBox(
-                                                            width: 6,
-                                                          ),
-                                                          Text(
-                                                            'Created ${_formatDate(project.createdAt)}',
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              color:
-                                                                  Colors
-                                                                      .grey[600],
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                            ),
-                                                          ),
-                                                        ],
+                                                      blurRadius: 12,
+                                                      offset: const Offset(
+                                                        0,
+                                                        6,
                                                       ),
                                                     ),
                                                   ],
                                                 ),
-                                              ),
-                                              Container(
-                                                decoration: BoxDecoration(
-                                                  color: Colors.grey.shade50,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
+                                                child: const Icon(
+                                                  Icons.folder_rounded,
+                                                  color: Colors.white,
+                                                  size: 28,
                                                 ),
-                                                child: PopupMenuButton<String>(
-                                                  onSelected: (value) {
-                                                    switch (value) {
-                                                      case 'edit':
-                                                        _showProjectForm(
-                                                          project: project,
-                                                        );
-                                                        break;
-                                                      case 'delete':
-                                                        _confirmDelete(project);
-                                                        break;
-                                                    }
-                                                  },
-                                                  icon: Icon(
-                                                    Icons.more_vert_rounded,
-                                                    color: Colors.grey[600],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 20),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    project.name,
+                                                    style: const TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.black87,
+                                                      letterSpacing: 0.3,
+                                                    ),
                                                   ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
+                                                  if (project
+                                                          .description
+                                                          ?.isNotEmpty ==
+                                                      true) ...[
+                                                    const SizedBox(height: 6),
+                                                    Text(
+                                                      project.description ??
+                                                          '',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color:
+                                                            Colors.grey[600],
+                                                        height: 1.4,
+                                                      ),
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow
+                                                              .ellipsis,
+                                                    ),
+                                                  ],
+                                                  const SizedBox(height: 12),
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 6,
                                                         ),
-                                                  ),
-                                                  itemBuilder:
-                                                      (context) => [
-                                                        PopupMenuItem(
-                                                          value: 'edit',
-                                                          child: Row(
-                                                            children: [
-                                                              Icon(
-                                                                Icons
-                                                                    .edit_rounded,
-                                                                size: 18,
-                                                                color:
-                                                                    Colors
-                                                                        .blue[600],
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 12,
-                                                              ),
-                                                              const Text(
-                                                                'Edit',
-                                                                style: TextStyle(
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                ),
-                                                              ),
-                                                            ],
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors
+                                                              .grey
+                                                              .shade100,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            20,
                                                           ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          Icons
+                                                              .calendar_today_rounded,
+                                                          size: 14,
+                                                          color:
+                                                              Colors
+                                                                  .grey[600],
                                                         ),
-                                                        PopupMenuItem(
-                                                          value: 'delete',
-                                                          child: Row(
-                                                            children: [
-                                                              Icon(
-                                                                Icons
-                                                                    .delete_rounded,
-                                                                size: 18,
-                                                                color:
-                                                                    Colors
-                                                                        .red[600],
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 12,
-                                                              ),
-                                                              Text(
-                                                                'Delete',
-                                                                style: TextStyle(
-                                                                  color:
-                                                                      Colors
-                                                                          .red[600],
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                ),
-                                                              ),
-                                                            ],
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        Text(
+                                                          'Created ${_formatDate(project.createdAt)}',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                Colors
+                                                                    .grey[600],
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500,
                                                           ),
                                                         ),
                                                       ],
-                                                ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: PopupMenuButton<String>(
+                                                onSelected: (value) {
+                                                  switch (value) {
+                                                    case 'edit':
+                                                      _showProjectForm(
+                                                        project: project,
+                                                      );
+                                                      break;
+                                                    case 'delete':
+                                                      _confirmDelete(project);
+                                                      break;
+                                                  }
+                                                },
+                                                icon: Icon(
+                                                  Icons.more_vert_rounded,
+                                                  color: Colors.grey[600],
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        12,
+                                                      ),
+                                                ),
+                                                itemBuilder:
+                                                    (context) => [
+                                                      PopupMenuItem(
+                                                        value: 'edit',
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .edit_rounded,
+                                                              size: 18,
+                                                              color:
+                                                                  Colors
+                                                                      .blue[600],
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 12,
+                                                            ),
+                                                            const Text(
+                                                              'Edit',
+                                                              style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      PopupMenuItem(
+                                                        value: 'delete',
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .delete_rounded,
+                                                              size: 18,
+                                                              color:
+                                                                  Colors
+                                                                      .red[600],
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 12,
+                                                            ),
+                                                            Text(
+                                                              'Delete',
+                                                              style: TextStyle(
+                                                                color:
+                                                                    Colors
+                                                                        .red[600],
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                  ),
-                ),
-              ],
-            ),
-            floatingActionButton:
-                state.data.projects.isNotEmpty
-                    ? Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.orange.withValues(alpha: 0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                                ),
+                              );
+                            },
                           ),
-                        ],
-                      ),
-                      child: FloatingActionButton.extended(
-                        onPressed: () => _showProjectForm(),
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        icon: const Icon(Icons.add_rounded),
-                        label: const Text(
-                          'Buat Projek',
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          floatingActionButton:
+              state.data.projects.isNotEmpty
+                  ? Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
                         ),
+                      ],
+                    ),
+                    child: FloatingActionButton.extended(
+                      onPressed: () => _showProjectForm(),
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text(
+                        'Buat Projek',
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
-                    )
-                    : null,
-          );
-        },
-      ),
+                    ),
+                  )
+                  : null,
+        );
+      },
     );
   }
 

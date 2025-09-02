@@ -9,6 +9,16 @@ import 'package:package_info_plus/package_info_plus.dart';
 class VersionBloc extends Bloc<VersionEvent, VersionState> {
   VersionBloc() : super(CheckVersionInitializing()) {
     on<CheckVersion>((event, emit) async {
+      final now = DateTime.now();
+      final lastCheckMillis = VersionCheckingRepository().getLastCheckVersion();
+
+      if (lastCheckMillis != null) {
+        final lastCheck = DateTime.fromMillisecondsSinceEpoch(lastCheckMillis);
+        if (now.difference(lastCheck).inHours < 24) {
+          return; 
+        }
+      }
+
       await ApiServerHandler.run(
         action: () async {
           PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -29,6 +39,10 @@ class VersionBloc extends Bloc<VersionEvent, VersionState> {
             buildNumber,
             organization,
           );
+
+          // Save last check
+          await VersionCheckingRepository().saveLastCheckVersion(now.millisecondsSinceEpoch);
+
           if (response['shouldUpdate'] == true) {
             emit(
               UpdateNotification(
@@ -55,11 +69,7 @@ class VersionBloc extends Bloc<VersionEvent, VersionState> {
           data: state.data,
         ),
       );
-      emit(
-        VersionState(
-          data: state.data,
-        ),
-      );
+      emit(VersionState(data: state.data));
     });
   }
 }

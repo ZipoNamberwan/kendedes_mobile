@@ -11,6 +11,7 @@ class SharedPreferenceService {
 
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
+  static const String _lastCheckVersionKey = 'last_check_version';
 
   late SharedPreferences prefs;
   bool _initialized = false;
@@ -44,5 +45,13 @@ class SharedPreferenceService {
   Future<void> clearToken() async {
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
+  }
+
+  Future<void> saveLastCheckVersion(int millisecondsSinceEpoch) async {
+    await prefs.setInt(_lastCheckVersionKey, millisecondsSinceEpoch);
+  }
+
+  int? getLastCheckVersion() {
+    return prefs.getInt(_lastCheckVersionKey);
   }
 }

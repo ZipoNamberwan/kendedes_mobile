@@ -33,4 +33,12 @@ class VersionCheckingRepository {
     };
     return versioningData;
   }
+
+  Future<void> saveLastCheckVersion(int millisecondsSinceEpoch) async {
+    await _versionCheckingProvider.saveLastCheckVersion(millisecondsSinceEpoch);
+  }
+
+  int? getLastCheckVersion() {
+    return _versionCheckingProvider.getLastCheckVersion();
+  }
 }

@@ -396,11 +396,13 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
     });
 
     on<UpdateCurrentLocation>((event, emit) async {
-      emit(
-        TaggingState(
-          data: state.data.copyWith(currentLocation: event.newPosition),
-        ),
-      );
+      if (!state.data.isFirstTimeMapLoading) {
+        emit(
+          TaggingState(
+            data: state.data.copyWith(currentLocation: event.newPosition),
+          ),
+        );
+      }
     });
 
     on<EditForm>((event, emit) {
@@ -921,10 +923,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           action: () async {
             emit(
               TaggingState(
-                data: state.data.copyWith(
-                  isTaggingInsideBoundsLoading: true,
-                  isFirstTimeMapLoading: false,
-                ),
+                data: state.data.copyWith(isTaggingInsideBoundsLoading: true),
               ),
             );
 
@@ -953,6 +952,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                       ...state.data.requestedAreas,
                       requestedArea,
                     ],
+                    isFirstTimeMapLoading: false,
                   ),
                 ),
               );
@@ -977,6 +977,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                       ...state.data.requestedAreas,
                       requestedArea,
                     ],
+                    isFirstTimeMapLoading: false,
                   ),
                 ),
               );
@@ -988,6 +989,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 data: state.data.copyWith(
                   isTaggingInsideBoundsLoading: false,
                   isTaggingInsideBoundsError: true,
+                  isFirstTimeMapLoading: false,
                 ),
               ),
             );
@@ -999,6 +1001,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 data: state.data.copyWith(
                   isTaggingInsideBoundsLoading: false,
                   isTaggingInsideBoundsError: true,
+                  isFirstTimeMapLoading: false,
                 ),
               ),
             );
@@ -1010,6 +1013,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 data: state.data.copyWith(
                   isTaggingInsideBoundsLoading: false,
                   isTaggingInsideBoundsError: true,
+                  isFirstTimeMapLoading: false,
                 ),
               ),
             );

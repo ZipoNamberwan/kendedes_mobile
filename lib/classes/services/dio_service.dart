@@ -5,6 +5,7 @@ import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/services/shared_preference_service.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class DioService {
   static final DioService _instance = DioService._internal();
@@ -116,7 +117,7 @@ class DioService {
   }
 }
 
-void _safeSendLog(DioException error, String userMessage) {
+Future<void> _safeSendLog(DioException error, String userMessage) async {
   try {
     final request = error.requestOptions;
     final statusCode = error.response?.statusCode ?? 'N/A';
@@ -133,10 +134,16 @@ void _safeSendLog(DioException error, String userMessage) {
             ? 'ID: ${user.id}, Name: ${user.firstname}, Email: ${user.email}, Organization: ${user.organization?.name ?? 'N/A'}'
             : 'User is null';
 
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+    // Emit the current version name
+    final currentVersionName = packageInfo.version;
+
     final logMessage = '''
         🚨 *Dio Error Report*
 
         *Type:* `${error.type}`
+        *App Version:* `$currentVersionName`
         *Message:* `${error.message}`
         *URL:* `${request.uri}`
         *Status Code:* `$statusCode`

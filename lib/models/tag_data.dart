@@ -325,7 +325,7 @@ class Sector extends Equatable {
   );
 
   static const values = [
-    // A,
+    A,
     B,
     C,
     D,
@@ -339,12 +339,12 @@ class Sector extends Equatable {
     L,
     M,
     N,
-    // O,
+    O,
     P,
     Q,
     R,
     S,
-    // T,
+    T,
     U,
   ];
 

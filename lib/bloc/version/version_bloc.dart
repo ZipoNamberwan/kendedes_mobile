@@ -40,20 +40,20 @@ class VersionBloc extends Bloc<VersionEvent, VersionState> {
             organization,
           );
 
-          // Save last check
-          await VersionCheckingRepository().saveLastCheckVersion(
-            now.millisecondsSinceEpoch,
-          );
-
           if (response['shouldUpdate'] == true) {
             emit(
               UpdateNotification(
                 data: VersionStateData(
                   shouldUpdate: true,
                   newVersion: response['version'],
-                  currentVersionName: currentVersionName
+                  currentVersionName: currentVersionName,
                 ),
               ),
+            );
+          } else {
+            // Save last check
+            await VersionCheckingRepository().saveLastCheckVersion(
+              now.millisecondsSinceEpoch,
             );
           }
         },

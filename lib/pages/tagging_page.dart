@@ -101,6 +101,10 @@ class _TaggingPageState extends State<TaggingPage>
         message: 'Gagal mendapatkan lokasi: ${e.toString()}',
       );
     }
+  }
+
+  void _afterInitSuccess() {
+    _taggingBloc.add(GetCurrentLocation());
 
     _mapController.mapEventStream.listen((event) {
       if (event is MapEventMove) {
@@ -164,9 +168,9 @@ class _TaggingPageState extends State<TaggingPage>
     );
   }
 
-  void _onMapReady() {
-    _taggingBloc.add(GetCurrentLocation());
-  }
+  // void _onMapReady() {
+  //   _taggingBloc.add(GetCurrentLocation());
+  // }
 
   void _showMarkerDialog(TagData tagData, Project project, User? currentUser) {
     showDialog(
@@ -608,6 +612,8 @@ class _TaggingPageState extends State<TaggingPage>
             message: 'Poligon berhasil dihapus',
             type: SnackBarType.success,
           );
+        } else if (state is InitializingSuccess) {
+          _afterInitSuccess();
         }
       },
       builder: (context, state) {
@@ -644,9 +650,9 @@ class _TaggingPageState extends State<TaggingPage>
                         initialCenter: LatLng(-7.9666, 112.6326),
                         initialZoom: state.data.currentZoom,
                         onLongPress: (tapPosition, point) => {},
-                        onMapReady: () {
-                          _onMapReady();
-                        },
+                        // onMapReady: () {
+                        //   _onMapReady();
+                        // },
                         onTap: (tapPosition, latLng) {
                           if (state.data.isMoveMode) {
                             _taggingBloc.add(MoveTag(newPosition: latLng));

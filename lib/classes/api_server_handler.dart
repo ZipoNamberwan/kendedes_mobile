@@ -3,6 +3,7 @@ import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/services/dio_service.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 typedef HandlerFunction<T> = void Function(T exception);
 
@@ -29,6 +30,11 @@ class ApiServerHandler {
       }
     } catch (e, stackTrace) {
       try {
+        PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+        // Emit the current version name
+        final currentVersionName = packageInfo.version;
+
         final fullTrace = stackTrace.toString();
         final truncatedTrace =
             fullTrace.length > AppConfig.stackTraceLimitCharacter
@@ -45,6 +51,7 @@ class ApiServerHandler {
         🚨 *Unhandled Error*
 
         *Error:* `${e.toString()}`
+        *App Version:* `$currentVersionName`
         *User Info: $userInfo*
         $userInfo
         *Stack Trace:*

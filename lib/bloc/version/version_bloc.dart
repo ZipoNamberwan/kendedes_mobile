@@ -24,7 +24,7 @@ class VersionBloc extends Bloc<VersionEvent, VersionState> {
 
       if (lastCheckMillis != null) {
         final lastCheck = DateTime.fromMillisecondsSinceEpoch(lastCheckMillis);
-        if (now.difference(lastCheck).inHours < 24) {
+        if (now.difference(lastCheck).inHours < 3) {
           return;
         }
       }

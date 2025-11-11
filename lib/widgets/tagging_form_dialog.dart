@@ -174,7 +174,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
   Widget _buildAnimatedDropdown<T>({
     required String fieldKey,
     required T value,
-    required List<DropdownMenuItem<T>> items,
+    required List<DropdownMenuEntry<T>> entries,
     required String label,
     required IconData icon,
     int delay = 0,
@@ -219,104 +219,199 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
           offset: Offset(0, 20 * (1 - animValue)),
           child: Opacity(
             opacity: animValue.clamp(0.0, 1.0),
-            child: DropdownButtonFormField<T>(
-              initialValue: value,
-              items:
-                  items.asMap().entries.map((entry) {
-                    DropdownMenuItem<T> item = entry.value;
-
-                    return DropdownMenuItem<T>(
-                      value: item.value,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 8),
+                  child: labelWidget,
+                ),
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    // Customize the dropdown menu theme
+                    menuTheme: MenuThemeData(
+                      style: MenuStyle(
+                        backgroundColor: WidgetStateProperty.all(Colors.white),
+                        surfaceTintColor: WidgetStateProperty.all(
+                          Colors.transparent,
                         ),
-                        decoration: BoxDecoration(color: Colors.white),
-                        child: Text(
-                          item.child is Text
-                              ? (item.child as Text).data ?? ''
-                              : item.child.toString(),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                        shadowColor: WidgetStateProperty.all(
+                          Colors.orange.withValues(alpha: 0.1),
+                        ),
+                        elevation: WidgetStateProperty.all(8),
+                        shape: WidgetStateProperty.all(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: Colors.orange.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
                           ),
-                          overflow:
-                              TextOverflow.ellipsis, // Prevent text overflow
-                          maxLines: 1,
+                        ),
+                        padding: WidgetStateProperty.all(
+                          const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
-                    );
-                  }).toList(),
-              onChanged:
-                  (newValue) =>
-                      _taggingBloc.add(SetTaggingFormField(fieldKey, newValue)),
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-              selectedItemBuilder: (BuildContext context) {
-                return items.map<Widget>((DropdownMenuItem<T> item) {
-                  return Container(
-                    width: double.infinity,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      item.child is Text
-                          ? (item.child as Text).data ?? ''
-                          : item.child.toString(),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
                     ),
-                  );
-                }).toList();
-              },
-              decoration: InputDecoration(
-                label: labelWidget,
-                filled: true,
-                fillColor: Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Colors.orange.shade400,
-                    width: 2,
+                  ),
+                  child: DropdownMenu<T>(
+                    initialSelection: value,
+                    dropdownMenuEntries:
+                        entries.map((entry) {
+                          final isSelected = entry.value == value;
+                          return DropdownMenuEntry<T>(
+                            value: entry.value,
+                            label: entry.label,
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.resolveWith<
+                                Color
+                              >((Set<WidgetState> states) {
+                                if (states.contains(WidgetState.hovered)) {
+                                  return Colors.orange.withValues(alpha: 0.1);
+                                }
+                                if (isSelected) {
+                                  return Colors.orange.withValues(alpha: 0.15);
+                                }
+                                return Colors.transparent;
+                              }),
+                              foregroundColor:
+                                  WidgetStateProperty.resolveWith<Color>((
+                                    Set<WidgetState> states,
+                                  ) {
+                                    if (isSelected) {
+                                      return Colors.orange.shade700;
+                                    }
+                                    if (states.contains(WidgetState.hovered)) {
+                                      return Colors.orange.shade600;
+                                    }
+                                    return Colors.black87;
+                                  }),
+                              textStyle:
+                                  WidgetStateProperty.resolveWith<TextStyle>((
+                                    Set<WidgetState> states,
+                                  ) {
+                                    return TextStyle(
+                                      fontSize: 15,
+                                      fontWeight:
+                                          isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.w500,
+                                      color:
+                                          isSelected
+                                              ? Colors.orange.shade700
+                                              : Colors.black87,
+                                    );
+                                  }),
+                              padding: WidgetStateProperty.all(
+                                const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                              shape: WidgetStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              overlayColor: WidgetStateProperty.resolveWith<
+                                Color
+                              >((Set<WidgetState> states) {
+                                if (states.contains(WidgetState.pressed)) {
+                                  return Colors.orange.withValues(alpha: 0.2);
+                                }
+                                return Colors.transparent;
+                              }),
+                            ),
+                          );
+                        }).toList(),
+                    onSelected:
+                        (newValue) => _taggingBloc.add(
+                          SetTaggingFormField(fieldKey, newValue),
+                        ),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    inputDecorationTheme: InputDecorationTheme(
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade300,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade300,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.orange.shade400,
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
+                      prefixIconColor: Colors.orange.shade600,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      errorStyle: const TextStyle(fontSize: 11),
+                    ),
+                    leadingIcon: Icon(
+                      icon,
+                      color: Colors.orange.shade600,
+                      size: 20,
+                    ),
+                    width: double.infinity,
+                    menuHeight: 500,
+                    errorText: error,
+                    helperText: null,
+                    menuStyle: MenuStyle(
+                      backgroundColor: WidgetStateProperty.all(Colors.white),
+                      surfaceTintColor: WidgetStateProperty.all(
+                        Colors.transparent,
+                      ),
+                      shadowColor: WidgetStateProperty.all(
+                        Colors.orange.withValues(alpha: 0.15),
+                      ),
+                      elevation: WidgetStateProperty.all(12),
+                      shape: WidgetStateProperty.all(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: Colors.orange.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      padding: WidgetStateProperty.all(
+                        const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
                   ),
                 ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.red, width: 2),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.red, width: 2),
-                ),
-                prefixIcon: Icon(icon, color: Colors.orange.shade600, size: 20),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                errorStyle: const TextStyle(fontSize: 11),
-                errorText: error,
-              ),
-              dropdownColor: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              isExpanded: true, // This helps with text clipping
-              isDense: true,
+              ],
             ),
           ),
         );
@@ -707,11 +802,11 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                             icon: Icons.apartment_rounded,
                             delay: 3,
                             error: state.data.formFields['building']?.error,
-                            items:
+                            entries:
                                 BuildingStatus.getStatuses().map((status) {
-                                  return DropdownMenuItem(
+                                  return DropdownMenuEntry(
                                     value: status,
-                                    child: Text(status.text),
+                                    label: status.text,
                                   );
                                 }).toList(),
                             mandatory: true,
@@ -737,11 +832,11 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
                             icon: Icons.category_rounded,
                             delay: 5,
                             error: state.data.formFields['sector']?.error,
-                            items:
+                            entries:
                                 Sector.getSectors().map((sector) {
-                                  return DropdownMenuItem(
+                                  return DropdownMenuEntry(
                                     value: sector,
-                                    child: Text(sector.text),
+                                    label: sector.text,
                                   );
                                 }).toList(),
                             mandatory: true,

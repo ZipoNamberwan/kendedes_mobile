@@ -70,13 +70,16 @@ class DioService {
     String userMessage =
         'Terjadi kesalahan jaringan, mengirim log ke server...';
 
+    // Extract status code and response data for additional context
+    final statusCode = error.response?.statusCode;
+    final responseData = error.response?.data;
+
     // Determine user message based on error type
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.sendTimeout ||
         error.type == DioExceptionType.receiveTimeout) {
       userMessage = 'Koneksi timeout';
     } else if (error.type == DioExceptionType.badResponse) {
-      final statusCode = error.response?.statusCode;
       if (statusCode == 401) {
         clearAuthHeader();
         _sharedPreferenceService.clearToken();
@@ -88,9 +91,8 @@ class DioService {
       } else if (statusCode == 404) {
         userMessage = 'Data tidak ditemukan';
       } else if (statusCode == 422) {
-        final data = error.response?.data;
-        if (data is Map && data['message'] != null) {
-          userMessage = data['message'].toString();
+        if (responseData is Map && responseData['message'] != null) {
+          userMessage = responseData['message'].toString();
         } else {
           userMessage = 'Data tidak valid';
         }
@@ -112,8 +114,12 @@ class DioService {
     // Send detailed log to Telegram
     _safeSendLog(error, userMessage);
 
-    // Rethrow user-facing exception
-    throw DataProviderException(userMessage);
+    // Rethrow user-facing exception with additional context
+    throw DataProviderException(
+      userMessage,
+      statusCode: statusCode,
+      data: responseData,
+    );
   }
 }
 
@@ -166,8 +172,10 @@ Future<void> _safeSendLog(DioException error, String userMessage) async {
 
 class DataProviderException implements Exception {
   final String message;
+  final int? statusCode;
+  final dynamic data;
 
-  const DataProviderException(this.message);
+  const DataProviderException(this.message, {this.statusCode, this.data});
 
   @override
   String toString() => 'DataProviderException: $message';

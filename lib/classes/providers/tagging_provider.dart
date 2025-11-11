@@ -62,7 +62,7 @@ class TaggingProvider {
 
   Future<Map<String, dynamic>> deleteMultipleTags(List<String> ids) async {
     final response = await _dioService.dio.delete(
-      '/business/delete-multiple',
+      '/business/delete-multiple-v2',
       data: {'ids': ids},
     );
     return response.data['data'];

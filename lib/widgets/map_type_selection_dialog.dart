@@ -69,69 +69,71 @@ class _MapTypeSelectionDialogState extends State<MapTypeSelectionDialog> {
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),
-            Column(
-              children:
-                  widget.mapTypes.map((mapType) {
-                    final isSelected = _selectedMapType?.key == mapType.key;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
+            RadioGroup<MapType>(
+              groupValue: _selectedMapType,
+              onChanged: (value) {
+                setState(() {
+                  _selectedMapType = value;
+                });
+              },
+              child: Column(
+                children:
+                    widget.mapTypes.map((mapType) {
+                      final isSelected = _selectedMapType?.key == mapType.key;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color:
+                                isSelected
+                                    ? Colors.blue.shade300
+                                    : Colors.grey.shade300,
+                          ),
                           color:
                               isSelected
-                                  ? Colors.blue.shade300
-                                  : Colors.grey.shade300,
+                                  ? Colors.blue.shade50
+                                  : Colors.transparent,
                         ),
-                        color:
-                            isSelected
-                                ? Colors.blue.shade50
-                                : Colors.transparent,
-                      ),
-                      child: RadioListTile<MapType>(
-                        value: mapType,
-                        groupValue: _selectedMapType,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedMapType = value;
-                          });
-                        },
-                        title: Row(
-                          children: [
-                            Icon(
-                              mapType.icon,
-                              size: 20,
-                              color:
-                                  isSelected
-                                      ? Colors.blue.shade600
-                                      : Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                mapType.name,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight:
-                                      isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                  color:
-                                      isSelected
-                                          ? Colors.blue.shade700
-                                          : Colors.black87,
+                        child: RadioListTile<MapType>(
+                          value: mapType,
+                          title: Row(
+                            children: [
+                              Icon(
+                                mapType.icon,
+                                size: 20,
+                                color:
+                                    isSelected
+                                        ? Colors.blue.shade600
+                                        : Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  mapType.name,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight:
+                                        isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.normal,
+                                    color:
+                                        isSelected
+                                            ? Colors.blue.shade700
+                                            : Colors.black87,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                          activeColor: Colors.blue,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                          ),
                         ),
-                        activeColor: Colors.blue,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+              ),
             ),
             const SizedBox(height: 20),
             Row(

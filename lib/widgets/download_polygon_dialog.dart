@@ -654,7 +654,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                 ),
               )
               : DropdownButtonFormField<T>(
-                value: value,
+                initialValue: value,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(

@@ -13,6 +13,9 @@ class ColorLegendDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.85,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -83,94 +86,103 @@ class ColorLegendDialog extends StatelessWidget {
               ),
             ),
 
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Warna marker menunjukkan jenis tagging:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                      height: 1.4,
+            // Scrollable Content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Warna marker menunjukkan jenis tagging:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                        height: 1.4,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // Legend items
-                  _buildLegendItem(
-                    color: Colors.purple,
-                    title: 'Sentra Ekonomi SWMAPS',
-                    description: 'Tagging dari projek sentra ekonomi SWMAPS',
-                  ),
-                  _buildLegendItem(
-                    color: Colors.indigo,
-                    title: 'Suplemen SWMAPS',
-                    description: 'Tagging dari projek suplemen SWMAPS',
-                  ),
-                  _buildLegendItem(
-                    color: Colors.pink,
-                    title: 'Survei BPS',
-                    description:
-                        'Tagging yang dihimpun dari berbagai Survei BPS',
-                  ),
-                  _buildLegendItem(
-                    color: Colors.deepOrange,
-                    title: 'Projek Saat Ini',
-                    description: 'Tagging yang dibuat dalam projek ini',
-                    isCurrentProject: true,
-                  ),
-                  _buildLegendItem(
-                    color: Colors.amber,
-                    title: 'Tagging Projek Lain',
-                    description:
-                        'Tagging yang dibuat oleh Anda di projek lain di Kendedes Mobile',
-                  ),
-                  _buildLegendItem(
-                    color: Colors.cyan,
-                    title: 'Tagging Pengguna Lain',
-                    description:
-                        'Tagging dari pengguna lain melalui Kendedes Mobile',
-                  ),
-                  _buildLegendItem(
-                    color: Colors.green,
-                    title: 'Tagging Terpilih',
-                    description: 'Tagging yang sedang dipilih',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Additional info
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.shade200),
+                    // Legend items
+                    _buildLegendItem(
+                      color: Colors.purple,
+                      title: 'Sentra Ekonomi SWMAPS',
+                      description: 'Tagging dari projek sentra ekonomi SWMAPS',
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.blue.shade600,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Warna marker akan berubah menjadi hijau ketika sedang dipilih.',
-                            style: TextStyle(
-                              color: Colors.blue.shade700,
-                              fontSize: 12,
+                    _buildLegendItem(
+                      color: Colors.indigo,
+                      title: 'Suplemen SWMAPS',
+                      description: 'Tagging dari projek suplemen SWMAPS',
+                    ),
+                    _buildLegendItem(
+                      color: Colors.pink,
+                      title: 'Survei BPS',
+                      description:
+                          'Tagging yang dihimpun dari berbagai Survei BPS',
+                    ),
+                    _buildLegendItem(
+                      color: Colors.deepOrange,
+                      title: 'Tagging di Projek Ini',
+                      description: 'Tagging yang dibuat dalam projek ini',
+                      isCurrentProject: true,
+                    ),
+                    _buildLegendItem(
+                      color: Colors.deepOrange,
+                      title: 'Tagging Terkunci',
+                      description:
+                          'Tagging yang telah diedit oleh Admin melalui Kendedes Web dan tidak dapat diubah melalui Kendedes Mobile',
+                      icon: Icons.lock_rounded,
+                    ),
+                    _buildLegendItem(
+                      color: Colors.amber,
+                      title: 'Tagging Projek Lain',
+                      description:
+                          'Tagging yang dibuat oleh Anda di projek lain di Kendedes Mobile',
+                    ),
+                    _buildLegendItem(
+                      color: Colors.cyan,
+                      title: 'Tagging Pengguna Lain',
+                      description:
+                          'Tagging dari pengguna lain melalui Kendedes Mobile',
+                    ),
+                    _buildLegendItem(
+                      color: Colors.green,
+                      title: 'Tagging Terpilih',
+                      description: 'Tagging yang sedang dipilih',
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Additional info
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.blue.shade600,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Warna marker akan berubah menjadi hijau ketika sedang dipilih.',
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -184,6 +196,7 @@ class ColorLegendDialog extends StatelessWidget {
     required String title,
     required String description,
     bool isCurrentProject = false,
+    IconData? icon,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -205,7 +218,11 @@ class ColorLegendDialog extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.location_on, color: Colors.white, size: 14),
+            child: Icon(
+              icon ?? Icons.location_on,
+              color: Colors.white,
+              size: 14,
+            ),
           ),
           const SizedBox(width: 12),
 

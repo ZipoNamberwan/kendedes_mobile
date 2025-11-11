@@ -756,6 +756,63 @@ class _ProjectListPageState extends State<ProjectListPage>
                                                           ],
                                                         ),
                                                       ),
+                                                      const SizedBox(width: 8),
+                                                      // Locked tags container
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              Colors
+                                                                  .blue
+                                                                  .shade50,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                16,
+                                                              ),
+                                                          border: Border.all(
+                                                            color:
+                                                                Colors
+                                                                    .blue
+                                                                    .shade200,
+                                                            width: 1,
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .lock_rounded,
+                                                              size: 14,
+                                                              color:
+                                                                  Colors
+                                                                      .blue
+                                                                      .shade600,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 4,
+                                                            ),
+                                                            Text(
+                                                              '${state.data.tagCounts[project.id]?['locked'] ?? 0}',
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                color:
+                                                                    Colors
+                                                                        .blue
+                                                                        .shade700,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
                                                     ],
                                                   ),
                                                 ],

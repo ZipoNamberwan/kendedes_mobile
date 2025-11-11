@@ -106,14 +106,22 @@ class MarkerDialog extends StatelessWidget {
                       _buildInfoRow('Survei', tagData.survey!.name),
                     if (project.id == tagData.project.id)
                       _buildInfoRowWithIcon(
-                        'Status Upload',
-                        tagData.hasSentToServer
+                        'Status',
+                        tagData.isLocked
+                            ? 'Terkunci'
+                            : tagData.hasSentToServer
                             ? 'Sudah Upload'
                             : 'Belum Upload',
-                        tagData.hasSentToServer
+                        tagData.isLocked
+                            ? Icons.lock_rounded
+                            : tagData.hasSentToServer
                             ? Icons.cloud_done_rounded
                             : Icons.cloud_off_rounded,
-                        tagData.hasSentToServer ? Colors.green : Colors.orange,
+                        tagData.isLocked
+                            ? Colors.blue
+                            : tagData.hasSentToServer
+                            ? Colors.green
+                            : Colors.orange,
                       ),
                     // if (tagData.createdAt != null)
                     //   _buildInfoRow(
@@ -141,38 +149,71 @@ class MarkerDialog extends StatelessWidget {
                       bottomRight: Radius.circular(12),
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildActionButton(
-                        icon: Icons.edit,
-                        label: 'Ubah',
-                        color: Colors.green,
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          onEdit(tagData);
-                        },
-                      ),
-                      _buildActionButton(
-                        icon: Icons.open_with,
-                        label: 'Pindah',
-                        color: Colors.blue,
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          onMove(tagData);
-                        },
-                      ),
-                      _buildActionButton(
-                        icon: Icons.delete,
-                        label: 'Hapus',
-                        color: Colors.red,
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          onDelete(tagData);
-                        },
-                      ),
-                    ],
-                  ),
+                  child:
+                      tagData.isLocked
+                          ? Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.blue.shade200,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.lock_rounded,
+                                  color: Colors.blue.shade600,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Tagging ini telah diedit oleh Admin melalui Kendedes Web, sehingga tidak bisa diubah/dihapus oleh Anda melalui Kendedes Mobile',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.blue.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                          : Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildActionButton(
+                                icon: Icons.edit,
+                                label: 'Ubah',
+                                color: Colors.green,
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  onEdit(tagData);
+                                },
+                              ),
+                              _buildActionButton(
+                                icon: Icons.open_with,
+                                label: 'Pindah',
+                                color: Colors.blue,
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  onMove(tagData);
+                                },
+                              ),
+                              _buildActionButton(
+                                icon: Icons.delete,
+                                label: 'Hapus',
+                                color: Colors.red,
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  onDelete(tagData);
+                                },
+                              ),
+                            ],
+                          ),
                 )
                 : SizedBox.shrink(),
           ],

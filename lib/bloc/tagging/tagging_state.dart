@@ -169,6 +169,14 @@ class SaveFormError extends TaggingState {
   List<Object> get props => [errorMessage, data];
 }
 
+class TaggingLockedWarning extends TaggingState {
+  final String message;
+  const TaggingLockedWarning({this.message = 'Tagging sudah Dikunci Oleh Admin Kabupaten', required super.data});
+
+  @override
+  List<Object> get props => [message, data];
+}
+
 class TaggingSideBarOpened extends TaggingState {
   const TaggingSideBarOpened({required super.data});
 
@@ -298,13 +306,18 @@ class DeleteMultipleTagsError extends TaggingState {
 
 class DeleteMultipleTagsSuccess extends TaggingState {
   final String successMessage;
+  final int deletedCount;
+  final int lockedCount;
+  
   const DeleteMultipleTagsSuccess({
     required this.successMessage,
+    required this.deletedCount,
+    required this.lockedCount,
     required super.data,
   });
 
   @override
-  List<Object> get props => [successMessage, data];
+  List<Object> get props => [successMessage, deletedCount, lockedCount, data];
 }
 
 class MockupLocationDetected extends TaggingState {

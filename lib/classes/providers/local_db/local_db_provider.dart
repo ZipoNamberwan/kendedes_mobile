@@ -20,7 +20,7 @@ class LocalDbProvider {
     final String path = '${documentsDirectory.path}/tagging_app.db';
     _database = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -98,6 +98,7 @@ class LocalDbProvider {
       position_lng REAL,
       has_changed INTEGER,
       has_sent_to_server INTEGER,
+      is_locked INTEGER,
       tag_type TEXT,
       initial_position_lat REAL,
       initial_position_lng REAL,
@@ -281,6 +282,14 @@ class LocalDbProvider {
           village_id TEXT,
           FOREIGN KEY(village_id) REFERENCES villages(id)
         )
+      ''');
+    }
+
+    if (oldVersion < 3) {
+      // Add is_locked column to tag_data table
+      await db.execute('''
+        ALTER TABLE tag_data
+        ADD COLUMN is_locked INTEGER DEFAULT 0
       ''');
     }
   }

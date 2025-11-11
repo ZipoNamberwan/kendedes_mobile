@@ -297,12 +297,21 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             emit(TokenExpired(data: state.data.copyWith(deleteLoading: false)));
           },
           onDataProviderError: (e) {
-            emit(
-              ProjectDeletedError(
-                errorMessage: e.message,
-                data: state.data.copyWith(deleteLoading: false),
-              ),
-            );
+            if (e.statusCode == 423) {
+              emit(
+                ProjectDeletedError(
+                  errorMessage: e.data['message'] ?? e.message,
+                  data: state.data.copyWith(deleteLoading: false),
+                ),
+              );
+            } else {
+              emit(
+                ProjectDeletedError(
+                  errorMessage: e.message,
+                  data: state.data.copyWith(deleteLoading: false),
+                ),
+              );
+            }
           },
           onOtherError: (e) {
             emit(

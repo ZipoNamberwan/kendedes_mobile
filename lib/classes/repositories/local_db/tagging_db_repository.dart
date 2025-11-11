@@ -10,8 +10,7 @@ import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/models/user_role.dart';
 
 class TaggingDbRepository {
-  static final TaggingDbRepository _instance =
-      TaggingDbRepository._internal();
+  static final TaggingDbRepository _instance = TaggingDbRepository._internal();
   factory TaggingDbRepository() => _instance;
 
   TaggingDbRepository._internal();
@@ -90,6 +89,7 @@ class TaggingDbRepository {
       'sector': tag.sector?.key,
       'note': tag.note,
       'user_id': tag.user?.id,
+      'is_locked': tag.isLocked ? 1 : 0,
     });
   }
 
@@ -167,7 +167,7 @@ class TaggingDbRepository {
   }) async {
     final map = await _taggingDbProvider.getById(id);
     if (map == null) return null;
-
+    
     // Use preloaded project or hydrate it
     final project =
         preloadedProject ??
@@ -206,6 +206,7 @@ class TaggingDbRepository {
       description: map['description'],
       sector: Sector.values.firstWhere((e) => e.key == map['sector']),
       note: map['note'],
+      isLocked: map['is_locked'] == 1,
       user:
           user ??
           User(id: '', email: '', firstname: '', organization: null, roles: []),
@@ -243,6 +244,7 @@ class TaggingDbRepository {
             'sector': tag.sector?.key,
             'note': tag.note,
             'user_id': tag.user?.id,
+            'is_locked': tag.isLocked ? 1 : 0,
           };
         }).toList();
 

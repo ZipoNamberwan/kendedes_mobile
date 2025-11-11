@@ -10,17 +10,30 @@ class ProjectInfoDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<TaggingBloc, TaggingState>(
       builder: (context, state) {
+        // Count tags for current project only
+        final currentProjectTags = state.data.tags.where((tag) {
+          return tag.project.id == state.data.project.id;
+        });
+
+        // Count locked tags first
+        final lockedCount =
+            currentProjectTags.where((tag) {
+              return tag.isLocked;
+            }).length;
+
+        // Count synced tags (unlocked only)
         final syncedCount =
-            state.data.tags.where((tag) {
-              return tag.hasSentToServer &&
-                  tag.project.id == state.data.project.id;
+            currentProjectTags.where((tag) {
+              return !tag.isLocked && tag.hasSentToServer;
             }).length;
+
+        // Count unsynced tags (unlocked only)
         final unsyncedCount =
-            state.data.tags.where((tag) {
-              return !tag.hasSentToServer &&
-                  tag.project.id == state.data.project.id;
+            currentProjectTags.where((tag) {
+              return !tag.isLocked && !tag.hasSentToServer;
             }).length;
-        final totalTags = syncedCount + unsyncedCount;
+
+        final totalTags = syncedCount + unsyncedCount + lockedCount;
 
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -220,8 +233,18 @@ class ProjectInfoDialog extends StatelessWidget {
                             _buildStatRow(
                               'Belum Diupload',
                               unsyncedCount.toString(),
-                              Colors.red.shade600,
+                              Colors.orange.shade600,
                               Icons.cloud_off,
+                            ),
+
+                            const SizedBox(height: 6),
+
+                            // Locked Tags
+                            _buildStatRow(
+                              'Terkunci',
+                              lockedCount.toString(),
+                              Colors.blue.shade600,
+                              Icons.lock_rounded,
                             ),
                           ],
                         ),

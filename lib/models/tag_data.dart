@@ -19,6 +19,7 @@ class TagData {
   final DateTime? deletedAt;
   final int? incrementalId;
   final Project project;
+  final bool isLocked;
 
   // Attributes for the supplement tag data
   final String businessName;
@@ -47,6 +48,7 @@ class TagData {
     this.incrementalId,
     required this.project,
     required this.user,
+    required this.isLocked,
 
     // Supplement tag data
     required this.businessName,
@@ -83,6 +85,7 @@ class TagData {
     Sector? sector,
     String? note,
     Survey? survey,
+    bool? isLocked,
   }) {
     return TagData(
       id: id ?? this.id,
@@ -108,6 +111,7 @@ class TagData {
       sector: sector ?? this.sector,
       note: note ?? this.note,
       survey: survey ?? this.survey,
+      isLocked: isLocked ?? this.isLocked,
     );
   }
 
@@ -157,7 +161,7 @@ class TagData {
 
   bool canBeDeleted(String currentProjectId) {
     if (currentProjectId == project.id) {
-      return true;
+      return !isLocked;
     }
     return false;
   }
@@ -201,6 +205,7 @@ class TagData {
         positionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
         hasChanged: false,
         hasSentToServer: true,
+        isLocked: json['is_locked'],
         type: TagType.auto,
         initialPositionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
         initialPositionLng:

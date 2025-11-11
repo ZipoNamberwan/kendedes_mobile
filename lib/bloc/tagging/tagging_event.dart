@@ -108,6 +108,11 @@ class EditForm extends TaggingEvent {
   const EditForm({required this.tagData});
 }
 
+class LockTagData extends TaggingEvent {
+  final TagData tagData;
+  const LockTagData({required this.tagData});
+}
+
 class SetTaggingFormField extends TaggingEvent {
   final String key;
   final dynamic value;

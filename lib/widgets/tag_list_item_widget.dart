@@ -126,15 +126,19 @@ class TagListItemWidget extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Server sync status icon
+                              // Status icon: Lock, Cloud Done, or Cloud Off
                               if (tag.showCloudIcon(project?.id ?? '')) ...[
                                 Icon(
-                                  tag.hasSentToServer
+                                  tag.isLocked
+                                      ? Icons.lock_rounded
+                                      : tag.hasSentToServer
                                       ? Icons.cloud_done_rounded
                                       : Icons.cloud_off_rounded,
                                   size: 16,
                                   color:
-                                      tag.hasSentToServer
+                                      tag.isLocked
+                                          ? Colors.blue.shade600
+                                          : tag.hasSentToServer
                                           ? Colors.green.shade600
                                           : Colors.orange.shade600,
                                 ),

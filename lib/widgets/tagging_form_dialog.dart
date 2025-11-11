@@ -220,7 +220,7 @@ class _TaggingFormDialogState extends State<TaggingFormDialog>
           child: Opacity(
             opacity: animValue.clamp(0.0, 1.0),
             child: DropdownButtonFormField<T>(
-              value: value,
+              initialValue: value,
               items:
                   items.asMap().entries.map((entry) {
                     DropdownMenuItem<T> item = entry.value;

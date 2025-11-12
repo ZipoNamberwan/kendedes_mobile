@@ -61,5 +61,8 @@ class TaggingRepository {
     return response;
   }
 
- 
+  Future<List<TagData>> getLockedTags(String projectId) async {
+    final response = await _taggingProvider.getLockedTags(projectId);
+    return response.map((data) => TagData.fromJson(data)).toList();
+  }
 }

@@ -17,12 +17,14 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         ProjectState(
           data: ProjectStateData(
             projects: [],
+            filteredProjects: [],
             saveLoading: false,
             initLoading: false,
             deleteLoading: false,
             isSyncing: false,
             currentUser: null,
             tagCounts: {},
+            searchKeyword: '',
           ),
         ),
       ) {
@@ -61,6 +63,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
                   InitializingSuccess(
                     data: state.data.copyWith(
                       projects: projects,
+                      filteredProjects: projects,
                       initLoading: false,
                       tagCounts: tagCounts,
                     ),
@@ -95,6 +98,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             InitializingSuccess(
               data: state.data.copyWith(
                 projects: projects,
+                filteredProjects: projects,
                 initLoading: false,
                 tagCounts: tagCounts,
               ),
@@ -144,6 +148,10 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
               ProjectAddedSuccess(
                 data: state.data.copyWith(
                   projects: [...state.data.projects, newProject],
+                  filteredProjects: [
+                    ...state.data.filteredProjects,
+                    newProject,
+                  ],
                   resetForm: true,
                   saveLoading: false,
                 ),
@@ -231,6 +239,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
               ProjectUpdatedSuccess(
                 data: state.data.copyWith(
                   projects: updatedProjects,
+                  filteredProjects: updatedProjects,
                   resetForm: true,
                   saveLoading: false,
                 ),
@@ -287,6 +296,10 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
                   deleteLoading: false,
                   projects:
                       state.data.projects
+                          .where((project) => project.id != event.id)
+                          .toList(),
+                  filteredProjects:
+                      state.data.filteredProjects
                           .where((project) => project.id != event.id)
                           .toList(),
                 ),
@@ -386,6 +399,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             SyncSuccess(
               data: state.data.copyWith(
                 projects: projects,
+                filteredProjects: projects,
                 isSyncing: false,
                 tagCounts: tagCounts,
               ),
@@ -450,6 +464,39 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       final tagCounts =
           await ProjectDbRepository().getTagCountsByProjectAndSyncStatus();
       emit(ProjectState(data: state.data.copyWith(tagCounts: tagCounts)));
+    });
+
+    on<SearchProject>((event, emit) async {
+      // filter state.projects name and description by event.keyword
+      final keyword = event.keyword.toLowerCase();
+      final filteredProjects =
+          state.data.projects.where((project) {
+            final nameMatch = project.name.toLowerCase().contains(keyword);
+            final descriptionMatch =
+                project.description != null &&
+                project.description!.toLowerCase().contains(keyword);
+            return nameMatch || descriptionMatch;
+          }).toList();
+
+      emit(
+        ProjectState(
+          data: state.data.copyWith(
+            filteredProjects: filteredProjects,
+            searchKeyword: event.keyword,
+          ),
+        ),
+      );
+    });
+
+    on<ClearKeyword>((event, emit) async {
+      emit(
+        SearchCleared(
+          data: state.data.copyWith(
+            filteredProjects: state.data.projects,
+            clearSearch: true,
+          ),
+        ),
+      );
     });
   }
 

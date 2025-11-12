@@ -167,7 +167,7 @@ class TaggingDbRepository {
   }) async {
     final map = await _taggingDbProvider.getById(id);
     if (map == null) return null;
-    
+
     // Use preloaded project or hydrate it
     final project =
         preloadedProject ??
@@ -259,5 +259,13 @@ class TaggingDbRepository {
     String projectId,
   ) async {
     return await _taggingDbProvider.countSentAndUnsentByProjectId(projectId);
+  }
+
+  bool? hasCheckLockedTags(String projectId) {
+    return _taggingDbProvider.hasCheckLockedTags(projectId);
+  }
+
+  Future<void> saveCheckLockedTags(String projectId) async {
+    await _taggingDbProvider.saveCheckLockedTags(projectId);
   }
 }

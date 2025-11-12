@@ -32,6 +32,9 @@ class _ProjectListPageState extends State<ProjectListPage>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
+  final FocusNode _searchFocusNode = FocusNode();
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -145,11 +148,7 @@ class _ProjectListPageState extends State<ProjectListPage>
     );
   }
 
-  void _showAppBarPopupMenu(
-    BuildContext context,
-    Offset position,
-    bool noProject,
-  ) async {
+  void _showAppBarPopupMenu(BuildContext context, Offset position) async {
     final value = await showMenu<String>(
       context: context,
       position: RelativeRect.fromLTRB(
@@ -160,7 +159,6 @@ class _ProjectListPageState extends State<ProjectListPage>
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       items: [
-        // if (noProject)
         PopupMenuItem(
           value: 'sync',
           child: Row(
@@ -319,6 +317,8 @@ class _ProjectListPageState extends State<ProjectListPage>
                   buttonText: 'Tutup',
                 ),
           );
+        } else if (state is SearchCleared) {
+          _searchController.text = '';
         }
       },
       builder: (context, state) {
@@ -352,18 +352,14 @@ class _ProjectListPageState extends State<ProjectListPage>
                       ),
                 ),
             onMoreTap:
-                (tapPosition) => _showAppBarPopupMenu(
-                  context,
-                  tapPosition,
-                  state.data.projects.isEmpty,
-                ),
+                (tapPosition) => _showAppBarPopupMenu(context, tapPosition),
           ),
           body: Column(
             children: [
-              // Enhanced Statistics Card
+              // Enhanced Search Box
               Container(
                 margin: const EdgeInsets.all(20),
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -379,10 +375,22 @@ class _ProjectListPageState extends State<ProjectListPage>
                     width: 1,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
+                child: TextField(
+                  focusNode: _searchFocusNode,
+                  controller: _searchController,
+                  onChanged:
+                      (value) =>
+                          _projectBloc.add(SearchProject(keyword: value)),
+                  decoration: InputDecoration(
+                    hintText: 'Cari projek...',
+                    hintStyle: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    prefixIcon: Container(
+                      margin: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -392,41 +400,85 @@ class _ProjectListPageState extends State<ProjectListPage>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        Icons.analytics_rounded,
+                        Icons.search_rounded,
                         color: Colors.orange.shade600,
-                        size: 28,
+                        size: 20,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    suffixIcon: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            'Total Projek',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[600],
-                              letterSpacing: 0.3,
+                          if (state.data.searchKeyword.isNotEmpty)
+                            GestureDetector(
+                              onTap: () => _projectBloc.add(ClearKeyword()),
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.red.shade200,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.clear_rounded,
+                                  color: Colors.red.shade600,
+                                  size: 16,
+                                ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${state.data.projects.length}',
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                          // Project count
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.grey.shade200,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              '${state.data.filteredProjects.length} projek',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(
+                        color: Colors.orange.shade300,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                  ),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
 
@@ -511,9 +563,10 @@ class _ProjectListPageState extends State<ProjectListPage>
                           )
                           : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                            itemCount: state.data.projects.length,
+                            itemCount: state.data.filteredProjects.length,
                             itemBuilder: (context, index) {
-                              final project = state.data.projects[index];
+                              final project =
+                                  state.data.filteredProjects[index];
                               return AnimatedContainer(
                                 duration: Duration(
                                   milliseconds: 100 + (index * 50),
@@ -562,6 +615,7 @@ class _ProjectListPageState extends State<ProjectListPage>
                                           ),
                                         );
 
+                                        _searchFocusNode.unfocus();
                                         _projectBloc.add(RecalculateTags());
                                       },
                                       child: Padding(

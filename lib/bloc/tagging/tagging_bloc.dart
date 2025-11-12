@@ -19,10 +19,37 @@ import 'tagging_state.dart';
 class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
   final Uuid _uuid = const Uuid();
 
-  TaggingBloc() : super(InitializingStarted()) {
+  TaggingBloc() : super(InitializingStarted(message: 'Memuat peta...')) {
     on<InitTag>((event, emit) async {
-      emit(InitializingStarted());
+      emit(InitializingStarted(message: 'Memuat peta...'));
       try {
+        await ApiServerHandler.run(
+          action: () async {
+            if (TaggingDbRepository().hasCheckLockedTags(event.project.id) !=
+                true) {
+              emit(InitializingStarted(message: 'Mengambil data dari server...'));
+
+              final lockedTags = await TaggingRepository().getLockedTags(
+                event.project.id,
+              );
+
+              for (final lockedTag in lockedTags) {
+                await TaggingDbRepository().insertOrUpdate(
+                  lockedTag.copyWith(isLocked: true),
+                );
+              }
+
+              await TaggingDbRepository().saveCheckLockedTags(event.project.id);
+            }
+          },
+          onLoginExpired: (e) {
+            emit(TokenExpired(data: state.data.copyWith()));
+            return;
+          },
+          onDataProviderError: (e) {},
+          onOtherError: (e) {},
+        );
+
         // Open the Hive box for tag data
         final tags =
             (await TaggingDbRepository().getAllByProjectId(
@@ -34,6 +61,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
         final polygons = await PolygonDbRepository().getPolygonsForProject(
           event.project.id,
         );
+
         // Emit success state with initial data
         emit(
           InitializingSuccess(

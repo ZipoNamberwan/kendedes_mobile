@@ -621,7 +621,7 @@ class _TaggingPageState extends State<TaggingPage>
       builder: (context, state) {
         if (state is InitializingStarted) {
           return LoadingScaffold(
-            title: 'Memuat Peta...',
+            title: state.message,
             subtitle: 'Mohon tunggu sebentar',
           );
         } else if (state is InitializingError) {

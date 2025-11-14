@@ -21,7 +21,7 @@ class ProjectProvider {
   }
 
   Future<List<Map<String, dynamic>>> getProjectsWithTags(String userId) async {
-    final response = await _dioService.dio.get('/users/$userId/projects');
+    final response = await _dioService.dio.get('/users/$userId/projects/v2');
     return List<Map<String, dynamic>>.from(response.data['data']);
   }
 

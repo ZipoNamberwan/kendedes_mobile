@@ -1,4 +1,5 @@
 import 'package:kendedes_mobile/classes/providers/local_db/local_db_provider.dart';
+import 'package:kendedes_mobile/classes/services/shared_preference_service.dart';
 import 'package:sqflite/sqflite.dart';
 
 class TaggingDbProvider {
@@ -8,6 +9,7 @@ class TaggingDbProvider {
   TaggingDbProvider._internal();
 
   late LocalDbProvider _dbProvider;
+  late SharedPreferenceService _sharedPreferenceService;
   bool _initialized = false;
 
   Future<void> init() async {
@@ -15,6 +17,8 @@ class TaggingDbProvider {
     _initialized = true;
     _dbProvider = LocalDbProvider();
     await _dbProvider.init();
+    _sharedPreferenceService = SharedPreferenceService();
+    await _sharedPreferenceService.init();
   }
 
   // Local Database Operations
@@ -123,5 +127,13 @@ class TaggingDbProvider {
       'sent': Sqflite.firstIntValue(sentResult) ?? 0,
       'unsent': Sqflite.firstIntValue(unsentResult) ?? 0,
     };
+  }
+
+  bool? hasCheckLockedTags(String projectId) {
+    return _sharedPreferenceService.hasCheckLockedTags(projectId);
+  }
+
+  Future<void> saveCheckLockedTags(String projectId) async {
+    await _sharedPreferenceService.saveCheckLockedTags(projectId);
   }
 }

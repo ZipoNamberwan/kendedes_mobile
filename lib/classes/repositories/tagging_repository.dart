@@ -49,17 +49,20 @@ class TaggingRepository {
     await _taggingProvider.deleteTagging(taggingId);
   }
 
-  Future<bool> deleteMultipleTags(List<String> ids) async {
+  Future<Map<String, dynamic>> deleteMultipleTags(List<String> ids) async {
     final response = await _taggingProvider.deleteMultipleTags(ids);
-    return response['success'];
+    return response;
   }
 
-  Future<List<String>> uploadMultipleTags(List<TagData> tags) async {
+  Future<Map<String, dynamic>> uploadMultipleTags(List<TagData> tags) async {
     final List<Map<String, dynamic>> tagJsonList =
         tags.map((tag) => tag.toJson()).toList();
     final response = await _taggingProvider.uploadMultipleTags(tagJsonList);
-    return List<String>.from(response['uploaded_ids']);
+    return response;
   }
 
- 
+  Future<List<TagData>> getLockedTags(String projectId) async {
+    final response = await _taggingProvider.getLockedTags(projectId);
+    return response.map((data) => TagData.fromJson(data)).toList();
+  }
 }

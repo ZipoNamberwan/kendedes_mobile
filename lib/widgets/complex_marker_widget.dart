@@ -85,7 +85,9 @@ class ComplexMarkerWidget extends StatelessWidget {
                   ),
                 ),
                 child: Icon(
-                  Icons.location_on,
+                  (currentProject?.id == tagData.project.id && tagData.isLocked)
+                      ? Icons.lock_rounded
+                      : Icons.location_on,
                   color: Colors.white,
                   size: isSelected ? 20 : 16,
                 ),

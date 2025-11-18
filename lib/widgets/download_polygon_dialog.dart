@@ -136,7 +136,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                                         '[${regency?.shortCode}] ${regency?.name}',
                                 onChanged: (value) {
                                   _polygonBloc.add(
-                                    SelectRegency(regency: value!),
+                                    SelectRegency(regency: value),
                                   );
                                 },
                               ),
@@ -624,63 +624,226 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade300, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child:
           isLoading
               ? Container(
-                height: 36,
+                height: 42,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
                   children: [
                     SizedBox(
-                      width: 14,
-                      height: 14,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: Colors.purple,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Text(
-                      'Memuat...',
+                      'Memuat $label...',
                       style: TextStyle(
                         color: Colors.grey.shade500,
-                        fontSize: 12,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               )
-              : DropdownButtonFormField<T>(
-                value: value,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  isDense: true,
-                ),
-                hint: Text(
-                  'Pilih $label',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-                ),
-                items:
-                    items.map((item) {
-                      return DropdownMenuItem<T>(
-                        value: item,
-                        child: Text(
-                          displayText(item),
-                          style: const TextStyle(fontSize: 12),
+              : Theme(
+                data: Theme.of(context).copyWith(
+                  menuTheme: MenuThemeData(
+                    style: MenuStyle(
+                      backgroundColor: WidgetStateProperty.all(Colors.white),
+                      surfaceTintColor: WidgetStateProperty.all(
+                        Colors.transparent,
+                      ),
+                      shadowColor: WidgetStateProperty.all(
+                        Colors.purple.withValues(alpha: 0.1),
+                      ),
+                      elevation: WidgetStateProperty.all(8),
+                      shape: WidgetStateProperty.all(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: Colors.purple.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
                         ),
-                      );
-                    }).toList(),
-                onChanged: onChanged,
-                style: const TextStyle(color: Colors.black87, fontSize: 12),
+                      ),
+                      padding: WidgetStateProperty.all(
+                        const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ),
+                ),
+                child: DropdownMenu<T>(
+                  key: ValueKey('${label}_${value?.hashCode ?? 'null'}'),
+                  initialSelection: value,
+                  hintText: 'Pilih $label',
+                  enableSearch: true,
+                  enabled: items.isNotEmpty,
+                  dropdownMenuEntries:
+                      items.map((item) {
+                        final isSelected = item == value;
+                        return DropdownMenuEntry<T>(
+                          value: item,
+                          label: displayText(item),
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.resolveWith<
+                              Color
+                            >((Set<WidgetState> states) {
+                              if (states.contains(WidgetState.hovered)) {
+                                return Colors.purple.withValues(alpha: 0.1);
+                              }
+                              if (isSelected) {
+                                return Colors.purple.withValues(alpha: 0.15);
+                              }
+                              return Colors.transparent;
+                            }),
+                            foregroundColor:
+                                WidgetStateProperty.resolveWith<Color>((
+                                  Set<WidgetState> states,
+                                ) {
+                                  if (isSelected) {
+                                    return Colors.purple.shade700;
+                                  }
+                                  if (states.contains(WidgetState.hovered)) {
+                                    return Colors.purple.shade600;
+                                  }
+                                  return Colors.black87;
+                                }),
+                            textStyle:
+                                WidgetStateProperty.resolveWith<TextStyle>((
+                                  Set<WidgetState> states,
+                                ) {
+                                  return TextStyle(
+                                    fontSize: 14,
+                                    fontWeight:
+                                        isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.w500,
+                                    color:
+                                        isSelected
+                                            ? Colors.purple.shade700
+                                            : Colors.black87,
+                                  );
+                                }),
+                            padding: WidgetStateProperty.all(
+                              const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                            ),
+                            shape: WidgetStateProperty.all(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            overlayColor:
+                                WidgetStateProperty.resolveWith<Color>((
+                                  Set<WidgetState> states,
+                                ) {
+                                  if (states.contains(WidgetState.pressed)) {
+                                    return Colors.purple.withValues(alpha: 0.2);
+                                  }
+                                  return Colors.transparent;
+                                }),
+                          ),
+                          leadingIcon:
+                              isSelected
+                                  ? Icon(
+                                    Icons.check_circle_rounded,
+                                    color: Colors.purple.shade600,
+                                    size: 18,
+                                  )
+                                  : Icon(
+                                    _getAreaIcon(label),
+                                    color: Colors.grey.shade500,
+                                    size: 18,
+                                  ),
+                        );
+                      }).toList(),
+                  onSelected: onChanged,
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                  inputDecorationTheme: InputDecorationTheme(
+                    constraints: BoxConstraints.tight(
+                      const Size.fromHeight(40),
+                    ),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: Colors.purple.shade400,
+                        width: 2,
+                      ),
+                    ),
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  width: double.infinity,
+                  menuHeight: 400,
+                  menuStyle: MenuStyle(
+                    backgroundColor: WidgetStateProperty.all(Colors.white),
+                    surfaceTintColor: WidgetStateProperty.all(
+                      Colors.transparent,
+                    ),
+                    shadowColor: WidgetStateProperty.all(
+                      Colors.purple.withValues(alpha: 0.15),
+                    ),
+                    elevation: WidgetStateProperty.all(12),
+                    shape: WidgetStateProperty.all(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Colors.purple.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
               ),
     );
+  }
+
+  IconData _getAreaIcon(String label) {
+    switch (label.toLowerCase()) {
+      case 'kabupaten/kota':
+        return Icons.location_city_rounded;
+      case 'kecamatan':
+        return Icons.domain_rounded;
+      case 'kelurahan/desa':
+        return Icons.home_work_rounded;
+      default:
+        return Icons.location_on_rounded;
+    }
   }
 
   Widget _buildPolygonItem(

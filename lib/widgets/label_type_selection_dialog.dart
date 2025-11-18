@@ -70,54 +70,57 @@ class _LabelTypeSelectionDialogState extends State<LabelTypeSelectionDialog> {
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),
-            Column(
-              children:
-                  widget.labelTypes.map((labelType) {
-                    final isSelected = _selectedLabelType?.key == labelType.key;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color:
-                              isSelected
-                                  ? Colors.green.shade300
-                                  : Colors.grey.shade300,
-                        ),
-                        color:
-                            isSelected
-                                ? Colors.green.shade50
-                                : Colors.transparent,
-                      ),
-                      child: RadioListTile<LabelType>(
-                        value: labelType,
-                        groupValue: _selectedLabelType,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedLabelType = value;
-                          });
-                        },
-                        title: Text(
-                          labelType.label,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight:
-                                isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
+            RadioGroup<LabelType>(
+              groupValue: _selectedLabelType,
+              onChanged: (value) {
+                setState(() {
+                  _selectedLabelType = value;
+                });
+              },
+              child: Column(
+                children:
+                    widget.labelTypes.map((labelType) {
+                      final isSelected =
+                          _selectedLabelType?.key == labelType.key;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
                             color:
                                 isSelected
-                                    ? Colors.green.shade700
-                                    : Colors.black87,
+                                    ? Colors.green.shade300
+                                    : Colors.grey.shade300,
+                          ),
+                          color:
+                              isSelected
+                                  ? Colors.green.shade50
+                                  : Colors.transparent,
+                        ),
+                        child: RadioListTile<LabelType>(
+                          value: labelType,
+                          title: Text(
+                            labelType.label,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                              color:
+                                  isSelected
+                                      ? Colors.green.shade700
+                                      : Colors.black87,
+                            ),
+                          ),
+                          activeColor: Colors.green,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
                           ),
                         ),
-                        activeColor: Colors.green,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+              ),
             ),
             const SizedBox(height: 20),
             Row(

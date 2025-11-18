@@ -22,6 +22,8 @@ class DeleteTagConfirmationDialog extends StatelessWidget {
       listener: (context, state) {
         if (state is TagDeletedSuccess) {
           Navigator.of(context).pop(); // Close dialog on success
+        } else if (state is TaggingLockedWarning) {
+          Navigator.of(context).pop(); // Close dialog on error closed
         }
       },
       builder: (context, state) {

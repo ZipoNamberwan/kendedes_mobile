@@ -74,3 +74,18 @@ class RecalculateTags extends ProjectEvent {
   @override
   List<Object?> get props => [];
 }
+
+class SearchProject extends ProjectEvent {
+  final String keyword;
+  const SearchProject({required this.keyword});
+
+  @override
+  List<Object?> get props => [keyword];
+}
+
+class ClearKeyword extends ProjectEvent {
+  const ClearKeyword();
+
+  @override
+  List<Object?> get props => [];
+}

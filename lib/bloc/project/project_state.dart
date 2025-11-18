@@ -73,6 +73,10 @@ class SyncFailed extends ProjectState {
   const SyncFailed({required this.errorMessage, required super.data});
 }
 
+class SearchCleared extends ProjectState {
+  const SearchCleared({required super.data});
+}
+
 class ProjectFormFieldState<T> {
   final T? value;
   final String? error;
@@ -88,6 +92,7 @@ class ProjectFormFieldState<T> {
 
 class ProjectStateData {
   final List<Project> projects;
+  final List<Project> filteredProjects;
   final Map<String, ProjectFormFieldState<dynamic>> formFields;
   final User? currentUser;
 
@@ -96,15 +101,18 @@ class ProjectStateData {
   final bool deleteLoading;
   final bool isSyncing;
   final Map<String, Map<String, int>> tagCounts;
+  final String searchKeyword;
 
   ProjectStateData({
     required this.projects,
+    required this.filteredProjects,
     this.currentUser,
     required this.saveLoading,
     required this.initLoading,
     required this.deleteLoading,
     required this.isSyncing,
     required this.tagCounts,
+    required this.searchKeyword,
     Map<String, ProjectFormFieldState<dynamic>>? formFields,
   }) : formFields = formFields ?? _generateFormFields();
 
@@ -121,6 +129,7 @@ class ProjectStateData {
 
   ProjectStateData copyWith({
     List<Project>? projects,
+    List<Project>? filteredProjects,
     User? currentUser,
     Map<String, ProjectFormFieldState<dynamic>>? formFields,
     bool? resetForm,
@@ -128,10 +137,13 @@ class ProjectStateData {
     bool? initLoading,
     bool? deleteLoading,
     bool? isSyncing,
+    String? searchKeyword,
+    bool? clearSearch,
     Map<String, Map<String, int>>? tagCounts,
   }) {
     return ProjectStateData(
       projects: projects ?? this.projects,
+      filteredProjects: filteredProjects ?? this.filteredProjects,
       currentUser: currentUser ?? this.currentUser,
       formFields:
           (resetForm ?? false)
@@ -142,6 +154,8 @@ class ProjectStateData {
       deleteLoading: deleteLoading ?? this.deleteLoading,
       isSyncing: isSyncing ?? this.isSyncing,
       tagCounts: tagCounts ?? this.tagCounts,
+      searchKeyword:
+          clearSearch == true ? '' : (searchKeyword ?? this.searchKeyword),
     );
   }
 }

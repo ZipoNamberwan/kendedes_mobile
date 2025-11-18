@@ -62,7 +62,7 @@ class TaggingProvider {
 
   Future<Map<String, dynamic>> deleteMultipleTags(List<String> ids) async {
     final response = await _dioService.dio.delete(
-      '/business/delete-multiple',
+      '/business/delete-multiple-v2',
       data: {'ids': ids},
     );
     return response.data['data'];
@@ -78,4 +78,10 @@ class TaggingProvider {
     return response.data['data'];
   }
 
+  Future<List<dynamic>> getLockedTags(String projectId) async {
+    final response = await _dioService.dio.get(
+      '/business/project/locked/$projectId',
+    );
+    return response.data['data'];
+  }
 }

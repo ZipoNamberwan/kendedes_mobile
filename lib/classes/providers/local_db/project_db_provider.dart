@@ -66,38 +66,48 @@ class ProjectDbProvider {
     await _dbProvider.db.delete('projects', where: 'id = ?', whereArgs: [id]);
   }
 
-  /// Count tags by sync status grouped by project ID
+  /// Count tags by sync status and lock status grouped by project ID
   /// Returns a map with project_id as key and another map containing sync counts
-  /// Example: {'project1': {'synced': 5, 'unsynced': 3}, 'project2': {'synced': 2, 'unsynced': 1}}
+  /// Example: {'project1': {'synced': 5, 'unsynced': 3, 'locked': 2}, 'project2': {'synced': 2, 'unsynced': 1, 'locked': 0}}
   Future<Map<String, Map<String, int>>>
   getTagCountsByProjectAndSyncStatus() async {
     final result = await _dbProvider.db.rawQuery('''
       SELECT 
         project_id,
+        is_locked,
         has_sent_to_server,
         COUNT(*) as count
       FROM tag_data 
       WHERE is_deleted = 0 OR is_deleted IS NULL
-      GROUP BY project_id, has_sent_to_server
+      GROUP BY project_id, is_locked, has_sent_to_server
     ''');
 
     final Map<String, Map<String, int>> projectCounts = {};
 
     for (final row in result) {
       final projectId = row['project_id'] as String;
-      final hasSentToServer = (row['has_sent_to_server'] as int) == 1;
+      final isLocked = (row['is_locked'] as int?) == 1;
+      final hasSentToServer = (row['has_sent_to_server'] as int?) == 1;
       final count = row['count'] as int;
 
       // Initialize project map if it doesn't exist
       if (!projectCounts.containsKey(projectId)) {
-        projectCounts[projectId] = {'synced': 0, 'unsynced': 0};
+        projectCounts[projectId] = {'synced': 0, 'unsynced': 0, 'locked': 0};
       }
 
-      // Update the appropriate count
-      if (hasSentToServer) {
-        projectCounts[projectId]!['synced'] = count;
+      // Update the appropriate count based on lock status first
+      if (isLocked) {
+        projectCounts[projectId]!['locked'] =
+            (projectCounts[projectId]!['locked'] ?? 0) + count;
       } else {
-        projectCounts[projectId]!['unsynced'] = count;
+        // If not locked, count by sync status
+        if (hasSentToServer) {
+          projectCounts[projectId]!['synced'] =
+              (projectCounts[projectId]!['synced'] ?? 0) + count;
+        } else {
+          projectCounts[projectId]!['unsynced'] =
+              (projectCounts[projectId]!['unsynced'] ?? 0) + count;
+        }
       }
     }
 

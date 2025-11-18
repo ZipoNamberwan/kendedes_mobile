@@ -19,7 +19,8 @@ class TaggingState extends Equatable {
 }
 
 class InitializingStarted extends TaggingState {
-  InitializingStarted()
+  final String message;
+  InitializingStarted({required this.message})
     : super(
         data: TaggingStateData(
           project: Project(
@@ -169,6 +170,17 @@ class SaveFormError extends TaggingState {
   List<Object> get props => [errorMessage, data];
 }
 
+class TaggingLockedWarning extends TaggingState {
+  final String message;
+  const TaggingLockedWarning({
+    this.message = 'Tagging sudah Dikunci Oleh Admin Kabupaten',
+    required super.data,
+  });
+
+  @override
+  List<Object> get props => [message, data];
+}
+
 class TaggingSideBarOpened extends TaggingState {
   const TaggingSideBarOpened({required super.data});
 
@@ -214,10 +226,7 @@ class AllFilterCleared extends TaggingState {
 class NoTaggingInsideBounds extends TaggingState {
   final String message;
 
-  const NoTaggingInsideBounds({
-    required this.message,
-    required super.data,
-  });
+  const NoTaggingInsideBounds({required this.message, required super.data});
 
   @override
   List<Object> get props => [data, message];
@@ -298,13 +307,18 @@ class DeleteMultipleTagsError extends TaggingState {
 
 class DeleteMultipleTagsSuccess extends TaggingState {
   final String successMessage;
+  final int deletedCount;
+  final int lockedCount;
+
   const DeleteMultipleTagsSuccess({
     required this.successMessage,
+    required this.deletedCount,
+    required this.lockedCount,
     required super.data,
   });
 
   @override
-  List<Object> get props => [successMessage, data];
+  List<Object> get props => [successMessage, deletedCount, lockedCount, data];
 }
 
 class MockupLocationDetected extends TaggingState {

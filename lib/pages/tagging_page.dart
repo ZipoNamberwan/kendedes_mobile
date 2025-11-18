@@ -614,12 +614,14 @@ class _TaggingPageState extends State<TaggingPage>
           );
         } else if (state is InitializingSuccess) {
           _afterInitSuccess();
+        } else if (state is TaggingLockedWarning) {
+          CustomSnackBar.showWarning(context, message: state.message);
         }
       },
       builder: (context, state) {
         if (state is InitializingStarted) {
           return LoadingScaffold(
-            title: 'Memuat Peta...',
+            title: state.message,
             subtitle: 'Mohon tunggu sebentar',
           );
         } else if (state is InitializingError) {
@@ -1118,17 +1120,33 @@ class _TaggingPageState extends State<TaggingPage>
 
                                       Builder(
                                         builder: (context) {
-                                          final syncedCount =
-                                              state.data.tags.where((tag) {
-                                                return tag.hasSentToServer &&
-                                                    tag.project.id ==
-                                                        state.data.project.id;
+                                          // Count tags for current project only
+                                          final currentProjectTags = state
+                                              .data
+                                              .tags
+                                              .where((tag) {
+                                                return tag.project.id ==
+                                                    state.data.project.id;
+                                              });
+
+                                          // Count locked tags first
+                                          final lockedCount =
+                                              currentProjectTags.where((tag) {
+                                                return tag.isLocked;
                                               }).length;
+
+                                          // Count synced tags (unlocked only)
+                                          final syncedCount =
+                                              currentProjectTags.where((tag) {
+                                                return !tag.isLocked &&
+                                                    tag.hasSentToServer;
+                                              }).length;
+
+                                          // Count unsynced tags (unlocked only)
                                           final unsyncedCount =
-                                              state.data.tags.where((tag) {
-                                                return !tag.hasSentToServer &&
-                                                    tag.project.id ==
-                                                        state.data.project.id;
+                                              currentProjectTags.where((tag) {
+                                                return !tag.isLocked &&
+                                                    !tag.hasSentToServer;
                                               }).length;
 
                                           return Row(
@@ -1194,6 +1212,43 @@ class _TaggingPageState extends State<TaggingPage>
                                                     const SizedBox(width: 2),
                                                     Text(
                                                       '$unsyncedCount',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 9,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              // Locked tags counter
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue.withValues(
+                                                    alpha: 0.8,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.lock_rounded,
+                                                      color: Colors.white,
+                                                      size: 10,
+                                                    ),
+                                                    const SizedBox(width: 2),
+                                                    Text(
+                                                      '$lockedCount',
                                                       style: const TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 9,

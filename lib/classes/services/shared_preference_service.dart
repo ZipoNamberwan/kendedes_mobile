@@ -54,4 +54,12 @@ class SharedPreferenceService {
   int? getLastCheckVersion() {
     return prefs.getInt(_lastCheckVersionKey);
   }
+
+  Future<void> saveCheckLockedTags(String projectId) async {
+    await prefs.setBool('locked_tags_$projectId', true);
+  }
+
+  bool? hasCheckLockedTags(String projectId) {
+    return prefs.getBool('locked_tags_$projectId');
+  }
 }

@@ -7,6 +7,7 @@ import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/widgets/delete_multiple_tag_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/tag_list_item_widget.dart';
 import 'package:kendedes_mobile/widgets/upload_selected_tags_dialog.dart';
 
@@ -71,17 +72,48 @@ class _TaggingSidebarWidgetState extends State<TaggingSidebarWidget> {
           _searchController.text = '';
         } else if (state is TaggingSideBarClosed) {
           _searchFocusNode.unfocus();
-        } else if (state is UploadMultipleTagsSuccess ||
-            state is DeleteMultipleTagsSuccess) {
+        } else if (state is UploadMultipleTagsSuccess) {
           _taggingBloc.add(SetTaggingSideBarOpen(false));
           Navigator.of(context).pop();
-          final message = switch (state) {
-            UploadMultipleTagsSuccess(:final successMessage) => successMessage,
-            DeleteMultipleTagsSuccess(:final successMessage) => successMessage,
-            _ => '',
-          };
+          final message = state.successMessage;
 
           CustomSnackBar.showSuccess(context, message: message);
+        } else if (state is DeleteMultipleTagsSuccess) {
+          _taggingBloc.add(SetTaggingSideBarOpen(false));
+          Navigator.of(context).pop();
+
+          // Show notification based on deletion results
+          if (state.deletedCount > 0 && state.lockedCount == 0) {
+            // All tags deleted successfully
+            CustomSnackBar.showSuccess(
+              context,
+              message: 'Semua tagging berhasil dihapus',
+            );
+          } else if (state.deletedCount > 0 && state.lockedCount > 0) {
+            // Some deleted, some locked
+            showDialog(
+              context: context,
+              builder:
+                  (context) => MessageDialog(
+                    title: 'Penghapusan Sebagian Berhasil',
+                    message:
+                        '${state.deletedCount} tagging berhasil dihapus, ${state.lockedCount} tagging terkunci sehingga tidak dapat dihapus',
+                    type: MessageType.warning,
+                  ),
+            );
+          } else if (state.deletedCount == 0 && state.lockedCount > 0) {
+            // None deleted, all locked
+            showDialog(
+              context: context,
+              builder:
+                  (context) => MessageDialog(
+                    title: 'Penghapusan Gagal',
+                    message:
+                        'Tidak ada tagging yang dihapus karena semua tagging yang dipilih terkunci',
+                    type: MessageType.error,
+                  ),
+            );
+          }
         }
       },
       builder: (context, state) {
@@ -442,7 +474,7 @@ class _TaggingSidebarWidgetState extends State<TaggingSidebarWidget> {
                                       );
                                     },
                                     padding: const EdgeInsets.all(0),
-                                    activeColor: Colors.deepOrange,
+                                    activeThumbColor: Colors.deepOrange,
                                     materialTapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                   ),
@@ -472,7 +504,7 @@ class _TaggingSidebarWidgetState extends State<TaggingSidebarWidget> {
                                       );
                                     },
                                     padding: const EdgeInsets.all(0),
-                                    activeColor: Colors.deepOrange,
+                                    activeThumbColor: Colors.deepOrange,
                                     materialTapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                   ),

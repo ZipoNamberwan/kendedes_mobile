@@ -19,19 +19,49 @@ import 'tagging_state.dart';
 class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
   final Uuid _uuid = const Uuid();
 
-  TaggingBloc() : super(InitializingStarted()) {
+  TaggingBloc() : super(InitializingStarted(message: 'Memuat peta...')) {
     on<InitTag>((event, emit) async {
-      emit(InitializingStarted());
+      emit(InitializingStarted(message: 'Memuat peta...'));
       try {
+        await ApiServerHandler.run(
+          action: () async {
+            if (TaggingDbRepository().hasCheckLockedTags(event.project.id) !=
+                true) {
+              emit(InitializingStarted(message: 'Mengambil data dari server...'));
+
+              final lockedTags = await TaggingRepository().getLockedTags(
+                event.project.id,
+              );
+
+              for (final lockedTag in lockedTags) {
+                await TaggingDbRepository().insertOrUpdate(
+                  lockedTag.copyWith(isLocked: true),
+                );
+              }
+
+              await TaggingDbRepository().saveCheckLockedTags(event.project.id);
+            }
+          },
+          onLoginExpired: (e) {
+            emit(TokenExpired(data: state.data.copyWith()));
+            return;
+          },
+          onDataProviderError: (e) {},
+          onOtherError: (e) {},
+        );
+
         // Open the Hive box for tag data
-        final List<TagData> tags = await TaggingDbRepository()
-            .getAllByProjectId(event.project.id);
+        final tags =
+            (await TaggingDbRepository().getAllByProjectId(
+              event.project.id,
+            )).where((tag) => !tag.isDeleted).toList();
 
         final User currentUser = AuthRepository().getUser();
 
         final polygons = await PolygonDbRepository().getPolygonsForProject(
           event.project.id,
         );
+
         // Emit success state with initial data
         emit(
           InitializingSuccess(
@@ -135,13 +165,21 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             return;
           },
           onDataProviderError: (e) {
-            emit(
-              TagDeletedError(
-                errorMessage: e.message,
-                data: state.data.copyWith(isDeletingTag: false),
-              ),
-            );
-            return;
+            if (e.statusCode == 423) {
+              // check if e.data is not null and has errors key in it
+              if (e.data != null && e.data['errors'] != null) {
+                TagData lockedTag = TagData.fromJson(e.data['errors']);
+                add(LockTagData(tagData: lockedTag));
+              }
+            } else {
+              emit(
+                TagDeletedError(
+                  errorMessage: e.message,
+                  data: state.data.copyWith(isDeletingTag: false),
+                ),
+              );
+              return;
+            }
           },
           onOtherError: (e) {
             emit(
@@ -179,26 +217,52 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             });
             final deletedTagIds = deletedTags.map((tag) => tag.id).toList();
 
-            final result = await TaggingRepository().deleteMultipleTags(
+            final response = await TaggingRepository().deleteMultipleTags(
               deletedTagIds,
             );
 
-            if (result) {
+            if (response['success']) {
+              final User user = AuthRepository().getUser();
+
+              final deletedTagIds = List<String>.from(response['deleted_ids']);
               await TaggingDbRepository().deleteByIds(deletedTagIds);
+
+              final updatedTags =
+                  state.data.tags
+                      .where((tag) => !deletedTagIds.contains(tag.id))
+                      .toList();
+
+              final lockedTags =
+                  (response['locked_tags'] as List).map((lockedTagData) {
+                    return TagData.fromJson(lockedTagData).copyWith(
+                      hasChanged: false,
+                      hasSentToServer: true,
+                      user: user,
+                    );
+                  }).toList();
+
+              for (final lockedTag in lockedTags) {
+                await TaggingDbRepository().insertOrUpdate(lockedTag);
+              }
+
+              final updatedTagsWithLocked =
+                  updatedTags.map((tag) {
+                    final lockedTag = lockedTags.firstWhere(
+                      (lockedTag) => lockedTag.id == tag.id,
+                      orElse: () => tag,
+                    );
+                    return lockedTag;
+                  }).toList();
 
               emit(
                 DeleteMultipleTagsSuccess(
                   successMessage:
-                      'Berhasil menghapus ${deletedTags.length} tagging terpilih',
+                      'Berhasil menghapus ${deletedTagIds.length} tagging terpilih',
+                  deletedCount: deletedTagIds.length,
+                  lockedCount: lockedTags.length,
                   data: state.data.copyWith(
-                    tags:
-                        state.data.tags
-                            .where((tag) => !deletedTags.contains(tag))
-                            .toList(),
-                    filteredTags:
-                        state.data.filteredTags
-                            .where((tag) => !deletedTags.contains(tag))
-                            .toList(),
+                    tags: updatedTagsWithLocked,
+                    filteredTags: updatedTagsWithLocked,
                     selectedTags: [],
                     isDeletingTag: false,
                   ),
@@ -280,50 +344,76 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
                 return tag.copyWith(user: user);
               }).toList();
 
-          final ids = await TaggingRepository().uploadMultipleTags(
+          final response = await TaggingRepository().uploadMultipleTags(
             uploadedTags.toList(),
           );
 
-          if (ids.isNotEmpty) {
-            // Update local Hive box
-            for (final tag in uploadedTags) {
-              if (ids.contains(tag.id)) {
-                final updatedTag = tag.copyWith(
+          // Update tags that is not locked
+          final ids = List<String>.from(response['uploaded_ids']);
+
+          // Update local storage
+          for (final tag in uploadedTags) {
+            if (ids.contains(tag.id)) {
+              final updatedTag = tag.copyWith(
+                hasChanged: false,
+                hasSentToServer: true,
+                user: user,
+              );
+              await TaggingDbRepository().insertOrUpdate(updatedTag);
+            }
+          }
+
+          // Update tags list
+          final updatedTags =
+              state.data.tags.map((tag) {
+                return ids.contains(tag.id)
+                    ? tag.copyWith(hasChanged: false, hasSentToServer: true)
+                    : tag;
+              }).toList();
+
+          final lockedTags =
+              (response['locked_tags'] as List).map((lockedTagData) {
+                return TagData.fromJson(lockedTagData).copyWith(
                   hasChanged: false,
                   hasSentToServer: true,
                   user: user,
                 );
-                //TODO: can be optimized by using a batch operation
-                await TaggingDbRepository().insertOrUpdate(updatedTag);
-              }
-            }
+              }).toList();
 
-            // Update tags list
-            final updatedTags =
-                state.data.tags.map((tag) {
-                  return ids.contains(tag.id)
-                      ? tag.copyWith(hasChanged: false, hasSentToServer: true)
-                      : tag;
-                }).toList();
-
-            emit(
-              UploadMultipleTagsSuccess(
-                successMessage: 'Tagging berhasil diupload',
-                data: state.data.copyWith(
-                  tags: updatedTags,
-                  selectedTags: [],
-                  isUploadingMultipleTags: false,
-                ),
-              ),
-            );
-          } else {
-            emit(
-              UploadMultipleTagsError(
-                errorMessage: 'Tidak ada tagging yang berhasil diupload',
-                data: state.data.copyWith(isUploadingMultipleTags: false),
-              ),
-            );
+          for (final lockedTag in lockedTags) {
+            await TaggingDbRepository().insertOrUpdate(lockedTag);
           }
+
+          final updatedTagsWithLocked =
+              updatedTags.map((tag) {
+                final lockedTag = lockedTags.firstWhere(
+                  (lockedTag) => lockedTag.id == tag.id,
+                  orElse: () => tag,
+                );
+                return lockedTag;
+              }).toList();
+
+          emit(
+            UploadMultipleTagsSuccess(
+              successMessage: 'Tagging berhasil diupload',
+              data: state.data.copyWith(
+                tags: updatedTagsWithLocked,
+                selectedTags: [],
+                isUploadingMultipleTags: false,
+              ),
+            ),
+          );
+
+          // if (ids.isNotEmpty) {
+
+          // } else {
+          //   emit(
+          //     UploadMultipleTagsError(
+          //       errorMessage: 'Tidak ada tagging yang berhasil diupload',
+          //       data: state.data.copyWith(isUploadingMultipleTags: false),
+          //     ),
+          //   );
+          // }
         },
         onLoginExpired: (e) {
           emit(
@@ -488,6 +578,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           updatedAt: DateTime.now(),
           project: state.data.project,
           user: user,
+          isLocked: false,
         );
 
         // 🔐 Save to SQL Lite
@@ -585,6 +676,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           updatedAt: DateTime.now(),
           project: state.data.project,
           user: user,
+          isLocked: false,
         );
 
         // 🔐 Save to db
@@ -644,7 +736,15 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             );
           },
           onLoginExpired: (e) {},
-          onDataProviderError: (e) {},
+          onDataProviderError: (e) {
+            if (e.statusCode == 423) {
+              // check if e.data is not null and has errors key in it
+              if (e.data != null && e.data['errors'] != null) {
+                TagData lockedTag = TagData.fromJson(e.data['errors']);
+                add(LockTagData(tagData: lockedTag));
+              }
+            }
+          },
           onOtherError: (e) {},
         );
       } catch (e) {
@@ -655,6 +755,44 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           ),
         );
       }
+    });
+
+    on<LockTagData>((event, emit) async {
+      final lockedTag = event.tagData.copyWith(isLocked: true);
+      TaggingDbRepository().insertOrUpdate(lockedTag);
+      final updatedTags =
+          state.data.tags.map((tag) {
+            if (tag.id == lockedTag.id) {
+              return lockedTag;
+            }
+            return tag;
+          }).toList();
+
+      final updatedSelectedTags =
+          state.data.selectedTags.map((tag) {
+            if (tag.id == lockedTag.id) {
+              return lockedTag;
+            }
+            return tag;
+          }).toList();
+
+      final updatedFilteredTags =
+          state.data.filteredTags.map((tag) {
+            if (tag.id == lockedTag.id) {
+              return lockedTag;
+            }
+            return tag;
+          }).toList();
+
+      emit(
+        TaggingLockedWarning(
+          data: state.data.copyWith(
+            tags: updatedTags,
+            selectedTags: updatedSelectedTags,
+            filteredTags: updatedFilteredTags,
+          ),
+        ),
+      );
     });
 
     on<RecordTagLocation>((event, emit) async {

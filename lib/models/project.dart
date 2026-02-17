@@ -1,4 +1,5 @@
 import 'package:kendedes_mobile/classes/helpers.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/user.dart';
 
 class Project {
@@ -11,6 +12,8 @@ class Project {
   final ProjectType type;
   final User? user;
 
+  final InteractionMode interactionMode;
+
   Project({
     required this.id,
     required this.name,
@@ -20,6 +23,7 @@ class Project {
     this.deletedAt,
     required this.type,
     this.user,
+    required this.interactionMode,
   });
 
   factory Project.fromJson(Map<String, dynamic> json) {
@@ -38,6 +42,7 @@ class Project {
           json['user'] != null
               ? User.fromJson(json['user'] as Map<String, dynamic>)
               : null,
+      interactionMode: InteractionMode.tag,
     );
   }
 
@@ -50,6 +55,7 @@ class Project {
       'created_at': DateHelper.format(createdAt),
       'updated_at': DateHelper.format(updatedAt),
       'deleted_at': DateHelper.format(deletedAt),
+      'interaction_mode': interactionMode.key,
     };
   }
 
@@ -62,6 +68,7 @@ class Project {
     DateTime? deletedAt,
     ProjectType? type,
     User? user,
+    InteractionMode? interactionMode,
   }) {
     return Project(
       id: id ?? this.id,
@@ -72,6 +79,7 @@ class Project {
       deletedAt: deletedAt ?? this.deletedAt,
       type: type ?? this.type,
       user: user ?? this.user,
+      interactionMode: interactionMode ?? this.interactionMode,
     );
   }
 }
@@ -100,6 +108,7 @@ class ProjectType {
   static const jenggala = ProjectType._('jenggala', 'Jenggala');
   static const survey = ProjectType._('survey', 'Survei BPS');
   static const other = ProjectType._('other', 'Lainnya');
+  static const browse = ProjectType._('browse', 'Browse Mode');
 
   static const values = [
     marketSwmaps,

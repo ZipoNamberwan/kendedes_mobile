@@ -478,6 +478,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                                             state.data.filteredPolygons[index];
                                         return _buildPolygonItem(
                                           polygon.id,
+                                          polygon.shortName,
                                           polygon.fullName,
                                           polygon.type.name,
                                           polygon,
@@ -848,6 +849,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
 
   Widget _buildPolygonItem(
     String id,
+    String shortName,
     String fullName,
     String type,
     Polygon polygon,
@@ -901,7 +903,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                         ),
                       ),
                       Text(
-                        id,
+                        shortName,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

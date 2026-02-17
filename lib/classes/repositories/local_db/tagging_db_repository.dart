@@ -3,6 +3,7 @@ import 'package:kendedes_mobile/classes/providers/local_db/project_db_provider.d
 import 'package:kendedes_mobile/classes/providers/local_db/tagging_db_provider.dart';
 import 'package:kendedes_mobile/classes/providers/local_db/user_db_provider.dart';
 import 'package:kendedes_mobile/classes/providers/local_db/user_role_db_provider.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/organization.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -119,6 +120,7 @@ class TaggingDbRepository {
           map['deleted_at'] != null ? DateTime.parse(map['deleted_at']) : null,
       type: ProjectType.values.firstWhere((e) => e.key == map['type']),
       user: user,
+      interactionMode: InteractionMode.tag,
     );
   }
 

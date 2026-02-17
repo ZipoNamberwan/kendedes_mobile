@@ -6,6 +6,7 @@ import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/project_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:uuid/uuid.dart';
 
@@ -136,6 +137,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         updatedAt: now,
         type: ProjectType.supplementMobile,
         user: user,
+        interactionMode: InteractionMode.tag,
       );
 
       try {
@@ -217,6 +219,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         updatedAt: now,
         type: ProjectType.supplementMobile,
         user: user,
+        interactionMode: InteractionMode.tag,
       );
 
       try {
@@ -439,6 +442,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
               type: ProjectType.supplementMobile,
+              interactionMode: InteractionMode.tag,
             ),
       );
 

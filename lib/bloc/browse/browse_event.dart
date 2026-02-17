@@ -4,6 +4,8 @@ import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/label_type.dart';
+import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:latlong2/latlong.dart';
 
 abstract class BrowseEvent extends Equatable {
@@ -122,4 +124,14 @@ class ClearSelectedSls extends BrowseEvent {
 
   @override
   List<Object?> get props => [];
+}
+
+class SelectLabelType extends BrowseEvent {
+  final LabelType? labelTypeKey;
+  const SelectLabelType(this.labelTypeKey);
+}
+
+class SelectMapType extends BrowseEvent {
+  final MapType? mapTypeKey;
+  const SelectMapType(this.mapTypeKey);
 }

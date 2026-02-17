@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
@@ -453,6 +454,9 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
                                                           type:
                                                               ProjectType
                                                                   .supplementMobile,
+                                                          interactionMode:
+                                                              InteractionMode
+                                                                  .tag,
                                                         ),
                                                   ),
                                                 );

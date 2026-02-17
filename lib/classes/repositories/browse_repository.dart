@@ -34,9 +34,9 @@ class BrowseRepository {
     return response.map((data) => TagData.fromJson(data)).toList();
   }
 
-  Future<List<TagData>> getBusinessesBySls(String slsId) async {
+  Future<Map<String, dynamic>> getBusinessesBySls(String slsId) async {
     final response = await _browseProvider.getBusinessesBySls(slsId);
-    return response.map((data) => TagData.fromJson(data)).toList();
+    return response;
   }
 
   Future<List<Village>> getVillagesBySubdistrictId(String subdistrictId) async {

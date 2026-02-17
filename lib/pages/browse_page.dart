@@ -13,6 +13,7 @@ import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
@@ -21,6 +22,8 @@ import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart
 import 'package:kendedes_mobile/widgets/browse_widgets/simple_marker_browse_widget.dart';
 import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/color_legend_dialog.dart';
+import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
+import 'package:kendedes_mobile/widgets/map_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/zoom_level_notification_dialog.dart';
@@ -443,7 +446,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                   ),
                   const SizedBox(width: 10),
                   const Text(
-                    'memuat usaha',
+                    'Loading...',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -589,6 +592,38 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
           ),
         ),
       ),
+    );
+  }
+
+  void _togglePolygonSidebar(bool isOpen) {
+    // _browseBloc.add(SetPolygonSideBarOpen(isOpen));
+  }
+
+  void _showLabelTypeDialog(LabelType? selectedLabelType) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => LabelTypeSelectionDialog(
+            labelTypes: LabelType.values,
+            selectedLabelType: selectedLabelType,
+            onLabelTypeSelected: (labelType) {
+              _browseBloc.add(SelectLabelType(labelType));
+            },
+          ),
+    );
+  }
+
+  void _showMapTypeDialog(MapType? selectedMapType) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => MapTypeSelectionDialog(
+            mapTypes: MapType.getMapTypes(),
+            selectedMapType: selectedMapType,
+            onMapTypeSelected: (mapType) {
+              _browseBloc.add(SelectMapType(mapType));
+            },
+          ),
     );
   }
 
@@ -1118,6 +1153,52 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                 ),
                               ),
                             ),
+
+                            const SizedBox(height: 12),
+
+                            // Label type button
+                            _buildActionButton(
+                              icon: Icons.label,
+                              iconColor: Colors.green,
+                              onPressed: () {
+                                _showLabelTypeDialog(
+                                  state.data.selectedLabelType,
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Map type button
+                            _buildActionButton(
+                              icon: Icons.layers_rounded,
+                              iconColor: Colors.blue.shade600,
+                              onPressed: () {
+                                _showMapTypeDialog(state.data.selectedMapType);
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Polygon button
+                            _buildActionButton(
+                              icon: Icons.pentagon_outlined,
+                              iconColor: Colors.purple.shade600,
+                              onPressed: () {
+                                _togglePolygonSidebar(true);
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Clear selection button
+                            if (state.data.selectedBusinesses.isNotEmpty) ...[
+                              _buildActionButton(
+                                icon: Icons.clear_all_rounded,
+                                iconColor: Colors.red,
+                                onPressed: () {},
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -1373,7 +1454,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                             'Load Prelist Usaha',
                                             style: TextStyle(
                                               color: Colors.grey.shade900,
-                                              fontSize: 13,
+                                              fontSize: 14,
                                               fontWeight: FontWeight.w700,
                                               letterSpacing: 0.2,
                                             ),
@@ -1415,7 +1496,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                           _buildLoadSegment(
                                             mode: BusinessLoadMode.area,
                                             icon: Icons.map_rounded,
-                                            label: 'By Area',
+                                            label: 'By SLS',
                                             onTap:
                                                 () => _browseBloc.add(
                                                   SetBusinessLoadMode(
@@ -1433,7 +1514,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                             icon:
                                                 Icons
                                                     .center_focus_strong_rounded,
-                                            label: 'By Screen',
+                                            label: 'By Layar',
                                             onTap:
                                                 () => _browseBloc.add(
                                                   SetBusinessLoadMode(
@@ -1482,6 +1563,8 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                           Colors.blue,
                                           Colors.indigo,
                                         ],
+                                        isLoading:
+                                            state.data.isBusinessBySlsLoading,
                                         isEnabled:
                                             state.data.selectedSls != null,
                                         onPressed: () {

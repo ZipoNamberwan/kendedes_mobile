@@ -7,15 +7,23 @@ import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/browse_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/area_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/browse_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/polygon_db_repository.dart';
 import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/polygon.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:uuid/uuid.dart';
 
 class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
+  final Uuid _uuid = const Uuid();
+
   BrowseBloc() : super(InitializingStarted()) {
     on<Initialize>((event, emit) async {
       final User currentUser = AuthRepository().getUser();
@@ -33,11 +41,24 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       }
       final regencies = await AreaDbRepository().getRegencies();
 
+      BrowseDbRepository browseDbRepository = BrowseDbRepository();
+      if (!await browseDbRepository.hasBrowseProject(currentUser.id)) {
+        await browseDbRepository.saveBrowseProject(
+          projectId: _uuid.v4(),
+          userId: currentUser.id,
+        );
+      }
+
+      Project? browseProject = await browseDbRepository.getBrowseProject(
+        currentUser.id,
+      );
+
       emit(
         InitializingSuccess(
           data: state.data.copyWith(
             currentUser: currentUser,
             regencies: regencies,
+            browseProject: browseProject,
           ),
         ),
       );
@@ -232,27 +253,69 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         action: () async {
           emit(
             BrowseState(
-              data: state.data.copyWith(isBusinessInsideBoundsLoading: true),
+              data: state.data.copyWith(isBusinessBySlsLoading: true),
             ),
           );
 
-          final businesses = await BrowseRepository().getBusinessesBySls(
+          final response = await BrowseRepository().getBusinessesBySls(
             event.sls.id,
           );
+
+          List<TagData> businesses =
+              response['businesses'] != null
+                  ? List<Map<String, dynamic>>.from(
+                    response['businesses'],
+                  ).map((data) => TagData.fromJson(data)).toList()
+                  : [];
+
+          Sls slsWithPolygon = Sls.fromJson(response['sls']);
+          Polygon updatedPolygon = slsWithPolygon.polygon!.copyWith(
+            id: _uuid.v4(),
+          );
+
+          await PolygonDbRepository().savePolygonWithPoints(updatedPolygon);
+
+          // Check if project-polygon pair already exists before adding
+          final existingPolygons = await PolygonDbRepository()
+              .getPolygonsForProject(state.data.browseProject.id);
+
+          final pairExists = existingPolygons.any(
+            (polygon) => polygon.id == updatedPolygon.id,
+          );
+
+          if (!pairExists) {
+            await PolygonDbRepository().addProjectPolygonPair(
+              state.data.browseProject.id,
+              updatedPolygon.id,
+            );
+          }
 
           if (businesses.isEmpty) {
             emit(
               NoBusinessInsideBounds(
                 message: 'Belum ada prelist usaha di SLS ${event.sls.name}',
-                data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
+                data: state.data.copyWith(isBusinessBySlsLoading: false),
               ),
             );
           } else {
+            // Create a copy of the current businesses list
+            final updatedNearbyBusiness = List.of(state.data.businesses);
+
+            // Use a Set for efficient duplicate checks
+            final existingIds = updatedNearbyBusiness.map((e) => e.id).toSet();
+
+            // Add only new businesses
+            updatedNearbyBusiness.addAll(
+              businesses.where(
+                (business) => !existingIds.contains(business.id),
+              ),
+            );
+
             emit(
               BrowseState(
                 data: state.data.copyWith(
-                  isBusinessInsideBoundsLoading: false,
-                  businesses: businesses,
+                  isBusinessBySlsLoading: false,
+                  businesses: updatedNearbyBusiness,
                 ),
               ),
             );
@@ -261,7 +324,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         onLoginExpired: (e) {
           emit(
             TokenExpired(
-              data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
+              data: state.data.copyWith(
+                isBusinessBySlsLoading: false,
+                isBusinessBySlsError: true,
+              ),
             ),
           );
         },
@@ -269,7 +335,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           emit(
             BusinessInsideBoundsFailed(
               errorMessage: e.message,
-              data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
+              data: state.data.copyWith(
+                isBusinessBySlsLoading: false,
+                isBusinessBySlsError: true,
+              ),
             ),
           );
         },
@@ -277,7 +346,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           emit(
             BusinessInsideBoundsFailed(
               errorMessage: e.toString(),
-              data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
+              data: state.data.copyWith(
+                isBusinessBySlsLoading: false,
+                isBusinessBySlsError: true,
+              ),
             ),
           );
         },
@@ -367,7 +439,11 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             ),
           );
         },
-        onLoginExpired: (e) {},
+        onLoginExpired: (e) {
+          emit(
+            TokenExpired(data: state.data.copyWith(isLoadingVillage: false)),
+          );
+        },
         onDataProviderError: (e) {
           emit(
             BrowseState(
@@ -415,7 +491,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             ),
           );
         },
-        onLoginExpired: (e) {},
+        onLoginExpired: (e) {
+          emit(TokenExpired(data: state.data.copyWith(isLoadingSls: false)));
+        },
         onDataProviderError: (e) {
           emit(
             BrowseState(
@@ -475,6 +553,22 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<ClearSelectedSls>((event, emit) {
       emit(BrowseState(data: state.data.copyWith(clearSelectedSls: true)));
+    });
+
+    on<SelectLabelType>((event, emit) {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(selectedLabelType: event.labelTypeKey),
+        ),
+      );
+    });
+
+    on<SelectMapType>((event, emit) {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(selectedMapType: event.mapTypeKey),
+        ),
+      );
     });
   }
 

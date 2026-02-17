@@ -40,12 +40,12 @@ class BrowseProvider {
     return List<Map<String, dynamic>>.from(response.data['data']);
   }
 
-  Future<List<Map<String, dynamic>>> getBusinessesBySls(String slsId) async {
+  Future<Map<String, dynamic>> getBusinessesBySls(String slsId) async {
     final response = await _dioService.dio.get(
       '/business-by-sls',
       queryParameters: {'sls': slsId},
     );
-    return List<Map<String, dynamic>>.from(response.data['data']);
+    return Map<String, dynamic>.from(response.data['data']);
   }
 
   Future<List<Village>> getVillagesBySubdistrictId(String subdistrictId) async {

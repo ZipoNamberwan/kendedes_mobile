@@ -4,9 +4,11 @@ import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
@@ -45,6 +47,8 @@ class InitializingStarted extends BrowseState {
           isLoadBusinessContainerExpanded: true,
           isBusinessInsideBoundsError: false,
           isBusinessInsideBoundsLoading: false,
+          isBusinessBySlsLoading: false,
+          isBusinessBySlsError: false,
           isLoadingRegency: false,
           isLoadingSubdistrict: false,
           isLoadingVillage: false,
@@ -53,6 +57,15 @@ class InitializingStarted extends BrowseState {
           isSubdistrictError: false,
           isVillageError: false,
           isSlsError: false,
+          browseProject: Project(
+            id: '',
+            name: '',
+            description: '',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            type: ProjectType.supplementMobile,
+            interactionMode: InteractionMode.browse,
+          ),
         ),
       );
 
@@ -148,6 +161,8 @@ class BrowseStateData {
   final MapType? selectedMapType;
   final bool isBusinessInsideBoundsLoading;
   final bool isBusinessInsideBoundsError;
+  final bool isBusinessBySlsLoading;
+  final bool isBusinessBySlsError;
 
   // Map data state
   final double currentZoom;
@@ -163,6 +178,7 @@ class BrowseStateData {
   final List<TagData> businesses;
   final List<TagData> filteredBusinesses;
   final List<TagData> selectedBusinesses;
+  final Project browseProject;
 
   // Load Business data state
   final List<Regency> regencies;
@@ -198,6 +214,8 @@ class BrowseStateData {
     this.selectedMapType,
     required this.isBusinessInsideBoundsLoading,
     required this.isBusinessInsideBoundsError,
+    required this.isBusinessBySlsLoading,
+    required this.isBusinessBySlsError,
 
     required this.currentZoom,
     required this.rotation,
@@ -211,6 +229,7 @@ class BrowseStateData {
     required this.businesses,
     required this.filteredBusinesses,
     required this.selectedBusinesses,
+    required this.browseProject,
 
     required this.regencies,
     required this.subdistricts,
@@ -242,6 +261,8 @@ class BrowseStateData {
     MapType? selectedMapType,
     bool? isBusinessInsideBoundsLoading,
     bool? isBusinessInsideBoundsError,
+    bool? isBusinessBySlsLoading,
+    bool? isBusinessBySlsError,
 
     double? currentZoom,
     double? rotation,
@@ -255,6 +276,7 @@ class BrowseStateData {
     List<TagData>? businesses,
     List<TagData>? filteredBusinesses,
     List<TagData>? selectedBusinesses,
+    Project? browseProject,
 
     List<Regency>? regencies,
     List<Subdistrict>? subdistricts,
@@ -295,6 +317,9 @@ class BrowseStateData {
           isBusinessInsideBoundsLoading ?? this.isBusinessInsideBoundsLoading,
       isBusinessInsideBoundsError:
           isBusinessInsideBoundsError ?? this.isBusinessInsideBoundsError,
+      isBusinessBySlsLoading:
+          isBusinessBySlsLoading ?? this.isBusinessBySlsLoading,
+      isBusinessBySlsError: isBusinessBySlsError ?? this.isBusinessBySlsError,
       currentZoom: currentZoom ?? this.currentZoom,
       rotation: rotation ?? this.rotation,
       isLoadingCurrentLocation:
@@ -307,6 +332,7 @@ class BrowseStateData {
       businesses: businesses ?? this.businesses,
       filteredBusinesses: filteredBusinesses ?? this.filteredBusinesses,
       selectedBusinesses: selectedBusinesses ?? this.selectedBusinesses,
+      browseProject: browseProject ?? this.browseProject,
       regencies: regencies ?? this.regencies,
       subdistricts:
           (clearSelectedRegency ?? false)

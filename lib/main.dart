@@ -16,6 +16,7 @@ import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/browse_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/area_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/browse_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/local_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/organization_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/polygon_db_repository.dart';
@@ -122,6 +123,7 @@ Future<void> _initializeApp() async {
   await AreaDbRepository().init();
   await PolygonRepository().init();
   await BrowseRepository().init();
+  await BrowseDbRepository().init();  
 }
 
 class MyApp extends StatefulWidget {

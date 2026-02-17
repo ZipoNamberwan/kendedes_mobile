@@ -20,7 +20,7 @@ class LocalDbProvider {
     final String path = '${documentsDirectory.path}/tagging_app.db';
     _database = await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -87,6 +87,7 @@ class LocalDbProvider {
       type TEXT,
       user_id TEXT,
       FOREIGN KEY(user_id) REFERENCES users(id)
+      interaction_mode TEXT
     )
   ''');
 
@@ -290,6 +291,14 @@ class LocalDbProvider {
       await db.execute('''
         ALTER TABLE tag_data
         ADD COLUMN is_locked INTEGER DEFAULT 0
+      ''');
+    }
+
+    if (oldVersion < 4) {
+      // Add interaction_mode column to projects table
+      await db.execute('''
+        ALTER TABLE projects
+        ADD COLUMN interaction_mode TEXT
       ''');
     }
   }

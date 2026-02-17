@@ -1,0 +1,498 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:kendedes_mobile/bloc/browse/browse_event.dart';
+import 'package:kendedes_mobile/bloc/browse/browse_state.dart';
+import 'package:kendedes_mobile/classes/api_server_handler.dart';
+import 'package:kendedes_mobile/classes/map_config.dart';
+import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/browse_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/area_db_repository.dart';
+import 'package:kendedes_mobile/models/area/regency.dart';
+import 'package:kendedes_mobile/models/area/sls.dart';
+import 'package:kendedes_mobile/models/area/subdistrict.dart';
+import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/requested_area.dart';
+import 'package:kendedes_mobile/models/user.dart';
+import 'package:latlong2/latlong.dart';
+
+class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
+  BrowseBloc() : super(InitializingStarted()) {
+    on<Initialize>((event, emit) async {
+      final User currentUser = AuthRepository().getUser();
+
+      final bool isRegenciesEmpty = await AreaDbRepository().isRegenciesEmpty();
+      final bool isSubdistrictsEmpty =
+          await AreaDbRepository().isSubdistrictsEmpty();
+      if (isRegenciesEmpty || isSubdistrictsEmpty) {
+        await AreaDbRepository().insertBatchRegencies(
+          Regency.getPredefinedRegencies(),
+        );
+        await AreaDbRepository().insertBatchSubdistricts(
+          Subdistrict.getPredefinedSubdistricts(),
+        );
+      }
+      final regencies = await AreaDbRepository().getRegencies();
+
+      emit(
+        InitializingSuccess(
+          data: state.data.copyWith(
+            currentUser: currentUser,
+            regencies: regencies,
+          ),
+        ),
+      );
+    });
+
+    on<GetCurrentLocation>((event, emit) async {
+      emit(
+        BrowseState(data: state.data.copyWith(isLoadingCurrentLocation: true)),
+      );
+
+      try {
+        Position position = await _getCurrentPosition();
+
+        if (position.isMocked) {
+          emit(
+            MockupLocationDetected(
+              data: state.data.copyWith(isLoadingCurrentLocation: false),
+            ),
+          );
+          return;
+        }
+
+        // Update current location in state
+        emit(
+          MovedCurrentLocation(
+            data: state.data.copyWith(
+              currentLocation: LatLng(position.latitude, position.longitude),
+              isLoadingCurrentLocation: false,
+            ),
+          ),
+        );
+      } catch (e) {
+        emit(
+          ErrorState(
+            errorMessage: e.toString(),
+            data: state.data.copyWith(isLoadingCurrentLocation: false),
+          ),
+        );
+      }
+    });
+
+    on<UpdateZoom>((event, emit) {
+      emit(
+        BrowseState(data: state.data.copyWith(currentZoom: event.zoomLevel)),
+      );
+    });
+
+    on<UpdateRotation>((event, emit) {
+      emit(BrowseState(data: state.data.copyWith(rotation: event.rotation)));
+    });
+
+    on<UpdateCurrentLocation>((event, emit) async {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(currentLocation: event.newPosition),
+        ),
+      );
+    });
+
+    on<UpdateVisibleMapBounds>((event, emit) {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            northEastCorner: event.ne,
+            southWestCorner: event.sw,
+          ),
+        ),
+      );
+    });
+
+    on<GetBusinessInsideBounds>((event, emit) async {
+      if (state.data.currentZoom <
+          MapConfig.minimumZoomToGetTaggingInsideBounds) {
+        emit(
+          ZoomLevelNotification(
+            message:
+                'Minimum zoom level untuk mendapatkan prelist usaha adalah '
+                '${MapConfig.minimumZoomToGetTaggingInsideBounds}. Apakah akan memperbesar zoom?',
+            data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
+          ),
+        );
+        return;
+      } else {
+        await ApiServerHandler.run(
+          action: () async {
+            emit(
+              BrowseState(
+                data: state.data.copyWith(isBusinessInsideBoundsLoading: true),
+              ),
+            );
+
+            final ne = state.data.northEastCorner;
+            final sw = state.data.southWestCorner;
+
+            final businesses = await BrowseRepository().getBusinessesInBox(
+              minLat: sw?.latitude ?? 0.0,
+              minLng: sw?.longitude ?? 0.0,
+              maxLat: ne?.latitude ?? 0.0,
+              maxLng: ne?.longitude ?? 0.0,
+            );
+
+            final requestedArea = RequestedArea(
+              northeast: ne ?? const LatLng(0, 0),
+              southwest: sw ?? const LatLng(0, 0),
+            );
+
+            if (businesses.isEmpty) {
+              emit(
+                NoBusinessInsideBounds(
+                  message: 'Tidak ada prelist usaha di area ini',
+                  data: state.data.copyWith(
+                    isBusinessInsideBoundsLoading: false,
+                    requestedAreas: [
+                      ...state.data.requestedAreas,
+                      requestedArea,
+                    ],
+                    // isFirstTimeMapLoading: false,
+                  ),
+                ),
+              );
+            } else {
+              // Create a copy of the current businesses list
+              final updatedNearbyBusiness = List.of(state.data.businesses);
+
+              // Use a Set for efficient duplicate checks
+              final existingIds =
+                  updatedNearbyBusiness.map((e) => e.id).toSet();
+
+              // Add only new businesses
+              updatedNearbyBusiness.addAll(
+                businesses.where(
+                  (business) => !existingIds.contains(business.id),
+                ),
+              );
+
+              emit(
+                BrowseState(
+                  data: state.data.copyWith(
+                    isBusinessInsideBoundsLoading: false,
+                    businesses: updatedNearbyBusiness,
+                    requestedAreas: [
+                      ...state.data.requestedAreas,
+                      requestedArea,
+                    ],
+                    // isFirstTimeMapLoading: false,
+                  ),
+                ),
+              );
+            }
+          },
+          onLoginExpired: (e) {
+            emit(
+              TokenExpired(
+                data: state.data.copyWith(
+                  isBusinessInsideBoundsLoading: false,
+                  isBusinessInsideBoundsError: true,
+                  // isFirstTimeMapLoading: false,
+                ),
+              ),
+            );
+          },
+          onDataProviderError: (e) {
+            emit(
+              BusinessInsideBoundsFailed(
+                errorMessage: e.message,
+                data: state.data.copyWith(
+                  isBusinessInsideBoundsLoading: false,
+                  isBusinessInsideBoundsError: true,
+                  // isFirstTimeMapLoading: false,
+                ),
+              ),
+            );
+          },
+          onOtherError: (e) {
+            emit(
+              BusinessInsideBoundsFailed(
+                errorMessage: e.toString(),
+                data: state.data.copyWith(
+                  isBusinessInsideBoundsLoading: false,
+                  isBusinessInsideBoundsError: true,
+                  // isFirstTimeMapLoading: false,
+                ),
+              ),
+            );
+          },
+        );
+      }
+    });
+
+    on<GetBusinessByArea>((event, emit) async {
+      await ApiServerHandler.run(
+        action: () async {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(isBusinessInsideBoundsLoading: true),
+            ),
+          );
+
+          final businesses = await BrowseRepository().getBusinessesBySls(
+            event.sls.id,
+          );
+
+          if (businesses.isEmpty) {
+            emit(
+              NoBusinessInsideBounds(
+                message: 'Belum ada prelist usaha di SLS ${event.sls.name}',
+                data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
+              ),
+            );
+          } else {
+            emit(
+              BrowseState(
+                data: state.data.copyWith(
+                  isBusinessInsideBoundsLoading: false,
+                  businesses: businesses,
+                ),
+              ),
+            );
+          }
+        },
+        onLoginExpired: (e) {
+          emit(
+            TokenExpired(
+              data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
+            ),
+          );
+        },
+        onDataProviderError: (e) {
+          emit(
+            BusinessInsideBoundsFailed(
+              errorMessage: e.message,
+              data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          emit(
+            BusinessInsideBoundsFailed(
+              errorMessage: e.toString(),
+              data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
+            ),
+          );
+        },
+      );
+    });
+
+    on<SetBrowseViewMode>((event, emit) {
+      emit(BrowseState(data: state.data.copyWith(viewMode: event.viewMode)));
+    });
+
+    on<SetBusinessLoadMode>((event, emit) {
+      emit(BrowseState(data: state.data.copyWith(loadMode: event.loadMode)));
+    });
+
+    on<ToggleLoadBusinessContainer>((event, emit) {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            isLoadBusinessContainerExpanded:
+                !state.data.isLoadBusinessContainerExpanded,
+          ),
+        ),
+      );
+    });
+
+    on<SelectRegency>((event, emit) async {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            isLoadingSubdistrict: true,
+            selectedRegency: event.regency,
+            isRegencyError: false,
+            isSubdistrictError: false,
+            isVillageError: false,
+            clearSelectedSubdistrict: true,
+            clearSelectedVillage: true,
+            clearSelectedSls: true,
+            subdistricts: [],
+          ),
+        ),
+      );
+      List<Subdistrict> subdistricts = [];
+      if (event.regency?.id != null) {
+        subdistricts = await AreaDbRepository().getSubdistrictsByRegency(
+          event.regency!.id,
+        );
+      }
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            subdistricts: subdistricts,
+            isLoadingSubdistrict: false,
+          ),
+        ),
+      );
+    });
+
+    on<SelectSubdistrict>((event, emit) async {
+      await ApiServerHandler.run(
+        action: () async {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(
+                selectedSubdistrict: event.subdistrict,
+                isLoadingVillage: true,
+                isSubdistrictError: false,
+                isVillageError: false,
+                isSlsError: false,
+                clearSelectedVillage: true,
+                clearSelectedSls: true,
+                villages: [],
+              ),
+            ),
+          );
+          List<Village> villages = [];
+          if (event.subdistrict?.id != null) {
+            villages = await BrowseRepository().getVillagesBySubdistrictId(
+              event.subdistrict!.id,
+            );
+          }
+          emit(
+            BrowseState(
+              data: state.data.copyWith(
+                villages: villages,
+                isLoadingVillage: false,
+              ),
+            ),
+          );
+        },
+        onLoginExpired: (e) {},
+        onDataProviderError: (e) {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(
+                isLoadingVillage: false,
+                isVillageError: true,
+              ),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(
+                isLoadingVillage: false,
+                isVillageError: true,
+              ),
+            ),
+          );
+        },
+      );
+    });
+
+    on<SelectVillage>((event, emit) async {
+      await ApiServerHandler.run(
+        action: () async {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(
+                isLoadingSls: true,
+                selectedVillage: event.village,
+                clearSelectedSls: true,
+                isSlsError: false,
+                sls: [],
+              ),
+            ),
+          );
+          List<Sls> sls = [];
+          if (event.village != null) {
+            sls = await BrowseRepository().getSlsByVillageId(event.village!.id);
+          }
+          emit(
+            BrowseState(
+              data: state.data.copyWith(isLoadingSls: false, sls: sls),
+            ),
+          );
+        },
+        onLoginExpired: (e) {},
+        onDataProviderError: (e) {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(isLoadingSls: false, isSlsError: true),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(isLoadingSls: false, isSlsError: true),
+            ),
+          );
+        },
+      );
+    });
+
+    on<SelectSls>((event, emit) {
+      emit(BrowseState(data: state.data.copyWith(selectedSls: event.sls)));
+    });
+
+    on<ClearSelectedRegency>((event, emit) {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            clearSelectedRegency: true,
+            clearSelectedSubdistrict: true,
+            clearSelectedVillage: true,
+            clearSelectedSls: true,
+          ),
+        ),
+      );
+    });
+
+    on<ClearSelectedSubdistrict>((event, emit) {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            clearSelectedSubdistrict: true,
+            clearSelectedVillage: true,
+            clearSelectedSls: true,
+          ),
+        ),
+      );
+    });
+
+    on<ClearSelectedVillage>((event, emit) {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            clearSelectedVillage: true,
+            clearSelectedSls: true,
+          ),
+        ),
+      );
+    });
+
+    on<ClearSelectedSls>((event, emit) {
+      emit(BrowseState(data: state.data.copyWith(clearSelectedSls: true)));
+    });
+  }
+
+  Future<Position> _getCurrentPosition() async {
+    // Check location permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permission denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('Location permission permanently denied');
+    }
+
+    // Get current position
+    return await Geolocator.getCurrentPosition();
+  }
+}

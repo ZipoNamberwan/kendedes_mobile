@@ -152,6 +152,19 @@ class TagData {
     }
   }
 
+  Color getBrowseColorScheme() {
+    if (project.type.key == ProjectType.marketSwmaps.key) {
+      return Colors.purple;
+    } else if (project.type.key == ProjectType.survey.key) {
+      return Colors.pink;
+    } else if (project.type.key == ProjectType.supplementMobile.key ||
+        project.type.key == ProjectType.supplementSwmaps.key) {
+      return Colors.cyan;
+    } else {
+      return Colors.grey;
+    }
+  }
+
   bool shouldSentToServer(String currentProjectId) {
     if (currentProjectId == project.id) {
       return !hasSentToServer;

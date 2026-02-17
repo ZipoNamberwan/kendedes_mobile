@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:kendedes_mobile/models/project.dart';
 
 class ColorLegendDialog extends StatelessWidget {
-  final Project? currentProject;
-  final String? currentUserId;
-
-  const ColorLegendDialog({super.key, this.currentProject, this.currentUserId});
+  const ColorLegendDialog({super.key});
 
   @override
   Widget build(BuildContext context) {

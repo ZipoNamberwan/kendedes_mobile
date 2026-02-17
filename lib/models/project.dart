@@ -86,15 +86,15 @@ class ProjectType {
 
   static const marketSwmaps = ProjectType._(
     'swmaps market',
-    'Sentra Ekonomi SWMaps',
+    'Sentra Ekonomi (SWMaps)',
   );
   static const supplementSwmaps = ProjectType._(
     'swmaps supplement',
-    'Suplemen SWMaps',
+    'Kendedes Mobile (SWMaps)',
   );
   static const supplementMobile = ProjectType._(
     'kendedes mobile',
-    'Suplemen Mobile',
+    'Kendedes Mobile',
   );
   static const wilkerstat = ProjectType._('wilkerstat', 'Suplemen Wilkerstat');
   static const jenggala = ProjectType._('jenggala', 'Jenggala');

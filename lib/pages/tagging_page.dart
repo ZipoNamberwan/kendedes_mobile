@@ -249,10 +249,7 @@ class _TaggingPageState extends State<TaggingPage>
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return ColorLegendDialog(
-          currentProject: widget.project,
-          currentUserId: _taggingBloc.state.data.currentUser?.id,
-        );
+        return ColorLegendDialog();
       },
     );
   }

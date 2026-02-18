@@ -818,8 +818,14 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             MaterialPageRoute(builder: (context) => const LoginPage()),
             (route) => false,
           );
-        } else if (state is BusinessInsideBoundsFailed) {
-          CustomSnackBar.showError(context, message: state.errorMessage);
+        } else if (state is BusinessInsideBoundsFailed ||
+            state is BusinessBySlsFailed) {
+          final message = switch (state) {
+            BusinessInsideBoundsFailed(:final errorMessage) => errorMessage,
+            BusinessBySlsFailed(:final errorMessage) => errorMessage,
+            _ => '',
+          };
+          CustomSnackBar.showError(context, message: message);
         } else if (state is MockupLocationDetected) {
           showDialog(
             context: context,
@@ -833,6 +839,8 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                   buttonText: 'Tutup',
                 ),
           );
+        } else if (state is BusinessBySlsSuccess) {
+          _mapController.move(state.centerLocation, state.data.currentZoom);
         }
       },
       builder: (context, state) {
@@ -861,6 +869,68 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                 state.data.selectedMapType?.url ??
                                 MapType.openStreetMapDefault.url,
                             userAgentPackageName: 'com.example.kendedes_mobile',
+                          ),
+
+                          // SLS Polygon layer
+                          PolygonLayer(
+                            polygons:
+                                state.data.polygons
+                                    .where(
+                                      (polygonData) =>
+                                          polygonData.type.name.toLowerCase() ==
+                                          'sls',
+                                    )
+                                    .map(
+                                      (polygonData) => Polygon(
+                                        points: polygonData.points,
+                                        color: Colors.purple.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        borderStrokeWidth: 2,
+                                        borderColor: Colors.purple,
+                                        label:
+                                            '${polygonData.shortName}\n${polygonData.fullName}',
+                                        labelStyle: const TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 12,
+                                          backgroundColor: Colors.white70,
+                                        ),
+                                        labelPlacement:
+                                            PolygonLabelPlacement.centroid,
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
+
+                          // Village Polygon layer
+                          PolygonLayer(
+                            polygons:
+                                state.data.polygons
+                                    .where(
+                                      (polygonData) =>
+                                          polygonData.type.name.toLowerCase() ==
+                                          'village',
+                                    )
+                                    .map(
+                                      (polygonData) => Polygon(
+                                        points: polygonData.points,
+                                        color: Colors.orange.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        borderStrokeWidth: 2,
+                                        borderColor: Colors.orange,
+                                        label:
+                                            '${polygonData.id}\n${polygonData.fullName}',
+                                        labelStyle: const TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 12,
+                                          backgroundColor: Colors.white70,
+                                        ),
+                                        labelPlacement:
+                                            PolygonLabelPlacement.centroid,
+                                      ),
+                                    )
+                                    .toList(),
                           ),
 
                           // Marker layer from bloc state

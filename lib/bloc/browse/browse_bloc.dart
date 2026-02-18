@@ -53,12 +53,17 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         currentUser.id,
       );
 
+      final polygons = await PolygonDbRepository().getPolygonsForProject(
+        browseProject?.id ?? '',
+      );
+
       emit(
         InitializingSuccess(
           data: state.data.copyWith(
             currentUser: currentUser,
             regencies: regencies,
             browseProject: browseProject,
+            polygons: polygons,
           ),
         ),
       );
@@ -269,9 +274,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                   : [];
 
           Sls slsWithPolygon = Sls.fromJson(response['sls']);
-          Polygon updatedPolygon = slsWithPolygon.polygon!.copyWith(
-            id: _uuid.v4(),
-          );
+          Polygon updatedPolygon = slsWithPolygon.polygon!;
 
           await PolygonDbRepository().savePolygonWithPoints(updatedPolygon);
 
@@ -312,10 +315,15 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             );
 
             emit(
-              BrowseState(
+              BusinessBySlsSuccess(
+                centerLocation: LatLng(
+                  businesses.first.positionLat,
+                  businesses.first.positionLng,
+                ),
                 data: state.data.copyWith(
                   isBusinessBySlsLoading: false,
                   businesses: updatedNearbyBusiness,
+                  polygons: [...state.data.polygons, updatedPolygon],
                 ),
               ),
             );
@@ -333,7 +341,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         },
         onDataProviderError: (e) {
           emit(
-            BusinessInsideBoundsFailed(
+            BusinessBySlsFailed(
               errorMessage: e.message,
               data: state.data.copyWith(
                 isBusinessBySlsLoading: false,
@@ -344,7 +352,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         },
         onOtherError: (e) {
           emit(
-            BusinessInsideBoundsFailed(
+            BusinessBySlsFailed(
               errorMessage: e.toString(),
               data: state.data.copyWith(
                 isBusinessBySlsLoading: false,

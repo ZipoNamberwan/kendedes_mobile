@@ -300,6 +300,12 @@ class LocalDbProvider {
         ALTER TABLE projects
         ADD COLUMN interaction_mode TEXT
       ''');
+
+      await db.execute('''
+        ALTER TABLE polygons
+        ADD COLUMN short_code TEXT,
+        ADD COLUMN full_code TEXT
+      ''');
     }
   }
 }

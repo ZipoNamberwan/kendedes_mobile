@@ -137,6 +137,25 @@ class BusinessInsideBoundsFailed extends BrowseState {
   List<Object> get props => [data, errorMessage];
 }
 
+class BusinessBySlsFailed extends BrowseState {
+  final String errorMessage;
+  const BusinessBySlsFailed({required this.errorMessage, required super.data});
+
+  @override
+  List<Object> get props => [data, errorMessage];
+}
+
+class BusinessBySlsSuccess extends BrowseState {
+  final LatLng centerLocation;
+  const BusinessBySlsSuccess({
+    required super.data,
+    required this.centerLocation,
+  });
+
+  @override
+  List<Object> get props => [data, centerLocation];
+}
+
 class TokenExpired extends BrowseState {
   const TokenExpired({required super.data});
 

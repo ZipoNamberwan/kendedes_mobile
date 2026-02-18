@@ -11,10 +11,8 @@ import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
-import 'package:uuid/uuid.dart';
 
 class PolygonBloc extends Bloc<PolygonEvent, PolygonState> {
-  final Uuid _uuid = const Uuid();
 
   PolygonBloc() : super(Initialized()) {
     on<Initialize>((event, emit) async {
@@ -291,7 +289,6 @@ class PolygonBloc extends Bloc<PolygonEvent, PolygonState> {
 
           // Update the selected polygon with extracted coordinates
           final updatedPolygon = state.data.selectedPolygon?.copyWith(
-            id: _uuid.v4(),
             points: polygonPoints,
           );
 

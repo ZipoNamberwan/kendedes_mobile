@@ -1680,7 +1680,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                       )
                                     else
                                       _buildPrimaryActionButton(
-                                        label: 'Muat Prelist di Layar',
+                                        label: 'Load Prelist di Layar',
                                         icon: Icons.center_focus_strong_rounded,
                                         gradientColors: const [
                                           Colors.orange,

@@ -128,6 +128,8 @@ class LocalDbProvider {
           id TEXT PRIMARY KEY,
           full_name TEXT,
           short_name TEXT,
+          full_code TEXT,
+          short_code TEXT,
           type TEXT
         )
       ''');

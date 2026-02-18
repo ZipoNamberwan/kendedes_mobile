@@ -690,7 +690,7 @@ class _TaggingPageState extends State<TaggingPage>
                                       borderStrokeWidth: 2,
                                       borderColor: Colors.purple,
                                       label:
-                                          '${polygonData.shortName}\n${polygonData.fullName}',
+                                          '${polygonData.fullCode}\n${polygonData.fullName}',
                                       labelStyle: const TextStyle(
                                         color: Colors.black87,
                                         fontSize: 12,
@@ -721,7 +721,7 @@ class _TaggingPageState extends State<TaggingPage>
                                       borderStrokeWidth: 2,
                                       borderColor: Colors.orange,
                                       label:
-                                          '${polygonData.id}\n${polygonData.fullName}',
+                                          '${polygonData.fullCode}\n${polygonData.fullName}',
                                       labelStyle: const TextStyle(
                                         color: Colors.black87,
                                         fontSize: 12,

@@ -477,10 +477,6 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                                         final polygon =
                                             state.data.filteredPolygons[index];
                                         return _buildPolygonItem(
-                                          polygon.id,
-                                          polygon.shortName,
-                                          polygon.fullName,
-                                          polygon.type.name,
                                           polygon,
                                           state.data.selectedPolygon?.id ==
                                               polygon.id,
@@ -847,14 +843,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
     }
   }
 
-  Widget _buildPolygonItem(
-    String id,
-    String shortName,
-    String fullName,
-    String type,
-    Polygon polygon,
-    bool isSelected,
-  ) {
+  Widget _buildPolygonItem(Polygon polygon, bool isSelected) {
     return GestureDetector(
       onTap: () {
         _polygonBloc.add(SelectPolygon(polygon: polygon));
@@ -865,11 +854,14 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? _getTypeColor(type).withValues(alpha: 0.1)
+                  ? _getTypeColor(polygon.type.name).withValues(alpha: 0.1)
                   : Colors.white,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isSelected ? _getTypeColor(type) : Colors.grey.shade200,
+            color:
+                isSelected
+                    ? _getTypeColor(polygon.type.name)
+                    : Colors.grey.shade200,
             width: 2,
           ),
         ),
@@ -878,12 +870,12 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: _getIconBackgroundColor(type),
+                color: _getIconBackgroundColor(polygon.type.name),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Icon(
                 Icons.pentagon_outlined,
-                color: _getIconColor(type),
+                color: _getIconColor(polygon.type.name),
                 size: 18,
               ),
             ),
@@ -903,7 +895,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                         ),
                       ),
                       Text(
-                        shortName,
+                        polygon.shortCode,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -914,7 +906,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    fullName,
+                    polygon.fullName,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -929,11 +921,11 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: _getTypeColor(type),
+                      color: _getTypeColor(polygon.type.name),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      _getIndonesianTypeName(type),
+                      _getIndonesianTypeName(polygon.type.name),
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -948,7 +940,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: _getTypeColor(type),
+                  color: _getTypeColor(polygon.type.name),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.check, color: Colors.white, size: 16),

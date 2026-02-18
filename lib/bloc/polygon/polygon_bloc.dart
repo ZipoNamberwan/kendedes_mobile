@@ -102,8 +102,10 @@ class PolygonBloc extends Bloc<PolygonEvent, PolygonState> {
               polygons.add(
                 Polygon(
                   id: village.id,
-                  shortName: village.longCode,
+                  shortName: village.name,
                   fullName: village.name,
+                  fullCode: village.longCode,
+                  shortCode: village.shortCode,
                   type: PolygonType.village,
                   points: [],
                 ),
@@ -185,8 +187,10 @@ class PolygonBloc extends Bloc<PolygonEvent, PolygonState> {
             polygons.add(
               Polygon(
                 id: sl.id,
-                shortName: sl.longCode,
+                shortName: sl.name,
                 fullName: sl.name,
+                fullCode: sl.longCode,
+                shortCode: sl.shortCode,
                 type: PolygonType.sls,
                 points: [],
               ),

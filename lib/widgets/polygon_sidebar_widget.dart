@@ -275,7 +275,7 @@ class _PolygonSidebarWidgetState extends State<PolygonSidebarWidget> {
                       children: [
                         Expanded(
                           child: Text(
-                            'ID: ${polygon.shortName}',
+                            'ID: ${polygon.fullCode}',
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,

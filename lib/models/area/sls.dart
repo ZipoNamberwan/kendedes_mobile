@@ -40,6 +40,8 @@ class Sls extends Equatable {
                 id: json['id'].toString(),
                 fullName: json['name'] as String,
                 shortName: json['name'] as String,
+                fullCode: json['long_code'] as String,
+                shortCode: json['short_code'] as String,
                 type: PolygonType.sls,
                 points:
                     (json['geojson']['coordinates'][0][0] as List)

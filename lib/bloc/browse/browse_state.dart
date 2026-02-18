@@ -49,6 +49,7 @@ class InitializingStarted extends BrowseState {
           isBusinessInsideBoundsLoading: false,
           isBusinessBySlsLoading: false,
           isBusinessBySlsError: false,
+          isPolygonSideBarOpen: false,
           isLoadingRegency: false,
           isLoadingSubdistrict: false,
           isLoadingVillage: false,
@@ -171,6 +172,35 @@ class ZoomLevelNotification extends BrowseState {
   List<Object> get props => [message, data];
 }
 
+class PolygonSideBarOpened extends BrowseState {
+  const PolygonSideBarOpened({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class PolygonSideBarClosed extends BrowseState {
+  const PolygonSideBarClosed({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class PolygonSelected extends BrowseState {
+  final LatLng polygonCenter;
+  const PolygonSelected(this.polygonCenter, {required super.data});
+
+  @override
+  List<Object> get props => [data, polygonCenter];
+}
+
+class PolygonDeleted extends BrowseState {
+  const PolygonDeleted({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class BrowseStateData {
   // UI data state
   final BrowseViewMode viewMode;
@@ -182,6 +212,7 @@ class BrowseStateData {
   final bool isBusinessInsideBoundsError;
   final bool isBusinessBySlsLoading;
   final bool isBusinessBySlsError;
+  final bool isPolygonSideBarOpen;
 
   // Map data state
   final double currentZoom;
@@ -235,6 +266,7 @@ class BrowseStateData {
     required this.isBusinessInsideBoundsError,
     required this.isBusinessBySlsLoading,
     required this.isBusinessBySlsError,
+    required this.isPolygonSideBarOpen,
 
     required this.currentZoom,
     required this.rotation,
@@ -282,6 +314,7 @@ class BrowseStateData {
     bool? isBusinessInsideBoundsError,
     bool? isBusinessBySlsLoading,
     bool? isBusinessBySlsError,
+    bool? isPolygonSideBarOpen,
 
     double? currentZoom,
     double? rotation,
@@ -339,6 +372,8 @@ class BrowseStateData {
       isBusinessBySlsLoading:
           isBusinessBySlsLoading ?? this.isBusinessBySlsLoading,
       isBusinessBySlsError: isBusinessBySlsError ?? this.isBusinessBySlsError,
+      isPolygonSideBarOpen: isPolygonSideBarOpen ?? this.isPolygonSideBarOpen,
+
       currentZoom: currentZoom ?? this.currentZoom,
       rotation: rotation ?? this.rotation,
       isLoadingCurrentLocation:

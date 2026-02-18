@@ -6,6 +6,7 @@ import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
+import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:latlong2/latlong.dart';
 
 abstract class BrowseEvent extends Equatable {
@@ -134,4 +135,23 @@ class SelectLabelType extends BrowseEvent {
 class SelectMapType extends BrowseEvent {
   final MapType? mapTypeKey;
   const SelectMapType(this.mapTypeKey);
+}
+
+class SetPolygonSideBarOpen extends BrowseEvent {
+  final bool isOpen;
+  const SetPolygonSideBarOpen(this.isOpen);
+}
+
+class UpdatePolygon extends BrowseEvent {
+  const UpdatePolygon();
+}
+
+class SelectPolygon extends BrowseEvent {
+  final Polygon polygon;
+  const SelectPolygon({required this.polygon});
+}
+
+class DeletePolygon extends BrowseEvent {
+  final Polygon polygon;
+  const DeletePolygon({required this.polygon});
 }

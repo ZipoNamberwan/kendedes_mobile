@@ -12,10 +12,12 @@ import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
+import 'package:kendedes_mobile/models/polygon.dart' as polygonmodel;
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/area_not_requested_dialog.dart';
 import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/color_legend_dialog.dart';
+import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_tag_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/marker_dialog.dart';
@@ -279,6 +281,23 @@ class _TaggingPageState extends State<TaggingPage>
             },
             onCancel: () {
               Navigator.of(context).pop();
+            },
+          ),
+    );
+  }
+
+  Future<void> _showPolygonDeleteConfirmationDialog(
+    polygonmodel.Polygon polygon,
+    bool isDeletingPolygon,
+  ) async {
+    await showDialog(
+      context: context,
+      builder:
+          (context) => DeletePolygonDialog(
+            polygon: polygon,
+            isDeletingPolygon: isDeletingPolygon,
+            onConfirm: () {
+              _taggingBloc.add(DeletePolygon(polygon: polygon));
             },
           ),
     );
@@ -604,6 +623,8 @@ class _TaggingPageState extends State<TaggingPage>
             state.data.currentZoom,
           );
         } else if (state is PolygonDeleted) {
+          Navigator.of(context).pop();
+
           CustomSnackBar.show(
             context,
             message: 'Poligon berhasil dihapus',
@@ -1838,7 +1859,21 @@ class _TaggingPageState extends State<TaggingPage>
                     // Tagging sidebar
                     const TaggingSidebarWidget(),
                     // Polygon sidebar
-                    PolygonSidebarWidget(projectId: state.data.project.id),
+                    PolygonSidebarWidget(
+                      projectId: state.data.project.id,
+                      isPolygonSideBarOpen: state.data.isPolygonSideBarOpen,
+                      polygons: state.data.polygons,
+                      onClose: () => _togglePolygonSidebar(false),
+                      onSelect:
+                          (polygon) =>
+                              _taggingBloc.add(SelectPolygon(polygon: polygon)),
+                      onUpdate: () => _taggingBloc.add(UpdatePolygon()),
+                      onDelete:
+                          (polygon) => _showPolygonDeleteConfirmationDialog(
+                            polygon,
+                            state.data.isDeletingPolygon,
+                          ),
+                    ),
                   ],
                 );
               },

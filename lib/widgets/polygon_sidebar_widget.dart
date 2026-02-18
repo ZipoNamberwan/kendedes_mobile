@@ -1,242 +1,231 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
-import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
-import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/widgets/download_polygon_dialog.dart';
-import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 
-class PolygonSidebarWidget extends StatefulWidget {
+class PolygonSidebarWidget extends StatelessWidget {
   final String projectId;
-  const PolygonSidebarWidget({super.key, required this.projectId});
+  final bool isPolygonSideBarOpen;
+  final VoidCallback onClose;
+  final VoidCallback onUpdate;
+  final List<Polygon> polygons;
+  final Function(Polygon) onSelect;
+  final Function(Polygon) onDelete;
 
-  @override
-  State<PolygonSidebarWidget> createState() => _PolygonSidebarWidgetState();
-}
-
-class _PolygonSidebarWidgetState extends State<PolygonSidebarWidget> {
-  late TaggingBloc _taggingBloc;
-
-  @override
-  void initState() {
-    super.initState();
-    _taggingBloc = context.read<TaggingBloc>();
-  }
+  const PolygonSidebarWidget({
+    super.key,
+    required this.projectId,
+    required this.isPolygonSideBarOpen,
+    required this.onClose,
+    required this.onUpdate,
+    required this.polygons,
+    required this.onSelect,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<TaggingBloc, TaggingState>(
-      listener: (context, state) {},
-      builder: (context, state) {
-        return AnimatedPositioned(
-          duration: const Duration(milliseconds: 200),
-          top: 0,
-          right: state.data.isPolygonSideBarOpen ? 0 : -300,
-          bottom: 0,
-          width: 300,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 10,
-                  offset: const Offset(-2, 0),
-                ),
-              ],
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 200),
+      top: 0,
+      right: isPolygonSideBarOpen ? 0 : -300,
+      bottom: 0,
+      width: 300,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 10,
+              offset: const Offset(-2, 0),
             ),
-            child: Column(
-              children: [
-                // Header
-                Container(
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 10,
-                    bottom: 10,
-                    left: 20,
-                    right: 10,
-                  ),
-                  decoration: BoxDecoration(color: Colors.purple),
-                  child: Row(
-                    children: [
-                      Icon(Icons.pentagon, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'List Poligon',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 10,
+                bottom: 10,
+                left: 20,
+                right: 10,
+              ),
+              decoration: BoxDecoration(color: Colors.purple),
+              child: Row(
+                children: [
+                  Icon(Icons.pentagon, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'List Poligon',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      // Close button
-                      IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        onPressed:
-                            () =>
-                                _taggingBloc.add(SetPolygonSideBarOpen(false)),
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  // Close button
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: () => onClose(),
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        // Download Button
-                        Container(
-                          width: double.infinity,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.purple.shade400,
-                                Colors.purple.shade600,
-                              ],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              onTap: () async {
-                                await showDialog(
-                                  context: context,
-                                  builder:
-                                      (context) => DownloadPolygonDialog(
-                                        projectId: widget.projectId,
-                                      ),
-                                );
-
-                                _taggingBloc.add(const UpdatePolygon());
-                              },
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.download,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Download Poligon',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Polygon List Header
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.list_rounded,
-                              size: 18,
-                              color: Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Daftar Poligon',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Download Button
+                    Container(
+                      width: double.infinity,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.purple.shade400,
+                            Colors.purple.shade600,
                           ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
                         ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () async {
+                            await showDialog(
+                              context: context,
+                              builder:
+                                  (context) => DownloadPolygonDialog(
+                                    projectId: projectId,
+                                  ),
+                            );
 
-                        const SizedBox(height: 12),
-
-                        // Polygon List
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey.shade200,
-                                width: 1,
+                            onUpdate();
+                          },
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.download,
+                                color: Colors.white,
+                                size: 18,
                               ),
-                            ),
-                            child:
-                                state.data.polygons.isEmpty
-                                    ? const Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.pentagon_outlined,
-                                            size: 48,
-                                            color: Colors.grey,
-                                          ),
-                                          SizedBox(height: 12),
-                                          Text(
-                                            'Belum ada poligon',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          SizedBox(height: 4),
-                                          Text(
-                                            'Download poligon untuk melihat daftar',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                    : ListView.builder(
-                                      padding: const EdgeInsets.all(8),
-                                      itemCount: state.data.polygons.length,
-                                      itemBuilder: (context, index) {
-                                        final polygon =
-                                            state.data.polygons[index];
-                                        return _buildPolygonItem(polygon);
-                                      },
-                                    ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Download Poligon',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Polygon List Header
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.list_rounded,
+                          size: 18,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Daftar Poligon',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade700,
                           ),
                         ),
                       ],
                     ),
-                  ),
+
+                    const SizedBox(height: 12),
+
+                    // Polygon List
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.grey.shade200,
+                            width: 1,
+                          ),
+                        ),
+                        child:
+                            polygons.isEmpty
+                                ? const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.pentagon_outlined,
+                                        size: 48,
+                                        color: Colors.grey,
+                                      ),
+                                      SizedBox(height: 12),
+                                      Text(
+                                        'Belum ada poligon',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Download poligon untuk melihat daftar',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                : ListView.builder(
+                                  padding: const EdgeInsets.all(8),
+                                  itemCount: polygons.length,
+                                  itemBuilder: (context, index) {
+                                    final polygon = polygons[index];
+                                    return _buildPolygonItem(polygon);
+                                  },
+                                ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
@@ -262,9 +251,7 @@ class _PolygonSidebarWidgetState extends State<PolygonSidebarWidget> {
           children: [
             InkWell(
               borderRadius: BorderRadius.circular(6),
-              onTap: () {
-                _taggingBloc.add(SelectPolygon(polygon: polygon));
-              },
+              onTap: () => onSelect(polygon),
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: Column(
@@ -328,20 +315,21 @@ class _PolygonSidebarWidgetState extends State<PolygonSidebarWidget> {
                   borderRadius: BorderRadius.circular(20),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(20),
-                    onTap: () async {
-                      await showDialog(
-                        context: context,
-                        builder:
-                            (context) => DeletePolygonDialog(
-                              polygon: polygon,
-                              onConfirm: () {
-                                _taggingBloc.add(
-                                  DeletePolygon(polygon: polygon),
-                                );
-                              },
-                            ),
-                      );
-                    },
+                    onTap: () => onDelete(polygon),
+                    // onTap: () async {
+                    //   await showDialog(
+                    //     context: context,
+                    //     builder:
+                    //         (context) => DeletePolygonDialog(
+                    //           polygon: polygon,
+                    //           onConfirm: () {
+                    //             _taggingBloc.add(
+                    //               DeletePolygon(polygon: polygon),
+                    //             );
+                    //           },
+                    //         ),
+                    //   );
+                    // },
                     child: Container(
                       width: 36,
                       height: 36,

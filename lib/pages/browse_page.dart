@@ -16,16 +16,19 @@ import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/models/polygon.dart' as polygonmodel;
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/complex_marker_browse_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/simple_marker_browse_widget.dart';
 import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/color_legend_dialog.dart';
+import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/map_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
+import 'package:kendedes_mobile/widgets/polygon_sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/zoom_level_notification_dialog.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -595,8 +598,25 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     );
   }
 
+  Future<void> _showPolygonDeleteConfirmationDialog(
+    polygonmodel.Polygon polygon,
+    bool isDeletingPolygon,
+  ) async {
+    await showDialog(
+      context: context,
+      builder:
+          (context) => DeletePolygonDialog(
+            polygon: polygon,
+            isDeletingPolygon: isDeletingPolygon,
+            onConfirm: () {
+              _browseBloc.add(DeletePolygon(polygon: polygon));
+            },
+          ),
+    );
+  }
+
   void _togglePolygonSidebar(bool isOpen) {
-    // _browseBloc.add(SetPolygonSideBarOpen(isOpen));
+    _browseBloc.add(SetPolygonSideBarOpen(isOpen));
   }
 
   void _showLabelTypeDialog(LabelType? selectedLabelType) {
@@ -841,6 +861,19 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
           );
         } else if (state is BusinessBySlsSuccess) {
           _mapController.move(state.centerLocation, state.data.currentZoom);
+        } else if (state is PolygonSelected) {
+          _mapController.move(
+            LatLng(state.polygonCenter.latitude, state.polygonCenter.longitude),
+            state.data.currentZoom,
+          );
+        } else if (state is PolygonDeleted) {
+          Navigator.of(context).pop();
+
+          CustomSnackBar.show(
+            context,
+            message: 'Poligon berhasil dihapus',
+            type: SnackBarType.success,
+          );
         }
       },
       builder: (context, state) {
@@ -1673,6 +1706,34 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                           ],
                         ),
                       ),
+                    ),
+
+                    // Sidebar overlay
+                    if (state.data.isPolygonSideBarOpen)
+                      GestureDetector(
+                        onTap: () {
+                          _togglePolygonSidebar(false);
+                        },
+                        child: Container(
+                          color: Colors.black.withValues(alpha: 0.3),
+                        ),
+                      ),
+
+                    // Polygon sidebar
+                    PolygonSidebarWidget(
+                      projectId: state.data.browseProject.id,
+                      isPolygonSideBarOpen: state.data.isPolygonSideBarOpen,
+                      polygons: state.data.polygons,
+                      onClose: () => _togglePolygonSidebar(false),
+                      onSelect:
+                          (polygon) =>
+                              _browseBloc.add(SelectPolygon(polygon: polygon)),
+                      onUpdate: () => _browseBloc.add(UpdatePolygon()),
+                      onDelete:
+                          (polygon) => _showPolygonDeleteConfirmationDialog(
+                            polygon,
+                            state.data.isDeletingPolygon,
+                          ),
                     ),
                   ],
                 );

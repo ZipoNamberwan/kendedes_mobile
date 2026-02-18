@@ -296,7 +296,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           if (businesses.isEmpty) {
             emit(
               NoBusinessInsideBounds(
-                message: 'Belum ada prelist usaha di SLS ${event.sls.name}',
+                message: 'Tidak ada prelist usaha di SLS ${event.sls.name}',
                 data: state.data.copyWith(isBusinessBySlsLoading: false),
               ),
             );
@@ -578,6 +578,63 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         ),
       );
     });
+
+    on<SetPolygonSideBarOpen>((event, emit) {
+      final newDataState = state.data.copyWith(
+        isPolygonSideBarOpen: event.isOpen,
+      );
+      if (event.isOpen) {
+        emit(PolygonSideBarOpened(data: newDataState));
+      } else {
+        emit(PolygonSideBarClosed(data: newDataState));
+      }
+    });
+
+    on<UpdatePolygon>((event, emit) async {
+      emit(BrowseState(data: state.data.copyWith(isLoadingPolygon: true)));
+      final polygons = await PolygonDbRepository().getPolygonsForProject(
+        state.data.browseProject.id,
+      );
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            polygons: polygons,
+            isLoadingPolygon: false,
+          ),
+        ),
+      );
+    });
+
+    on<SelectPolygon>((event, emit) async {
+      // Calculate the centroid (center) of the polygon from its points
+      final center = _calculatePolygonCentroid(event.polygon.points);
+      emit(
+        PolygonSelected(
+          center,
+          data: state.data.copyWith(isPolygonSideBarOpen: false),
+        ),
+      );
+    });
+
+    on<DeletePolygon>((event, emit) async {
+      emit(BrowseState(data: state.data.copyWith(isDeletingPolygon: true)));
+      await PolygonDbRepository().removeProjectPolygonPair(
+        state.data.browseProject.id,
+        event.polygon.id,
+      );
+      final polygons = await PolygonDbRepository().getPolygonsForProject(
+        state.data.browseProject.id,
+      );
+
+      emit(
+        PolygonDeleted(
+          data: state.data.copyWith(
+            polygons: polygons,
+            isDeletingPolygon: false,
+          ),
+        ),
+      );
+    });
   }
 
   Future<Position> _getCurrentPosition() async {
@@ -596,5 +653,51 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     // Get current position
     return await Geolocator.getCurrentPosition();
+  }
+
+  LatLng _calculatePolygonCentroid(List<LatLng> points) {
+    if (points.isEmpty) {
+      return LatLng(0, 0);
+    }
+
+    if (points.length == 1) {
+      return points.first;
+    }
+
+    // Calculate centroid
+    double centroidLat = 0;
+    double centroidLng = 0;
+    double signedArea = 0;
+
+    // Calculate using the polygon centroid formula
+    for (int i = 0; i < points.length; i++) {
+      final current = points[i];
+      final next = points[(i + 1) % points.length];
+
+      final a =
+          current.latitude * next.longitude - next.latitude * current.longitude;
+      signedArea += a;
+      centroidLat += (current.latitude + next.latitude) * a;
+      centroidLng += (current.longitude + next.longitude) * a;
+    }
+
+    signedArea *= 0.5;
+
+    LatLng center;
+    if (signedArea.abs() < 1e-10) {
+      // Fallback to simple average if the polygon is degenerate
+      final avgLat =
+          points.map((p) => p.latitude).reduce((a, b) => a + b) / points.length;
+      final avgLng =
+          points.map((p) => p.longitude).reduce((a, b) => a + b) /
+          points.length;
+      center = LatLng(avgLat, avgLng);
+    } else {
+      centroidLat /= (6.0 * signedArea);
+      centroidLng /= (6.0 * signedArea);
+      center = LatLng(centroidLat, centroidLng);
+    }
+
+    return center;
   }
 }

@@ -305,7 +305,11 @@ class LocalDbProvider {
 
       await db.execute('''
         ALTER TABLE polygons
-        ADD COLUMN short_code TEXT,
+        ADD COLUMN short_code TEXT
+      ''');
+
+      await db.execute('''
+        ALTER TABLE polygons
         ADD COLUMN full_code TEXT
       ''');
     }

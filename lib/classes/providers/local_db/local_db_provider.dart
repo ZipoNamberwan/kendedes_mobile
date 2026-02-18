@@ -128,7 +128,7 @@ class LocalDbProvider {
           id TEXT PRIMARY KEY,
           full_name TEXT,
           short_name TEXT,
-          full_code TEXT,
+          long_code TEXT,
           short_code TEXT,
           type TEXT
         )
@@ -310,7 +310,7 @@ class LocalDbProvider {
 
       await db.execute('''
         ALTER TABLE polygons
-        ADD COLUMN full_code TEXT
+        ADD COLUMN long_code TEXT
       ''');
     }
   }

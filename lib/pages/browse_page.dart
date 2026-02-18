@@ -889,7 +889,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                         borderStrokeWidth: 2,
                                         borderColor: Colors.purple,
                                         label:
-                                            '${polygonData.fullCode}\n${polygonData.fullName}',
+                                            '${polygonData.longCode}\n${polygonData.fullName}',
                                         labelStyle: const TextStyle(
                                           color: Colors.black87,
                                           fontSize: 12,
@@ -920,7 +920,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                         borderStrokeWidth: 2,
                                         borderColor: Colors.orange,
                                         label:
-                                            '${polygonData.fullCode}\n${polygonData.fullName}',
+                                            '${polygonData.longCode}\n${polygonData.fullName}',
                                         labelStyle: const TextStyle(
                                           color: Colors.black87,
                                           fontSize: 12,

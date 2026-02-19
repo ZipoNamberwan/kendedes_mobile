@@ -86,8 +86,8 @@ class LocalDbProvider {
       deleted_at TEXT,
       type TEXT,
       user_id TEXT,
+      interaction_mode TEXT,
       FOREIGN KEY(user_id) REFERENCES users(id)
-      interaction_mode TEXT
     )
   ''');
 

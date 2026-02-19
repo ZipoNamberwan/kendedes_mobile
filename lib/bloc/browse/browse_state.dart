@@ -67,6 +67,8 @@ class InitializingStarted extends BrowseState {
             type: ProjectType.supplementMobile,
             interactionMode: InteractionMode.browse,
           ),
+          isSaveToLocalDbByArea: true,
+          isSaveToLocalDbByScreen: true,
         ),
       );
 
@@ -247,6 +249,8 @@ class BrowseStateData {
   final bool isSubdistrictError;
   final bool isVillageError;
   final bool isSlsError;
+  final bool isSaveToLocalDbByArea;
+  final bool isSaveToLocalDbByScreen;
 
   // User data state
   final User? currentUser;
@@ -298,6 +302,9 @@ class BrowseStateData {
     required this.isSubdistrictError,
     required this.isVillageError,
     required this.isSlsError,
+    required this.isSaveToLocalDbByArea,
+    required this.isSaveToLocalDbByScreen,
+
     this.currentUser,
 
     required this.polygons,
@@ -350,6 +357,8 @@ class BrowseStateData {
     bool? clearSelectedSubdistrict,
     bool? clearSelectedVillage,
     bool? clearSelectedSls,
+    bool? isSaveToLocalDbByArea,
+    bool? isSaveToLocalDbByScreen,
 
     User? currentUser,
 
@@ -417,7 +426,13 @@ class BrowseStateData {
       isSubdistrictError: isSubdistrictError ?? this.isSubdistrictError,
       isVillageError: isVillageError ?? this.isVillageError,
       isSlsError: isSlsError ?? this.isSlsError,
+      isSaveToLocalDbByArea:
+          isSaveToLocalDbByArea ?? this.isSaveToLocalDbByArea,
+      isSaveToLocalDbByScreen:
+          isSaveToLocalDbByScreen ?? this.isSaveToLocalDbByScreen,
+
       currentUser: currentUser ?? this.currentUser,
+
       polygons: polygons ?? this.polygons,
       isLoadingPolygon: isLoadingPolygon ?? this.isLoadingPolygon,
       isDeletingPolygon: isDeletingPolygon ?? this.isDeletingPolygon,

@@ -485,6 +485,92 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     );
   }
 
+  // Widget _buildSaveCheckbox({
+  //   required bool value,
+  //   required ValueChanged<bool?> onChanged,
+  //   required List<Color> gradientColors,
+  // }) {
+  //   return CheckboxListTile(
+  //     value: value,
+  //     onChanged: onChanged,
+  //     title: Text(
+  //       'Simpan ke database lokal',
+  //       style: TextStyle(
+  //         fontSize: 11,
+  //         fontWeight: FontWeight.w400,
+  //         color: Colors.grey.shade500,
+  //       ),
+  //     ),
+  //     activeColor: gradientColors.first.withValues(alpha: 0.7),
+  //     checkboxScaleFactor: 0.85,
+  //     side: BorderSide(color: Colors.grey.shade300, width: 1.2),
+  //     controlAffinity: ListTileControlAffinity.leading,
+  //     contentPadding: EdgeInsets.zero,
+  //     dense: true,
+  //     visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+  //   );
+  // }
+
+  Widget _buildAreaContent(BrowseStateData data) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildAreaDropdownCard(data),
+        const SizedBox(height: 10),
+        // _buildSaveCheckbox(
+        //   value: data.isSaveToLocalDbByArea,
+        //   onChanged: (value) {},
+        //   gradientColors: const [Colors.blue, Colors.indigo],
+        // ),
+        const SizedBox(height: 6),
+        _buildPrimaryActionButton(
+          label: 'Load Prelist By SLS',
+          icon: Icons.map_rounded,
+          gradientColors: const [Colors.blue, Colors.indigo],
+          isLoading: data.isBusinessBySlsLoading,
+          isEnabled: data.selectedSls != null,
+          onPressed: () {
+            _browseBloc.add(GetBusinessByArea(sls: data.selectedSls!));
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScreenContent(BrowseStateData data) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Muat semua prelist usaha yang terlihat di layar peta Anda. Minimum zoom level adalah ${MapConfig.minimumZoomToGetTaggingInsideBounds}.',
+          style: TextStyle(
+            color: Colors.grey.shade700,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 10),
+        // _buildSaveCheckbox(
+        //   value: data.isSaveToLocalDbByScreen,
+        //   onChanged: (value) {},
+        //   gradientColors: const [Colors.orange, Colors.deepOrange],
+        // ),
+        const SizedBox(height: 6),
+        _buildPrimaryActionButton(
+          label: 'Load Prelist di Layar',
+          icon: Icons.center_focus_strong_rounded,
+          gradientColors: const [Colors.orange, Colors.deepOrange],
+          isLoading: data.isBusinessInsideBoundsLoading,
+          isEnabled: data.viewMode == BrowseViewMode.map,
+          onPressed: () {
+            _browseBloc.add(const GetBusinessInsideBounds());
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildLoadSegment({
     required BusinessLoadMode mode,
     required IconData icon,
@@ -1633,72 +1719,11 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-
-                                    // By Area selection UI
-                                    if (state.data.loadMode ==
-                                        BusinessLoadMode.area) ...[
-                                      _buildAreaDropdownCard(state.data),
-                                      const SizedBox(height: 10),
-                                    ],
-
-                                    // Screen mode description
-                                    if (state.data.loadMode ==
-                                        BusinessLoadMode.screen) ...[
-                                      Text(
-                                        'Muat semua prelist usaha yang terlihat di layar peta Anda. Minimum zoom level adalah ${MapConfig.minimumZoomToGetTaggingInsideBounds}.',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade700,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          height: 1.4,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                    ],
-
-                                    // Load business button (depends on mode)
                                     if (state.data.loadMode ==
                                         BusinessLoadMode.area)
-                                      _buildPrimaryActionButton(
-                                        label: 'Load Prelist By SLS',
-                                        icon: Icons.map_rounded,
-                                        gradientColors: const [
-                                          Colors.blue,
-                                          Colors.indigo,
-                                        ],
-                                        isLoading:
-                                            state.data.isBusinessBySlsLoading,
-                                        isEnabled:
-                                            state.data.selectedSls != null,
-                                        onPressed: () {
-                                          _browseBloc.add(
-                                            GetBusinessByArea(
-                                              sls: state.data.selectedSls!,
-                                            ),
-                                          );
-                                        },
-                                      )
+                                      _buildAreaContent(state.data)
                                     else
-                                      _buildPrimaryActionButton(
-                                        label: 'Load Prelist di Layar',
-                                        icon: Icons.center_focus_strong_rounded,
-                                        gradientColors: const [
-                                          Colors.orange,
-                                          Colors.deepOrange,
-                                        ],
-                                        isLoading:
-                                            state
-                                                .data
-                                                .isBusinessInsideBoundsLoading,
-                                        isEnabled:
-                                            state.data.viewMode ==
-                                            BrowseViewMode.map,
-                                        onPressed: () {
-                                          _browseBloc.add(
-                                            const GetBusinessInsideBounds(),
-                                          );
-                                        },
-                                      ),
+                                      _buildScreenContent(state.data),
                                   ],
                                 ],
                               ),

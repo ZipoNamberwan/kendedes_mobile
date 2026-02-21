@@ -7,6 +7,7 @@ import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
+import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:latlong2/latlong.dart';
 
 abstract class BrowseEvent extends Equatable {
@@ -154,4 +155,14 @@ class SelectPolygon extends BrowseEvent {
 class DeletePolygon extends BrowseEvent {
   final Polygon polygon;
   const DeletePolygon({required this.polygon});
+}
+
+class SetSlsWithBusinessSidebarOpen extends BrowseEvent {
+  final bool isOpen;
+  const SetSlsWithBusinessSidebarOpen(this.isOpen);
+}
+
+class DeleteSlsWithBusiness extends BrowseEvent {
+  final SlsWithBusiness slsWithBusiness;
+  const DeleteSlsWithBusiness({required this.slsWithBusiness});
 }

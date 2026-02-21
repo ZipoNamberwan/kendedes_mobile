@@ -201,6 +201,34 @@ class LocalDbProvider {
           FOREIGN KEY(village_id) REFERENCES villages(id)
         )
       ''');
+
+    // 14. Create sls_with_business table
+    await db.execute('''
+        CREATE TABLE sls_with_business (
+          id TEXT PRIMARY KEY,
+          sls_id TEXT,
+          sls_short_code TEXT,
+          sls_long_code TEXT,
+          sls_name TEXT,
+          village_id TEXT,
+          village_short_code TEXT,
+          village_long_code TEXT,
+          village_name TEXT,
+          subdistrict_id TEXT,
+          subdistrict_short_code TEXT,
+          subdistrict_long_code TEXT,
+          subdistrict_name TEXT,
+          regency_id TEXT,
+          regency_short_code TEXT,
+          regency_long_code TEXT,
+          regency_name TEXT,
+
+          business_count INTEGER DEFAULT 0,
+
+          user_id TEXT,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+      ''');
   }
 
   static Future<void> _onUpgrade(
@@ -311,6 +339,34 @@ class LocalDbProvider {
       await db.execute('''
         ALTER TABLE polygons
         ADD COLUMN long_code TEXT
+      ''');
+
+      // 14. Create sls_with_business table
+      await db.execute('''
+        CREATE TABLE sls_with_business (
+          id TEXT PRIMARY KEY,
+          sls_id TEXT,
+          sls_short_code TEXT,
+          sls_long_code TEXT,
+          sls_name TEXT,
+          village_id TEXT,
+          village_short_code TEXT,
+          village_long_code TEXT,
+          village_name TEXT,
+          subdistrict_id TEXT,
+          subdistrict_short_code TEXT,
+          subdistrict_long_code TEXT,
+          subdistrict_name TEXT,
+          regency_id TEXT,
+          regency_short_code TEXT,
+          regency_long_code TEXT,
+          regency_name TEXT,
+
+          business_count INTEGER DEFAULT 0,
+
+          user_id TEXT,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
       ''');
     }
   }

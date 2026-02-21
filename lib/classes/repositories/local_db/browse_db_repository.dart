@@ -1,6 +1,8 @@
 import 'package:kendedes_mobile/classes/providers/local_db/browse_db_provider.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository.dart';
 import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/project.dart';
+import 'package:kendedes_mobile/models/sls_with_business.dart';
 
 class BrowseDbRepository {
   static final BrowseDbRepository _instance = BrowseDbRepository._internal();
@@ -9,6 +11,7 @@ class BrowseDbRepository {
   BrowseDbRepository._internal();
 
   late BrowseDbProvider _browseDbProvider;
+  late UserDbRepository _userDbRepository;
   bool _initialized = false;
 
   Future<void> init() async {
@@ -16,6 +19,9 @@ class BrowseDbRepository {
     _initialized = true;
     _browseDbProvider = BrowseDbProvider();
     await _browseDbProvider.init();
+
+    _userDbRepository = UserDbRepository();
+    await _userDbRepository.init();
   }
 
   Future<bool> hasBrowseProject(String userId) async {
@@ -59,5 +65,44 @@ class BrowseDbRepository {
       user: null,
       interactionMode: InteractionMode.browse,
     );
+  }
+
+  // sls_with_business CRUD
+  Future<void> createSlsWithBusiness(SlsWithBusiness item) async {
+    await _browseDbProvider.createSlsWithBusiness(item.toJson());
+  }
+
+  Future<void> updateSlsWithBusiness(SlsWithBusiness item) async {
+    final data = Map<String, dynamic>.from(item.toJson());
+    data.remove('id');
+    data.removeWhere((key, value) => value == null);
+
+    await _browseDbProvider.updateSlsWithBusiness(item.id, data);
+  }
+
+  Future<void> deleteSlsWithBusiness(String id) async {
+    await _browseDbProvider.deleteSlsWithBusiness(id);
+  }
+
+  Future<List<SlsWithBusiness>> getSlsWithBusinessList({
+    required String userId,
+  }) async {
+    final rows = await _browseDbProvider.getSlsWithBusinessList(userId: userId);
+
+    final user = await _userDbRepository.getById(userId);
+    if (user == null) {
+      throw StateError('User not found for userId=$userId');
+    }
+
+    final List<SlsWithBusiness> items = [];
+
+    for (final row in rows) {
+      final json = Map<String, dynamic>.from(row);
+      json['user'] = user.toJson();
+
+      items.add(SlsWithBusiness.fromJson(json));
+    }
+
+    return items;
   }
 }

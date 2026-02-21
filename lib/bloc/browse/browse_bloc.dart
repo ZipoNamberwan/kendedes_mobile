@@ -16,6 +16,7 @@ import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
+import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:latlong2/latlong.dart';
@@ -52,10 +53,12 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       Project? browseProject = await browseDbRepository.getBrowseProject(
         currentUser.id,
       );
-
       final polygons = await PolygonDbRepository().getPolygonsForProject(
         browseProject?.id ?? '',
       );
+
+      List<SlsWithBusiness> slsWithBusinessList = await BrowseDbRepository()
+          .getSlsWithBusinessList(userId: currentUser.id);
 
       emit(
         InitializingSuccess(
@@ -64,6 +67,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             regencies: regencies,
             browseProject: browseProject,
             polygons: polygons,
+            slsWithBusinessList: slsWithBusinessList,
           ),
         ),
       );
@@ -262,36 +266,16 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             ),
           );
 
+          // Get businesses from API based on SLS
           final response = await BrowseRepository().getBusinessesBySls(
             event.sls.id,
           );
-
           List<TagData> businesses =
               response['businesses'] != null
                   ? List<Map<String, dynamic>>.from(
                     response['businesses'],
                   ).map((data) => TagData.fromJson(data)).toList()
                   : [];
-
-          Sls slsWithPolygon = Sls.fromJson(response['sls']);
-          Polygon updatedPolygon = slsWithPolygon.polygon!;
-
-          await PolygonDbRepository().savePolygonWithPoints(updatedPolygon);
-
-          // Check if project-polygon pair already exists before adding
-          final existingPolygons = await PolygonDbRepository()
-              .getPolygonsForProject(state.data.browseProject.id);
-
-          final pairExists = existingPolygons.any(
-            (polygon) => polygon.id == updatedPolygon.id,
-          );
-
-          if (!pairExists) {
-            await PolygonDbRepository().addProjectPolygonPair(
-              state.data.browseProject.id,
-              updatedPolygon.id,
-            );
-          }
 
           if (businesses.isEmpty) {
             emit(
@@ -303,16 +287,44 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           } else {
             // Create a copy of the current businesses list
             final updatedNearbyBusiness = List.of(state.data.businesses);
-
             // Use a Set for efficient duplicate checks
             final existingIds = updatedNearbyBusiness.map((e) => e.id).toSet();
-
             // Add only new businesses
             updatedNearbyBusiness.addAll(
               businesses.where(
                 (business) => !existingIds.contains(business.id),
               ),
             );
+
+            // Save the polygon to local DB and link it with the current project
+            Sls slsWithPolygon = Sls.fromJson(response['sls']);
+            Polygon updatedPolygon = slsWithPolygon.polygon!;
+            await PolygonDbRepository().savePolygonWithPoints(updatedPolygon);
+            // Check if project-polygon pair already exists before adding
+            final existingPolygons = await PolygonDbRepository()
+                .getPolygonsForProject(state.data.browseProject.id);
+            final pairExists = existingPolygons.any(
+              (polygon) => polygon.id == updatedPolygon.id,
+            );
+            if (!pairExists) {
+              await PolygonDbRepository().addProjectPolygonPair(
+                state.data.browseProject.id,
+                updatedPolygon.id,
+              );
+            }
+
+            // Save SlsWithBusiness to local DB
+            SlsWithBusiness slsWithBusiness = SlsWithBusiness(
+              id: _uuid.v4(),
+              sls: slsWithPolygon,
+              businessCount: businesses.length,
+              user: state.data.currentUser!,
+            );
+            await BrowseDbRepository().createSlsWithBusiness(slsWithBusiness);
+            // Add the new SlsWithBusiness to the state list
+            final updatedSlsWithBusinessList = List.of(
+              state.data.slsWithBusinessList,
+            )..add(slsWithBusiness);
 
             emit(
               BusinessBySlsSuccess(
@@ -324,6 +336,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                   isBusinessBySlsLoading: false,
                   businesses: updatedNearbyBusiness,
                   polygons: [...state.data.polygons, updatedPolygon],
+                  slsWithBusinessList: updatedSlsWithBusinessList,
                 ),
               ),
             );
@@ -590,6 +603,17 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       }
     });
 
+    on<SetSlsWithBusinessSidebarOpen>((event, emit) {
+      final newDataState = state.data.copyWith(
+        isSlsWithBusinessSidebarOpen: event.isOpen,
+      );
+      if (event.isOpen) {
+        emit(SlsWithBusinessSidebarOpened(data: newDataState));
+      } else {
+        emit(SlsWithBusinessSidebarClosed(data: newDataState));
+      }
+    });
+
     on<UpdatePolygon>((event, emit) async {
       emit(BrowseState(data: state.data.copyWith(isLoadingPolygon: true)));
       final polygons = await PolygonDbRepository().getPolygonsForProject(
@@ -631,6 +655,46 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           data: state.data.copyWith(
             polygons: polygons,
             isDeletingPolygon: false,
+          ),
+        ),
+      );
+    });
+
+    on<DeleteSlsWithBusiness>((event, emit) async {
+      emit(
+        BrowseState(data: state.data.copyWith(isDeletingSlsWithBusiness: true)),
+      );
+
+      await BrowseDbRepository().deleteSlsWithBusiness(
+        event.slsWithBusiness.id,
+      );
+
+      List<SlsWithBusiness> updatedSlsWithBusinessList =
+          state.data.slsWithBusinessList
+              .where(
+                (slsWithBusiness) =>
+                    slsWithBusiness.id != event.slsWithBusiness.id,
+              )
+              .toList();
+
+      await PolygonDbRepository().removeProjectPolygonPair(
+        state.data.browseProject.id,
+        event.slsWithBusiness.sls.polygon!.id,
+      );
+
+      List<Polygon> updatedPolygons = state.data.polygons
+          .where(
+            (polygon) =>
+                polygon.id != event.slsWithBusiness.sls.polygon!.id,
+          )
+          .toList();
+
+      emit(
+        SlsWithBusinessDeleted(
+          data: state.data.copyWith(
+            slsWithBusinessList: updatedSlsWithBusinessList,
+            polygons: updatedPolygons,
+            isDeletingSlsWithBusiness: false,
           ),
         ),
       );

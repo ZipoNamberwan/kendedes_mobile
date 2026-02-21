@@ -49,4 +49,44 @@ class BrowseDbProvider {
 
     return result.isNotEmpty ? result.first : null;
   }
+
+  // sls_with_business table operations
+  Future<void> createSlsWithBusiness(Map<String, dynamic> data) async {
+    await _dbProvider.db.insert(
+      'sls_with_business',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> updateSlsWithBusiness(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    await _dbProvider.db.update(
+      'sls_with_business',
+      data,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteSlsWithBusiness(String id) async {
+    await _dbProvider.db.delete(
+      'sls_with_business',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getSlsWithBusinessList({
+    required String userId,
+  }) async {
+    return await _dbProvider.db.query(
+      'sls_with_business',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'sls_long_code ASC',
+    );
+  }
 }

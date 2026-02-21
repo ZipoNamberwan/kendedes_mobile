@@ -10,6 +10,7 @@ import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
+import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:latlong2/latlong.dart';
@@ -69,6 +70,9 @@ class InitializingStarted extends BrowseState {
           ),
           isSaveToLocalDbByArea: true,
           isSaveToLocalDbByScreen: true,
+          slsWithBusinessList: [],
+          isSlsWithBusinessSidebarOpen: false,
+          isDeletingSlsWithBusiness: false,
         ),
       );
 
@@ -188,6 +192,20 @@ class PolygonSideBarClosed extends BrowseState {
   List<Object> get props => [data];
 }
 
+class SlsWithBusinessSidebarOpened extends BrowseState {
+  const SlsWithBusinessSidebarOpened({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class SlsWithBusinessSidebarClosed extends BrowseState {
+  const SlsWithBusinessSidebarClosed({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class PolygonSelected extends BrowseState {
   final LatLng polygonCenter;
   const PolygonSelected(this.polygonCenter, {required super.data});
@@ -198,6 +216,13 @@ class PolygonSelected extends BrowseState {
 
 class PolygonDeleted extends BrowseState {
   const PolygonDeleted({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class SlsWithBusinessDeleted extends BrowseState {
+  const SlsWithBusinessDeleted({required super.data});
 
   @override
   List<Object> get props => [data];
@@ -215,6 +240,8 @@ class BrowseStateData {
   final bool isBusinessBySlsLoading;
   final bool isBusinessBySlsError;
   final bool isPolygonSideBarOpen;
+  final bool isSlsWithBusinessSidebarOpen;
+  final bool isDeletingSlsWithBusiness;
 
   // Map data state
   final double currentZoom;
@@ -231,6 +258,7 @@ class BrowseStateData {
   final List<TagData> filteredBusinesses;
   final List<TagData> selectedBusinesses;
   final Project browseProject;
+  final List<SlsWithBusiness> slsWithBusinessList;
 
   // Load Business data state
   final List<Regency> regencies;
@@ -271,6 +299,8 @@ class BrowseStateData {
     required this.isBusinessBySlsLoading,
     required this.isBusinessBySlsError,
     required this.isPolygonSideBarOpen,
+    required this.isSlsWithBusinessSidebarOpen,
+    required this.isDeletingSlsWithBusiness,
 
     required this.currentZoom,
     required this.rotation,
@@ -285,6 +315,7 @@ class BrowseStateData {
     required this.filteredBusinesses,
     required this.selectedBusinesses,
     required this.browseProject,
+    required this.slsWithBusinessList,
 
     required this.regencies,
     required this.subdistricts,
@@ -322,6 +353,8 @@ class BrowseStateData {
     bool? isBusinessBySlsLoading,
     bool? isBusinessBySlsError,
     bool? isPolygonSideBarOpen,
+    bool? isSlsWithBusinessSidebarOpen,
+    bool? isDeletingSlsWithBusiness,
 
     double? currentZoom,
     double? rotation,
@@ -336,6 +369,7 @@ class BrowseStateData {
     List<TagData>? filteredBusinesses,
     List<TagData>? selectedBusinesses,
     Project? browseProject,
+    List<SlsWithBusiness>? slsWithBusinessList,
 
     List<Regency>? regencies,
     List<Subdistrict>? subdistricts,
@@ -382,6 +416,10 @@ class BrowseStateData {
           isBusinessBySlsLoading ?? this.isBusinessBySlsLoading,
       isBusinessBySlsError: isBusinessBySlsError ?? this.isBusinessBySlsError,
       isPolygonSideBarOpen: isPolygonSideBarOpen ?? this.isPolygonSideBarOpen,
+      isSlsWithBusinessSidebarOpen:
+          isSlsWithBusinessSidebarOpen ?? this.isSlsWithBusinessSidebarOpen,
+      isDeletingSlsWithBusiness:
+          isDeletingSlsWithBusiness ?? this.isDeletingSlsWithBusiness,
 
       currentZoom: currentZoom ?? this.currentZoom,
       rotation: rotation ?? this.rotation,
@@ -396,6 +434,8 @@ class BrowseStateData {
       filteredBusinesses: filteredBusinesses ?? this.filteredBusinesses,
       selectedBusinesses: selectedBusinesses ?? this.selectedBusinesses,
       browseProject: browseProject ?? this.browseProject,
+      slsWithBusinessList: slsWithBusinessList ?? this.slsWithBusinessList,
+
       regencies: regencies ?? this.regencies,
       subdistricts:
           (clearSelectedRegency ?? false)

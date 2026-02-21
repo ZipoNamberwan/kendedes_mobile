@@ -15,12 +15,15 @@ import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
+import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/polygon.dart' as polygonmodel;
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/complex_marker_browse_widget.dart';
+import 'package:kendedes_mobile/widgets/browse_widgets/delete_sls_with_business_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/simple_marker_browse_widget.dart';
+import 'package:kendedes_mobile/widgets/browse_widgets/sls_with_business_sidebar.dart';
 import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/color_legend_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
@@ -684,7 +687,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _showPolygonDeleteConfirmationDialog(
+  void _showPolygonDeleteConfirmationDialog(
     polygonmodel.Polygon polygon,
     bool isDeletingPolygon,
   ) async {
@@ -698,6 +701,28 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
               _browseBloc.add(DeletePolygon(polygon: polygon));
             },
           ),
+    );
+  }
+
+  void _showSlsWithBusinessDeleteConfirmationDialog(
+    SlsWithBusiness item,
+    bool isDeleting,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return DeleteSlsWithBusinessDialog(
+          slsWithBusiness: item,
+          isDeleting: isDeleting,
+          onConfirm: () {
+            _browseBloc.add(DeleteSlsWithBusiness(slsWithBusiness: item));
+          },
+          onCancel: () {
+            Navigator.of(context).pop();
+          },
+          // isDeleting: isDeleting,
+        );
+      },
     );
   }
 
@@ -731,6 +756,10 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             },
           ),
     );
+  }
+
+  void _toggleSlsWithBusinessSidebar(bool isOpen) {
+    _browseBloc.add(SetSlsWithBusinessSidebarOpen(isOpen));
   }
 
   void _showColorLegendDialog() {
@@ -958,6 +987,14 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
           CustomSnackBar.show(
             context,
             message: 'Poligon berhasil dihapus',
+            type: SnackBarType.success,
+          );
+        } else if (state is SlsWithBusinessDeleted) {
+          Navigator.of(context).pop();
+
+          CustomSnackBar.show(
+            context,
+            message: 'Prelist SLS berhasil dihapus',
             type: SnackBarType.success,
           );
         }
@@ -1616,57 +1653,129 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   // Section header with collapse toggle
-                                  GestureDetector(
-                                    onTap:
-                                        () => _browseBloc.add(
-                                          const ToggleLoadBusinessContainer(),
-                                        ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.shade100,
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
                                             borderRadius: BorderRadius.circular(
-                                              10,
+                                              14,
+                                            ),
+                                            onTap:
+                                                () => _browseBloc.add(
+                                                  const ToggleLoadBusinessContainer(),
+                                                ),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 6,
+                                                  ),
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.all(6),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.blue.shade100,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.storefront_rounded,
+                                                      color:
+                                                          Colors.blue.shade700,
+                                                      size: 18,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Load Prelist Usaha',
+                                                      style: TextStyle(
+                                                        color:
+                                                            Colors
+                                                                .grey
+                                                                .shade900,
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        letterSpacing: 0.2,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
-                                          child: Icon(
-                                            Icons.storefront_rounded,
-                                            color: Colors.blue.shade700,
-                                            size: 18,
-                                          ),
                                         ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Text(
-                                            'Load Prelist Usaha',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade900,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w700,
-                                              letterSpacing: 0.2,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      if (state.data.loadMode ==
+                                          BusinessLoadMode.area) ...[
+                                        SizedBox(
+                                          width: 36,
+                                          height: 36,
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              onTap: () {
+                                                _toggleSlsWithBusinessSidebar(
+                                                  true,
+                                                );
+                                              },
+                                              child: Center(
+                                                child: Icon(
+                                                  Icons.download_done_rounded,
+                                                  color: Colors.blue.shade700,
+                                                  size: 19,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
-                                        AnimatedRotation(
-                                          turns:
-                                              state
-                                                      .data
-                                                      .isLoadBusinessContainerExpanded
-                                                  ? 0
-                                                  : 0.5,
-                                          duration: const Duration(
-                                            milliseconds: 300,
-                                          ),
-                                          child: Icon(
-                                            Icons.expand_more_rounded,
-                                            color: Colors.grey.shade700,
-                                            size: 24,
-                                          ),
-                                        ),
+                                        const SizedBox(width: 4),
                                       ],
-                                    ),
+                                      SizedBox(
+                                        width: 36,
+                                        height: 36,
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            onTap:
+                                                () => _browseBloc.add(
+                                                  const ToggleLoadBusinessContainer(),
+                                                ),
+                                            child: Center(
+                                              child: AnimatedRotation(
+                                                turns:
+                                                    state
+                                                            .data
+                                                            .isLoadBusinessContainerExpanded
+                                                        ? 0
+                                                        : 0.5,
+                                                duration: const Duration(
+                                                  milliseconds: 300,
+                                                ),
+                                                child: Icon(
+                                                  Icons.expand_more_rounded,
+                                                  color: Colors.grey.shade700,
+                                                  size: 24,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   if (state
                                       .data
@@ -1734,15 +1843,30 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                     ),
 
                     // Sidebar overlay
-                    if (state.data.isPolygonSideBarOpen)
+                    if (state.data.isSlsWithBusinessSidebarOpen ||
+                        state.data.isPolygonSideBarOpen)
                       GestureDetector(
                         onTap: () {
+                          _toggleSlsWithBusinessSidebar(false);
                           _togglePolygonSidebar(false);
                         },
                         child: Container(
                           color: Colors.black.withValues(alpha: 0.3),
                         ),
                       ),
+
+                    // Sls with business sidebar
+                    SlsWithBusinessSidebar(
+                      isOpen: state.data.isSlsWithBusinessSidebarOpen,
+                      items: state.data.slsWithBusinessList,
+                      onClose: () => _toggleSlsWithBusinessSidebar(false),
+                      onDeleteTap: (item) {
+                        _showSlsWithBusinessDeleteConfirmationDialog(
+                          item,
+                          state.data.isDeletingSlsWithBusiness,
+                        );
+                      },
+                    ),
 
                     // Polygon sidebar
                     PolygonSidebarWidget(

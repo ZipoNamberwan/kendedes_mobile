@@ -3,6 +3,8 @@ import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository
 import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
+import 'package:kendedes_mobile/models/user.dart';
 
 class BrowseDbRepository {
   static final BrowseDbRepository _instance = BrowseDbRepository._internal();
@@ -104,5 +106,176 @@ class BrowseDbRepository {
     }
 
     return items;
+  }
+
+  Future<void> insertTagDataBatch(
+    String? browseProjectId,
+    List<TagData> tags, {
+    int chunkSize = 500,
+  }) async {
+    for (int i = 0; i < tags.length; i += chunkSize) {
+      final chunk = tags.sublist(
+        i,
+        i + chunkSize > tags.length ? tags.length : i + chunkSize,
+      );
+
+      final mappedChunk =
+          chunk.map((tag) {
+            return {
+              'id': tag.id,
+              'position_lat': tag.positionLat,
+              'position_lng': tag.positionLng,
+              'has_changed': tag.hasChanged ? 1 : 0,
+              'has_sent_to_server': tag.hasSentToServer ? 1 : 0,
+              'tag_type': tag.type.name,
+              'initial_position_lat': tag.initialPositionLat,
+              'initial_position_lng': tag.initialPositionLng,
+              'is_deleted': tag.isDeleted ? 1 : 0,
+              'created_at': tag.createdAt?.toIso8601String(),
+              'updated_at': tag.updatedAt?.toIso8601String(),
+              'deleted_at': tag.deletedAt?.toIso8601String(),
+              'incremental_id': tag.incrementalId,
+              'project_id': tag.project.id,
+              'business_name': tag.businessName,
+              'business_owner': tag.businessOwner,
+              'business_address': tag.businessAddress,
+              'building_status': tag.buildingStatus?.key,
+              'description': tag.description,
+              'sector': tag.sector?.key,
+              'note': tag.note,
+              'user_id': tag.user?.id,
+              'is_locked': tag.isLocked ? 1 : 0,
+              'browse_project_id': browseProjectId,
+            };
+          }).toList();
+
+      await _browseDbProvider.insertTagDataBatch(mappedChunk);
+    }
+  }
+
+  Future<void> insertProjectBatch(List<Project> projects) async {
+    final dataList =
+        projects.map((project) {
+          return {
+            'id': project.id,
+            'name': project.name,
+            'description': project.description,
+            'created_at': project.createdAt.toIso8601String(),
+            'updated_at': project.updatedAt.toIso8601String(),
+            'deleted_at': project.deletedAt?.toIso8601String(),
+            'type': project.type.key,
+            'user_id': project.user?.id,
+          };
+        }).toList();
+
+    await _browseDbProvider.insertProjectsBatch(dataList);
+  }
+
+  Future<List<Project>> getAllProjects() async {
+    final maps = await _browseDbProvider.getAllProjects();
+    return maps.map((map) {
+      return Project.fromJson(map);
+    }).toList();
+  }
+
+  Future<List<User>> getAllUsers() async {
+    final maps = await _browseDbProvider.getAllUsers();
+    return maps.map((map) {
+      return User.fromJson(map);
+    }).toList();
+  }
+
+  // insert user by calling browseDbProvider.insertUsersBatch
+  Future<void> insertUsersBatch(List<User> users, {int chunkSize = 500}) async {
+    // add chunking to avoid inserting too many records at once
+    for (int i = 0; i < users.length; i += chunkSize) {
+      final chunk = users.sublist(
+        i,
+        i + chunkSize > users.length ? users.length : i + chunkSize,
+      );
+
+      final mappedChunk =
+          chunk.map((user) {
+            return {
+              'id': user.id,
+              'firstname': user.firstname,
+              'email': user.email,
+            };
+          }).toList();
+
+      await _browseDbProvider.insertUsersBatch(mappedChunk);
+    }
+  }
+
+  Future<List<TagData>> getBusinessByBrowseProjectId(String projectId) async {
+    final businessMaps = await _browseDbProvider.getBusinessByBrowseProjectId(
+      projectId,
+    );
+
+    final projectMaps = await _browseDbProvider.getAllProjects();
+    final userMaps = await _browseDbProvider.getAllUsers();
+
+    // return list of tag data with business details
+    return businessMaps.map((map) {
+      final projectMap = projectMaps.firstWhere(
+        (p) => p['id'] == map['project_id'],
+        orElse: () => {},
+      );
+
+      final userMap = userMaps.firstWhere(
+        (u) => u['id'] == map['user_id'],
+        orElse: () => {},
+      );
+
+      final tag = TagData(
+        id: map['id'] as String,
+        positionLat: map['position_lat'],
+        positionLng: map['position_lng'],
+        hasChanged: false,
+        hasSentToServer: true,
+        isLocked: map['is_locked'] == 1,
+        type: TagType.auto,
+        initialPositionLat: map['position_lat'],
+        initialPositionLng: map['position_lng'],
+        isDeleted: map['deleted_at'] != null,
+        createdAt:
+            map['created_at'] != null
+                ? DateTime.parse(map['created_at'] as String)
+                : null,
+        updatedAt:
+            map['updated_at'] != null
+                ? DateTime.parse(map['updated_at'] as String)
+                : null,
+        deletedAt:
+            map['deleted_at'] != null
+                ? DateTime.parse(map['deleted_at'] as String)
+                : null,
+        incrementalId: 1,
+        project: Project.fromJson(projectMap),
+        businessName: map['business_name'] as String,
+        businessOwner: map['business_owner'] as String?,
+        businessAddress: map['business_address'] as String?,
+        buildingStatus:
+            map['building_status'] != null
+                ? BuildingStatus.fromKey(
+                  map['building_status'].toString().toLowerCase().replaceAll(
+                    ' ',
+                    '_',
+                  ),
+                )
+                : null,
+        description: map['description'] as String,
+        sector:
+            (() {
+              final sectorStr = map['sector']?.toString();
+              return sectorStr != null && sectorStr.isNotEmpty
+                  ? Sector.fromKey(sectorStr[0].toUpperCase())
+                  : null;
+            })(),
+        note: map['note'] as String?,
+        user: userMap.isNotEmpty ? User.fromJson(userMap) : null,
+      );
+      return tag;
+    }).toList();
   }
 }

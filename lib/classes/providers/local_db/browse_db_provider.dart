@@ -89,4 +89,69 @@ class BrowseDbProvider {
       orderBy: 'sls_long_code ASC',
     );
   }
+
+  Future<void> insertTagDataBatch(List<Map<String, dynamic>> dataList) async {
+    final db = _dbProvider.db;
+
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+
+      for (final data in dataList) {
+        batch.insert(
+          'tag_data',
+          data,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
+      await batch.commit(noResult: true);
+    });
+  }
+
+  Future<void> insertProjectsBatch(List<Map<String, dynamic>> dataList) async {
+    final db = _dbProvider.db;
+    final batch = db.batch();
+
+    for (final data in dataList) {
+      batch.insert(
+        'projects',
+        data,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    await batch.commit(
+      noResult: true,
+    ); // Set `noResult` to true for faster insert
+  }
+
+  Future<List<Map<String, dynamic>>> getAllProjects() async {
+    return await _dbProvider.db.query('projects');
+  }
+
+  Future<List<Map<String, dynamic>>> getBusinessByBrowseProjectId(
+    String projectId,
+  ) async {
+    return await _dbProvider.db.query(
+      'tag_data',
+      // where: 'project_id = ?',
+      // whereArgs: [projectId],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    return await _dbProvider.db.query('users');
+  }
+
+  //insert users by batch
+  Future<void> insertUsersBatch(List<Map<String, dynamic>> dataList) async {
+    final db = _dbProvider.db;
+    final batch = db.batch();
+
+    for (final data in dataList) {
+      batch.insert('users', data, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+
+    await batch.commit(noResult: true);
+  }
 }

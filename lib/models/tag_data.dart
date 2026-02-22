@@ -32,6 +32,9 @@ class TagData {
   final User? user;
   final Survey? survey;
 
+  // Attributes for browse tag data
+  final String? browseProjectId;
+
   TagData({
     required this.id,
     required this.positionLat,
@@ -59,6 +62,9 @@ class TagData {
     required this.sector,
     this.note,
     this.survey,
+
+    // Browse tag data
+     this.browseProjectId,
   });
 
   TagData copyWith({
@@ -86,6 +92,7 @@ class TagData {
     String? note,
     Survey? survey,
     bool? isLocked,
+      String? browseProjectId,
   }) {
     return TagData(
       id: id ?? this.id,
@@ -112,6 +119,7 @@ class TagData {
       note: note ?? this.note,
       survey: survey ?? this.survey,
       isLocked: isLocked ?? this.isLocked,
+      browseProjectId: browseProjectId ?? this.browseProjectId,
     );
   }
 
@@ -205,6 +213,7 @@ class TagData {
         'description': project.description,
       },
       'user': user?.id,
+      'browse_project_id': browseProjectId,
       'organization': user?.organization?.id,
     };
   }

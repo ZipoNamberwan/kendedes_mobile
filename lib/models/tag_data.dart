@@ -35,9 +35,6 @@ class TagData {
   // ID in server
   final String remoteId;
 
-  // Attributes for browse tag data
-  final String? browseProjectId;
-
   TagData({
     required this.id,
     required this.positionLat,
@@ -68,9 +65,6 @@ class TagData {
 
     // ID in server
     required this.remoteId,
-
-    // Browse tag data
-    this.browseProjectId,
   });
 
   TagData copyWith({
@@ -99,7 +93,6 @@ class TagData {
     Survey? survey,
     bool? isLocked,
     String? remoteId,
-    String? browseProjectId,
   }) {
     return TagData(
       id: id ?? this.id,
@@ -127,7 +120,6 @@ class TagData {
       survey: survey ?? this.survey,
       isLocked: isLocked ?? this.isLocked,
       remoteId: remoteId ?? this.remoteId,
-      browseProjectId: browseProjectId ?? this.browseProjectId,
     );
   }
 

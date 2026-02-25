@@ -117,11 +117,9 @@ class LocalDbProvider {
       sector TEXT,
       note TEXT,
       user_id TEXT,
-      browse_project_id TEXT,
       remote_id TEXT,
       FOREIGN KEY(project_id) REFERENCES projects(id),
-      FOREIGN KEY(user_id) REFERENCES users(id),
-      FOREIGN KEY(browse_project_id) REFERENCES projects(id)
+      FOREIGN KEY(user_id) REFERENCES users(id)
     )
   ''');
 
@@ -342,11 +340,6 @@ class LocalDbProvider {
       await db.execute('''
         ALTER TABLE polygons
         ADD COLUMN long_code TEXT
-      ''');
-
-      await db.execute('''
-        ALTER TABLE tag_data 
-        ADD COLUMN browse_project_id TEXT;
       ''');
 
       await db.execute('''

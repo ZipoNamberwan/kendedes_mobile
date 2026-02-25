@@ -145,7 +145,6 @@ class BrowseDbRepository {
               'note': tag.note,
               'user_id': tag.user?.id,
               'is_locked': tag.isLocked ? 1 : 0,
-              'browse_project_id': browseProjectId,
             };
           }).toList();
 

@@ -26,7 +26,7 @@ class ProjectRepository {
 
     for (final projectJson in response) {
       // Parse project without businesses
-      final project = Project.fromJson({
+      final project = Project.fromServerJson({
         ...projectJson,
         'businesses': null, // ignore businesses
       });
@@ -47,7 +47,7 @@ class ProjectRepository {
   Future<Project> createProject(Map<String, dynamic> projectData) async {
     final sentData = {...projectData, 'user': AuthRepository().getUser().id};
     final response = await _projectProvider.createProject(sentData);
-    return Project.fromJson(response);
+    return Project.fromServerJson(response);
   }
 
   Future<Project> updateProject(
@@ -58,7 +58,7 @@ class ProjectRepository {
       projectId,
       projectData,
     );
-    return Project.fromJson(response);
+    return Project.fromServerJson(response);
   }
 
   Future<void> deleteProject(String projectId) async {

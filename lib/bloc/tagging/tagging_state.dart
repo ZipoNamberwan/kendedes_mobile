@@ -26,6 +26,7 @@ class InitializingStarted extends TaggingState {
         data: TaggingStateData(
           project: Project(
             id: '',
+            remoteId: '',
             name: '',
             description: '',
             createdAt: DateTime.now(),

@@ -276,7 +276,7 @@ class TagData {
                 ? DateTime.parse(json['deleted_at'] as String)
                 : null,
         incrementalId: 1,
-        project: Project.fromJson(json['project'] as Map<String, dynamic>),
+        project: Project.fromServerJson(json['project'] as Map<String, dynamic>),
         businessName: json['name'] as String,
         businessOwner: json['owner'] as String?,
         businessAddress: json['address'] as String?,

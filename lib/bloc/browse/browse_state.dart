@@ -67,6 +67,7 @@ class InitializingStarted extends BrowseState {
             updatedAt: DateTime.now(),
             type: ProjectType.supplementMobile,
             interactionMode: InteractionMode.browse,
+            remoteId: '',
           ),
           isSaveToLocalDbByArea: true,
           isSaveToLocalDbByScreen: true,

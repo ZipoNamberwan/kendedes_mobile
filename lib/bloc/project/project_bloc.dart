@@ -129,8 +129,10 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
 
       final now = DateTime.now();
       final user = AuthRepository().getUser();
+      String newId = _uuid.v4();
       final newProject = Project(
-        id: _uuid.v4(),
+        id: newId,
+        remoteId: newId,
         name: formFields['name']?.value as String,
         description: formFields['description']?.value as String?,
         createdAt: now,
@@ -213,6 +215,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       final user = AuthRepository().getUser();
       final updatedProject = Project(
         id: event.project.id,
+        remoteId: event.project.remoteId,
         name: formFields['name']?.value as String,
         description: formFields['description']?.value as String?,
         createdAt: event.project.createdAt,
@@ -437,6 +440,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         orElse:
             () => Project(
               id: '',
+              remoteId: '',
               name: '',
               description: null,
               createdAt: DateTime.now(),

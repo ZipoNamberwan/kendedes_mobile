@@ -14,6 +14,8 @@ class Project {
 
   final InteractionMode interactionMode;
 
+  final String remoteId;
+
   Project({
     required this.id,
     required this.name,
@@ -24,11 +26,13 @@ class Project {
     required this.type,
     this.user,
     required this.interactionMode,
+    required this.remoteId,
   });
 
-  factory Project.fromJson(Map<String, dynamic> json) {
+  factory Project.fromServerJson(Map<String, dynamic> json) {
     return Project(
       id: json['id'],
+      remoteId: json['remote_id'],
       name: json['name'],
       description: json['description'],
       createdAt: DateTime.parse(json['created_at']),
@@ -69,9 +73,11 @@ class Project {
     ProjectType? type,
     User? user,
     InteractionMode? interactionMode,
+    String? remoteId,
   }) {
     return Project(
       id: id ?? this.id,
+      remoteId: remoteId ?? this.remoteId,
       name: name ?? this.name,
       description: description ?? this.description,
       createdAt: createdAt ?? this.createdAt,

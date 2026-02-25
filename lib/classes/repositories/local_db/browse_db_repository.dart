@@ -57,6 +57,7 @@ class BrowseDbRepository {
 
     return Project(
       id: map['id'],
+      remoteId: map['remote_id'],
       name: map['name'],
       description: map['description'],
       createdAt: DateTime.parse(map['created_at']),
@@ -173,7 +174,7 @@ class BrowseDbRepository {
   Future<List<Project>> getAllProjects() async {
     final maps = await _browseDbProvider.getAllProjects();
     return maps.map((map) {
-      return Project.fromJson(map);
+      return Project.fromServerJson(map);
     }).toList();
   }
 
@@ -251,7 +252,7 @@ class BrowseDbRepository {
                 ? DateTime.parse(map['deleted_at'] as String)
                 : null,
         incrementalId: 1,
-        project: Project.fromJson(projectMap),
+        project: Project.fromServerJson(projectMap),
         businessName: map['business_name'] as String,
         businessOwner: map['business_owner'] as String?,
         businessAddress: map['business_address'] as String?,

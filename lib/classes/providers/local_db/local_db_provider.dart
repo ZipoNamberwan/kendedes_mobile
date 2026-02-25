@@ -87,6 +87,7 @@ class LocalDbProvider {
       type TEXT,
       user_id TEXT,
       interaction_mode TEXT,
+      remote_id TEXT,
       FOREIGN KEY(user_id) REFERENCES users(id)
     )
   ''');
@@ -230,6 +231,17 @@ class LocalDbProvider {
           FOREIGN KEY(user_id) REFERENCES users(id)
         )
       ''');
+
+    // 9. Create user_polygons many-to-many table
+    await db.execute('''
+        CREATE TABLE user_polygons (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT,
+          polygon_id TEXT,
+          FOREIGN KEY(user_id) REFERENCES users(id),
+          FOREIGN KEY(polygon_id) REFERENCES polygons(id)
+        )
+      ''');
   }
 
   static Future<void> _onUpgrade(
@@ -347,6 +359,11 @@ class LocalDbProvider {
         ADD COLUMN remote_id TEXT;
       ''');
 
+      await db.execute('''
+        ALTER TABLE projects 
+        ADD COLUMN remote_id TEXT;
+      ''');
+
       // 14. Create sls_with_business table
       await db.execute('''
         CREATE TABLE sls_with_business (
@@ -372,6 +389,16 @@ class LocalDbProvider {
 
           user_id TEXT,
           FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE user_polygons (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT,
+          polygon_id TEXT,
+          FOREIGN KEY(user_id) REFERENCES users(id),
+          FOREIGN KEY(polygon_id) REFERENCES polygons(id)
         )
       ''');
     }

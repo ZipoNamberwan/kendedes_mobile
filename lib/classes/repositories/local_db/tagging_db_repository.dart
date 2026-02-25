@@ -88,6 +88,7 @@ class TaggingDbRepository {
 
     return Project(
       id: map['id'],
+      remoteId: map['remote_id'],
       name: map['name'],
       description: map['description'],
       createdAt: DateTime.parse(map['created_at']),

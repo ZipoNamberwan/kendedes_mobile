@@ -441,6 +441,7 @@ class _ProjectFormDialogState extends State<ProjectFormDialog>
                                                         widget.project ??
                                                         Project(
                                                           id: '',
+                                                          remoteId: '',
                                                           name:
                                                               nameController
                                                                   .text,

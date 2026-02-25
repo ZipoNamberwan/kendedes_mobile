@@ -32,7 +32,7 @@ class Project {
   factory Project.fromServerJson(Map<String, dynamic> json) {
     return Project(
       id: json['id'],
-      remoteId: json['remote_id'],
+      remoteId: json['id'],
       name: json['name'],
       description: json['description'],
       createdAt: DateTime.parse(json['created_at']),

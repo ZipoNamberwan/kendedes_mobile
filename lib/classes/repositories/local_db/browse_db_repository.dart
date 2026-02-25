@@ -229,6 +229,7 @@ class BrowseDbRepository {
 
       final tag = TagData(
         id: map['id'] as String,
+        remoteId: map['id'] as String,
         positionLat: map['position_lat'],
         positionLng: map['position_lng'],
         hasChanged: false,

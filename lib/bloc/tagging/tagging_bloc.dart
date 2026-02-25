@@ -168,7 +168,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             if (e.statusCode == 423) {
               // check if e.data is not null and has errors key in it
               if (e.data != null && e.data['errors'] != null) {
-                TagData lockedTag = TagData.fromJson(e.data['errors']);
+                TagData lockedTag = TagData.fromServerJson(e.data['errors']);
                 add(LockTagData(tagData: lockedTag));
               }
             } else {
@@ -234,7 +234,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
               final lockedTags =
                   (response['locked_tags'] as List).map((lockedTagData) {
-                    return TagData.fromJson(lockedTagData).copyWith(
+                    return TagData.fromServerJson(lockedTagData).copyWith(
                       hasChanged: false,
                       hasSentToServer: true,
                       user: user,
@@ -373,7 +373,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
           final lockedTags =
               (response['locked_tags'] as List).map((lockedTagData) {
-                return TagData.fromJson(lockedTagData).copyWith(
+                return TagData.fromServerJson(lockedTagData).copyWith(
                   hasChanged: false,
                   hasSentToServer: true,
                   user: user,
@@ -557,8 +557,10 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
       try {
         final User user = AuthRepository().getUser();
 
+        String newId = _uuid.v4();
         final newTag = TagData(
-          id: _uuid.v4(),
+          id: newId,
+          remoteId: newId,
           positionLat: formFields['positionLat']?.value as double,
           positionLng: formFields['positionLng']?.value as double,
           initialPositionLat: formFields['positionLat']?.value as double,
@@ -657,6 +659,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
 
         final updatedTag = TagData(
           id: event.tagData.id,
+          remoteId: event.tagData.id,
           positionLat: formFields['positionLat']!.value as double,
           positionLng: formFields['positionLng']!.value as double,
           initialPositionLat: event.tagData.initialPositionLat,
@@ -740,7 +743,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
             if (e.statusCode == 423) {
               // check if e.data is not null and has errors key in it
               if (e.data != null && e.data['errors'] != null) {
-                TagData lockedTag = TagData.fromJson(e.data['errors']);
+                TagData lockedTag = TagData.fromServerJson(e.data['errors']);
                 add(LockTagData(tagData: lockedTag));
               }
             }

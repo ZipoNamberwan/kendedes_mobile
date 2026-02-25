@@ -289,7 +289,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               response['businesses'] != null
                   ? List<Map<String, dynamic>>.from(
                     response['businesses'],
-                  ).map((data) => TagData.fromJson(data)).toList()
+                  ).map((data) => TagData.fromServerJson(data)).toList()
                   : [];
 
           if (businesses.isEmpty) {

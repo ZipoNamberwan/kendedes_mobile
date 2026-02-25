@@ -67,31 +67,7 @@ class TaggingDbRepository {
 
   /// Insert or update a TagData
   Future<void> insertOrUpdate(TagData tag) async {
-    await _taggingDbProvider.insertOrUpdate({
-      'id': tag.id,
-      'position_lat': tag.positionLat,
-      'position_lng': tag.positionLng,
-      'has_changed': tag.hasChanged ? 1 : 0,
-      'has_sent_to_server': tag.hasSentToServer ? 1 : 0,
-      'tag_type': tag.type.name,
-      'initial_position_lat': tag.initialPositionLat,
-      'initial_position_lng': tag.initialPositionLng,
-      'is_deleted': tag.isDeleted ? 1 : 0,
-      'created_at': tag.createdAt?.toIso8601String(),
-      'updated_at': tag.updatedAt?.toIso8601String(),
-      'deleted_at': tag.deletedAt?.toIso8601String(),
-      'incremental_id': tag.incrementalId,
-      'project_id': tag.project.id,
-      'business_name': tag.businessName,
-      'business_owner': tag.businessOwner,
-      'business_address': tag.businessAddress,
-      'building_status': tag.buildingStatus?.key,
-      'description': tag.description,
-      'sector': tag.sector?.key,
-      'note': tag.note,
-      'user_id': tag.user?.id,
-      'is_locked': tag.isLocked ? 1 : 0,
-    });
+    await _taggingDbProvider.insertOrUpdate(tag.toLocalDbJson());
   }
 
   /// Delete by ID
@@ -181,38 +157,7 @@ class TaggingDbRepository {
     // Use preloaded user or hydrate it
     final user = preloadedUser ?? await _hydrateUser(map['user_id']);
 
-    return TagData(
-      id: map['id'],
-      positionLat: map['position_lat'],
-      positionLng: map['position_lng'],
-      hasChanged: map['has_changed'] == 1,
-      hasSentToServer: map['has_sent_to_server'] == 1,
-      type: TagType.values.firstWhere((e) => e.name == map['tag_type']),
-      initialPositionLat: map['initial_position_lat'],
-      initialPositionLng: map['initial_position_lng'],
-      isDeleted: map['is_deleted'] == 1,
-      createdAt:
-          map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
-      updatedAt:
-          map['updated_at'] != null ? DateTime.parse(map['updated_at']) : null,
-      deletedAt:
-          map['deleted_at'] != null ? DateTime.parse(map['deleted_at']) : null,
-      incrementalId: map['incremental_id'],
-      project: project,
-      businessName: map['business_name'],
-      businessOwner: map['business_owner'],
-      businessAddress: map['business_address'],
-      buildingStatus: BuildingStatus.values.firstWhere(
-        (e) => e.key == map['building_status'],
-      ),
-      description: map['description'],
-      sector: Sector.values.firstWhere((e) => e.key == map['sector']),
-      note: map['note'],
-      isLocked: map['is_locked'] == 1,
-      user:
-          user ??
-          User(id: '', email: '', firstname: '', organization: null, roles: []),
-    );
+    return TagData.fromLocalDbJson(map, user, project);
   }
 
   /// Update a single column
@@ -223,31 +168,7 @@ class TaggingDbRepository {
   Future<void> insertAll(List<TagData> tagList) async {
     final dataList =
         tagList.map((tag) {
-          return {
-            'id': tag.id,
-            'position_lat': tag.positionLat,
-            'position_lng': tag.positionLng,
-            'has_changed': tag.hasChanged ? 1 : 0,
-            'has_sent_to_server': tag.hasSentToServer ? 1 : 0,
-            'tag_type': tag.type.name,
-            'initial_position_lat': tag.initialPositionLat,
-            'initial_position_lng': tag.initialPositionLng,
-            'is_deleted': tag.isDeleted ? 1 : 0,
-            'created_at': tag.createdAt?.toIso8601String(),
-            'updated_at': tag.updatedAt?.toIso8601String(),
-            'deleted_at': tag.deletedAt?.toIso8601String(),
-            'incremental_id': tag.incrementalId,
-            'project_id': tag.project.id,
-            'business_name': tag.businessName,
-            'business_owner': tag.businessOwner,
-            'business_address': tag.businessAddress,
-            'building_status': tag.buildingStatus?.key,
-            'description': tag.description,
-            'sector': tag.sector?.key,
-            'note': tag.note,
-            'user_id': tag.user?.id,
-            'is_locked': tag.isLocked ? 1 : 0,
-          };
+          return tag.toLocalDbJson();
         }).toList();
 
     await _taggingDbProvider.insertAll(dataList);

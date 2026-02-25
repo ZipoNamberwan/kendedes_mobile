@@ -32,6 +32,9 @@ class TagData {
   final User? user;
   final Survey? survey;
 
+  // ID in server
+  final String remoteId;
+
   // Attributes for browse tag data
   final String? browseProjectId;
 
@@ -63,8 +66,11 @@ class TagData {
     this.note,
     this.survey,
 
+    // ID in server
+    required this.remoteId,
+
     // Browse tag data
-     this.browseProjectId,
+    this.browseProjectId,
   });
 
   TagData copyWith({
@@ -92,7 +98,8 @@ class TagData {
     String? note,
     Survey? survey,
     bool? isLocked,
-      String? browseProjectId,
+    String? remoteId,
+    String? browseProjectId,
   }) {
     return TagData(
       id: id ?? this.id,
@@ -119,6 +126,7 @@ class TagData {
       note: note ?? this.note,
       survey: survey ?? this.survey,
       isLocked: isLocked ?? this.isLocked,
+      remoteId: remoteId ?? this.remoteId,
       browseProjectId: browseProjectId ?? this.browseProjectId,
     );
   }
@@ -194,8 +202,8 @@ class TagData {
     return false;
   }
 
-  /// Convert to JSON
-  Map<String, dynamic> toJson() {
+  /// Convert to JSON to sent to server
+  Map<String, dynamic> toServerJson() {
     return {
       'id': id,
       'latitude': positionLat,
@@ -213,16 +221,46 @@ class TagData {
         'description': project.description,
       },
       'user': user?.id,
-      'browse_project_id': browseProjectId,
       'organization': user?.organization?.id,
     };
   }
 
-  /// Parse from JSON
-  factory TagData.fromJson(Map<String, dynamic> json) {
+  /// Convert to JSON to store in local db
+  Map<String, dynamic> toLocalDbJson() {
+    return {
+      'id': id,
+      'remote_id': remoteId,
+      'position_lat': positionLat,
+      'position_lng': positionLng,
+      'has_changed': hasChanged ? 1 : 0,
+      'has_sent_to_server': hasSentToServer ? 1 : 0,
+      'tag_type': type.name,
+      'initial_position_lat': initialPositionLat,
+      'initial_position_lng': initialPositionLng,
+      'is_deleted': isDeleted ? 1 : 0,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
+      'incremental_id': incrementalId,
+      'project_id': project.id,
+      'business_name': businessName,
+      'business_owner': businessOwner,
+      'business_address': businessAddress,
+      'building_status': buildingStatus?.key,
+      'description': description,
+      'sector': sector?.key,
+      'note': note,
+      'user_id': user?.id,
+      'is_locked': isLocked ? 1 : 0,
+    };
+  }
+
+  /// Parse from Server JSON
+  factory TagData.fromServerJson(Map<String, dynamic> json) {
     try {
       return TagData(
         id: json['id'] as String,
+        remoteId: json['id'] as String,
         positionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
         positionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
         hasChanged: false,
@@ -276,6 +314,63 @@ class TagData {
       );
     } catch (e) {
       throw Exception('Failed to parse TagData: $e');
+    }
+  }
+
+  /// Parse from JSON from local db
+  factory TagData.fromLocalDbJson(
+    Map<String, dynamic> map,
+    User? user,
+    Project project,
+  ) {
+    try {
+      return TagData(
+        id: map['id'],
+        remoteId: map['remote_id'],
+        positionLat: map['position_lat'],
+        positionLng: map['position_lng'],
+        hasChanged: map['has_changed'] == 1,
+        hasSentToServer: map['has_sent_to_server'] == 1,
+        type: TagType.values.firstWhere((e) => e.name == map['tag_type']),
+        initialPositionLat: map['initial_position_lat'],
+        initialPositionLng: map['initial_position_lng'],
+        isDeleted: map['is_deleted'] == 1,
+        createdAt:
+            map['created_at'] != null
+                ? DateTime.parse(map['created_at'])
+                : null,
+        updatedAt:
+            map['updated_at'] != null
+                ? DateTime.parse(map['updated_at'])
+                : null,
+        deletedAt:
+            map['deleted_at'] != null
+                ? DateTime.parse(map['deleted_at'])
+                : null,
+        incrementalId: map['incremental_id'],
+        project: project,
+        businessName: map['business_name'],
+        businessOwner: map['business_owner'],
+        businessAddress: map['business_address'],
+        buildingStatus: BuildingStatus.values.firstWhere(
+          (e) => e.key == map['building_status'],
+        ),
+        description: map['description'],
+        sector: Sector.values.firstWhere((e) => e.key == map['sector']),
+        note: map['note'],
+        isLocked: map['is_locked'] == 1,
+        user:
+            user ??
+            User(
+              id: '',
+              email: '',
+              firstname: '',
+              organization: null,
+              roles: [],
+            ),
+      );
+    } catch (e) {
+      throw Exception('Failed to parse TagData from local db: $e');
     }
   }
 

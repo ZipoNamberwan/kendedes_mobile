@@ -31,7 +31,7 @@ class BrowseRepository {
       maxLat,
       maxLng,
     );
-    return response.map((data) => TagData.fromJson(data)).toList();
+    return response.map((data) => TagData.fromServerJson(data)).toList();
   }
 
   Future<Map<String, dynamic>> getBusinessesBySls(String slsId) async {

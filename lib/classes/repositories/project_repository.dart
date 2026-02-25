@@ -36,7 +36,7 @@ class ProjectRepository {
       final tagList = projectJson['businesses'] as List<dynamic>? ?? [];
       tags.addAll(
         tagList
-            .map((tagJson) => TagData.fromJson(tagJson as Map<String, dynamic>))
+            .map((tagJson) => TagData.fromServerJson(tagJson as Map<String, dynamic>))
             .toList(),
       );
     }

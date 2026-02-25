@@ -6,8 +6,8 @@ import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/login_state.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
-import 'package:kendedes_mobile/pages/browse_page.dart';
-// import 'package:kendedes_mobile/pages/project_list_page.dart';
+// import 'package:kendedes_mobile/pages/browse_page.dart';
+import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -95,8 +95,8 @@ class _LoginPageState extends State<LoginPage> {
           // Navigate to the home page or dashboard
           Navigator.pushAndRemoveUntil(
             context,
-            // MaterialPageRoute(builder: (context) => const ProjectListPage()),
-            MaterialPageRoute(builder: (context) => const BrowsePage()),
+            MaterialPageRoute(builder: (context) => const ProjectListPage()),
+            // MaterialPageRoute(builder: (context) => const BrowsePage()),
             (route) => false,
           );
         } else if (state is LoginFailed) {

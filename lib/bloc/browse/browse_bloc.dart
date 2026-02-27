@@ -267,6 +267,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     });
 
     on<GetBusinessByArea>((event, emit) async {
+      final browseDbRepository = BrowseDbRepository();
+      final polygonDbRepository = PolygonDbRepository();
+      final currentUserId = state.data.currentUser?.id ?? '';
+
       await ApiServerHandler.run(
         action: () async {
           emit(
@@ -307,7 +311,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                     if (business.user != null)
                       business.user!.id: business.user!,
                 }.values.toList();
-            await BrowseDbRepository().insertUniqueUsers(uniqueUsers);
+            await browseDbRepository.insertUniqueUsers(uniqueUsers);
 
             // 3. Get unique business.project values from the fetched businesses and save to local DB if not already exist
             // Modify the user_id field of the project to be the current user's id before saving to local DB
@@ -320,27 +324,24 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                       interactionMode: InteractionMode.browse,
                     ),
                 }.values.toList();
-            await BrowseDbRepository().insertUniqueProjects(
+            await browseDbRepository.insertUniqueProjects(
               uniqueProjects,
-              state.data.currentUser?.id ?? '',
+              currentUserId,
             );
 
             // 4. Save the business data to local DB
-            await BrowseDbRepository().insertTagDataBatch(
+            await browseDbRepository.insertTagDataBatch(
               businesses,
-              state.data.currentUser?.id ?? '',
+              currentUserId,
             );
 
             // 5. Save the polygon to local DB and link it with the current project
             Sls slsWithPolygon = Sls.fromJson(response['sls']);
             Polygon updatedPolygon = slsWithPolygon.polygon!;
-            await PolygonDbRepository().savePolygonWithPoints(updatedPolygon);
+            await polygonDbRepository.savePolygonWithPoints(updatedPolygon);
             // Check if user-polygon pair already exists before adding
-            final pairAdded = await PolygonDbRepository()
-                .addUniqueUserPolygonPair(
-                  state.data.currentUser?.id ?? '',
-                  updatedPolygon.id,
-                );
+            final pairAdded = await polygonDbRepository
+                .addUniqueUserPolygonPair(currentUserId, updatedPolygon.id);
 
             // 6. Save SlsWithBusiness to local DB
             SlsWithBusiness slsWithBusiness = SlsWithBusiness(
@@ -349,7 +350,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               businessCount: businesses.length,
               user: state.data.currentUser!,
             );
-            final bool slsWithBusinessCreated = await BrowseDbRepository()
+            final bool slsWithBusinessCreated = await browseDbRepository
                 .createSlsWithBusiness(slsWithBusiness);
 
             // 7. Update businesses list in state, ensuring no duplicates
@@ -360,7 +361,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             // Add only new businesses
             updatedNearbyBusiness.addAll(
               businesses.where(
-                (business) => !existingIds.contains(business.remoteId),
+                (business) => existingIds.add(business.remoteId),
               ),
             );
 

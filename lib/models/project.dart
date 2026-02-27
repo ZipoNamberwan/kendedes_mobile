@@ -73,7 +73,7 @@ class Project {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toServerJson() {
     return {
       'id': id,
       'name': name,
@@ -82,6 +82,21 @@ class Project {
       'created_at': DateHelper.format(createdAt),
       'updated_at': DateHelper.format(updatedAt),
       'deleted_at': DateHelper.format(deletedAt),
+      'interaction_mode': interactionMode.key,
+    };
+  }
+
+  Map<String, dynamic> toLocalDbJson() {
+    return {
+      'id': id,
+      'remote_id': remoteId,
+      'name': name,
+      'description': description,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
+      'type': type.key,
+      'user_id': user?.id,
       'interaction_mode': interactionMode.key,
     };
   }

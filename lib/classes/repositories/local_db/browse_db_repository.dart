@@ -96,6 +96,9 @@ class BrowseDbRepository {
     int chunkSize = 500,
   }) async {
     final existingProjects = await getProjectsByUser(userId);
+    final existingProjectsByRemoteId = {
+      for (final project in existingProjects) project.remoteId: project,
+    };
 
     for (int i = 0; i < tags.length; i += chunkSize) {
       final chunk = tags.sublist(
@@ -108,9 +111,13 @@ class BrowseDbRepository {
             final tagJson = Map<String, dynamic>.from(tag.toLocalDbJson());
 
             // Find existing project that matches tag's project_id with remote_id
-            final matchingProject = existingProjects.firstWhere(
-              (project) => project.remoteId == tagJson['project_id'],
-            );
+            final matchingProject =
+                existingProjectsByRemoteId[tagJson['project_id']];
+            if (matchingProject == null) {
+              throw StateError(
+                'Project not found for remote_id=${tagJson['project_id']}',
+              );
+            }
             // Replace project_id with existing project's local id
             tagJson['project_id'] = matchingProject.id;
 
@@ -124,18 +131,7 @@ class BrowseDbRepository {
   Future<void> insertProjectBatch(List<Project> projects) async {
     final dataList =
         projects.map((project) {
-          return {
-            'id': project.id,
-            'remote_id': project.remoteId,
-            'name': project.name,
-            'description': project.description,
-            'created_at': project.createdAt.toIso8601String(),
-            'updated_at': project.updatedAt.toIso8601String(),
-            'deleted_at': project.deletedAt?.toIso8601String(),
-            'type': project.type.key,
-            'user_id': project.user?.id,
-            'interaction_mode': project.interactionMode.key,
-          };
+          return project.toLocalDbJson();
         }).toList();
 
     await _browseDbProvider.insertProjectsBatch(dataList);
@@ -146,6 +142,8 @@ class BrowseDbRepository {
     String userId,
   ) async {
     final existingProjects = await getProjectsByUser(userId);
+    final existingRemoteIds =
+        existingProjects.map((project) => project.remoteId).toSet();
 
     final newProjects =
         projects
@@ -153,17 +151,11 @@ class BrowseDbRepository {
               (project) =>
                   project.copyWith(id: _uuid.v4(), remoteId: project.remoteId),
             )
-            .where((project) {
-              final match =
-                  !existingProjects.any(
-                    (existing) => existing.remoteId == project.remoteId,
-                  );
-              return match;
-            })
+            .where((project) => !existingRemoteIds.contains(project.remoteId))
             .toList();
 
     if (newProjects.isNotEmpty) {
-      await insertProjectBatch(newProjects.map((project) => project).toList());
+      await insertProjectBatch(newProjects);
     }
   }
 

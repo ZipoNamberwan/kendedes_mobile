@@ -146,7 +146,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         await ApiServerHandler.run(
           action: () async {
             emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
-            await ProjectRepository().createProject(newProject.toJson());
+            await ProjectRepository().createProject(newProject.toServerJson());
             await ProjectDbRepository().insert(newProject);
             emit(
               ProjectAddedSuccess(
@@ -231,7 +231,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
             await ProjectRepository().updateProject(
               updatedProject.id,
-              updatedProject.toJson(),
+              updatedProject.toServerJson(),
             );
             final updatedProjects =
                 state.data.projects.map((project) {

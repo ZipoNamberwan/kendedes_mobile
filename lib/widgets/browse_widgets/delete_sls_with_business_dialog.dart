@@ -147,28 +147,6 @@ class DeleteSlsWithBusinessDialog extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.tag,
-                              size: 14,
-                              color: Colors.grey.shade500,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                'Kode SLS: ${_valueOrDash(slsWithBusiness.sls.longCode)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
@@ -190,7 +168,17 @@ class DeleteSlsWithBusinessDialog extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Kode SLS: ${_valueOrDash(slsWithBusiness.sls.longCode)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
                         Text(
                           'Kab: ${_valueOrDash(regencyName)}',
                           maxLines: 1,

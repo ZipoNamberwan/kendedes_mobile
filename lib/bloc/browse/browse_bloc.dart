@@ -26,60 +26,70 @@ import 'package:uuid/uuid.dart';
 class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
   final Uuid _uuid = const Uuid();
 
-  BrowseBloc() : super(InitializingStarted()) {
+  BrowseBloc() : super(InitializingStarted(message: 'Memuat data...')) {
     on<Initialize>((event, emit) async {
-      final User currentUser = AuthRepository().getUser();
+      try {
+        final User currentUser = AuthRepository().getUser();
 
-      // 1. Init area data if not exist (regency and subdistrict only, village and sls will be fetched when user select the regency and subdistrict)
-      final bool isRegenciesEmpty = await AreaDbRepository().isRegenciesEmpty();
-      final bool isSubdistrictsEmpty =
-          await AreaDbRepository().isSubdistrictsEmpty();
-      if (isRegenciesEmpty || isSubdistrictsEmpty) {
-        await AreaDbRepository().insertBatchRegencies(
-          Regency.getPredefinedRegencies(),
+        // 1. Init area data if not exist (regency and subdistrict only, village and sls will be fetched when user select the regency and subdistrict)
+        final bool isRegenciesEmpty =
+            await AreaDbRepository().isRegenciesEmpty();
+        final bool isSubdistrictsEmpty =
+            await AreaDbRepository().isSubdistrictsEmpty();
+        if (isRegenciesEmpty || isSubdistrictsEmpty) {
+          await AreaDbRepository().insertBatchRegencies(
+            Regency.getPredefinedRegencies(),
+          );
+          await AreaDbRepository().insertBatchSubdistricts(
+            Subdistrict.getPredefinedSubdistricts(),
+          );
+        }
+        final regencies = await AreaDbRepository().getRegencies();
+
+        // 2. Init browse project list
+        List<Project> browseProjectList = [];
+        browseProjectList = await BrowseDbRepository().getProjectsByUser(
+          currentUser.id,
         );
-        await AreaDbRepository().insertBatchSubdistricts(
-          Subdistrict.getPredefinedSubdistricts(),
+
+        // 3. Init existing polygons
+        final polygons = await PolygonDbRepository().getPolygonsByUser(
+          currentUser.id,
         );
-      }
-      final regencies = await AreaDbRepository().getRegencies();
 
-      // 2. Init browse project list
-      List<Project> browseProjectList = [];
-      browseProjectList = await BrowseDbRepository().getProjectsByUser(
-        currentUser.id,
-      );
+        // 4. Init SLS with business list
+        List<SlsWithBusiness> slsWithBusinessList = await BrowseDbRepository()
+            .getSlsWithBusinessList(userId: currentUser.id);
 
-      // 3. Init existing polygons
-      final polygons = await PolygonDbRepository().getPolygonsByUser(
-        currentUser.id,
-      );
+        // 5. Init businesses list from the local DB based on the browse project id
+        List<TagData> businesses = [];
+        if (browseProjectList.isNotEmpty) {
+          businesses = await BrowseDbRepository().getBusinessByBrowseProjects(
+            browseProjectList.map((project) => project.id).toList(),
+          );
+        }
 
-      // 4. Init SLS with business list
-      List<SlsWithBusiness> slsWithBusinessList = await BrowseDbRepository()
-          .getSlsWithBusinessList(userId: currentUser.id);
-
-      // 5. Init businesses list from the local DB based on the browse project id
-      List<TagData> businesses = [];
-      if (browseProjectList.isNotEmpty) {
-        businesses = await BrowseDbRepository().getBusinessByBrowseProjects(
-          browseProjectList.map((project) => project.id).toList(),
-        );
-      }
-
-      emit(
-        InitializingSuccess(
-          data: state.data.copyWith(
-            currentUser: currentUser,
-            regencies: regencies,
-            polygons: polygons,
-            slsWithBusinessList: slsWithBusinessList,
-            businesses: businesses,
-            filteredBusinesses:
-                businesses, // Initialize filteredBusinesses with the full list of businesses
+        emit(
+          InitializingSuccess(
+            data: state.data.copyWith(
+              currentUser: currentUser,
+              regencies: regencies,
+              polygons: polygons,
+              slsWithBusinessList: slsWithBusinessList,
+              businesses: businesses,
+              filteredBusinesses:
+                  businesses, // Initialize filteredBusinesses with the full list of businesses
+            ),
           ),
-        ),
-      );
+        );
+      } catch (e) {
+        emit(
+          InitializingError(
+            errorMessage: e.toString(),
+            data: state.data.copyWith(),
+          ),
+        );
+      }
     });
 
     on<GetCurrentLocation>((event, emit) async {
@@ -330,7 +340,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             );
 
             // 4. Save the business data to local DB
-            await browseDbRepository.insertTagDataBatch(
+            await browseDbRepository.insertBusinessesDataBatch(
               businesses,
               currentUserId,
             );

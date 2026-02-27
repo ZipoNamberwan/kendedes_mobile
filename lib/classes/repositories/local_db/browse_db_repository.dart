@@ -90,41 +90,68 @@ class BrowseDbRepository {
     return items;
   }
 
-  Future<void> insertTagDataBatch(
-    List<TagData> tags,
+  Future<void> insertBusinessesDataBatch(
+    List<TagData> businesses,
     String userId, {
     int chunkSize = 500,
   }) async {
+    if (businesses.isEmpty) return;
+
     final existingProjects = await getProjectsByUser(userId);
     final existingProjectsByRemoteId = {
       for (final project in existingProjects) project.remoteId: project,
     };
+    final existingBusiness =
+        existingProjects.isEmpty
+            ? <TagData>[]
+            : await getBusinessByBrowseProjects(
+              existingProjects.map((project) => project.id).toList(),
+            );
+    final existingBusinessRemoteIds =
+        existingBusiness
+            .map((business) => business.remoteId)
+            .where((remoteId) => remoteId.isNotEmpty)
+            .toSet();
 
-    for (int i = 0; i < tags.length; i += chunkSize) {
-      final chunk = tags.sublist(
+    for (int i = 0; i < businesses.length; i += chunkSize) {
+      final chunk = businesses.sublist(
         i,
-        i + chunkSize > tags.length ? tags.length : i + chunkSize,
+        i + chunkSize > businesses.length ? businesses.length : i + chunkSize,
       );
 
-      final mappedChunk =
-          chunk.map((tag) {
-            final tagJson = Map<String, dynamic>.from(tag.toLocalDbJson());
+      final newBusinesses =
+          chunk.where((business) {
+            if (existingBusinessRemoteIds.contains(business.remoteId)) {
+              return false;
+            }
 
-            // Find existing project that matches tag's project_id with remote_id
+            existingBusinessRemoteIds.add(business.remoteId);
+            return true;
+          }).toList();
+
+      if (newBusinesses.isEmpty) {
+        continue;
+      }
+
+      final mappedChunk =
+          newBusinesses.map((business) {
+            final businessJson = Map<String, dynamic>.from(business.toLocalDbJson());
+
+            // Find existing project that matches business's project_id with remote_id
             final matchingProject =
-                existingProjectsByRemoteId[tagJson['project_id']];
+                existingProjectsByRemoteId[businessJson['project_id']];
             if (matchingProject == null) {
               throw StateError(
-                'Project not found for remote_id=${tagJson['project_id']}',
+                'Project not found for remote_id=${businessJson['project_id']}',
               );
             }
             // Replace project_id with existing project's local id
-            tagJson['project_id'] = matchingProject.id;
+            businessJson['project_id'] = matchingProject.id;
 
-            return tagJson;
+            return businessJson;
           }).toList();
 
-      await _browseDbProvider.insertTagDataBatch(mappedChunk);
+      await _browseDbProvider.insertBusinessesDataBatch(mappedChunk);
     }
   }
 
@@ -220,7 +247,7 @@ class BrowseDbRepository {
     final projectMaps = await _browseDbProvider.getAllProjects();
     final userMaps = await _browseDbProvider.getAllUsers();
 
-    // return list of tag data with business details
+    // return list of business data with business details
     return businessMaps.map((map) {
       final projectMap = projectMaps.firstWhere(
         (p) => p['id'] == map['project_id'],
@@ -232,12 +259,12 @@ class BrowseDbRepository {
         orElse: () => {},
       );
 
-      final tag = TagData.fromLocalDbJson(
+      final business = TagData.fromLocalDbJson(
         map,
         User.fromJson(userMap),
         Project.fromLocalDbJson(projectMap),
       );
-      return tag;
+      return business;
     }).toList();
   }
 }

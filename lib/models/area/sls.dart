@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'package:kendedes_mobile/models/area/regency.dart';
+import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:latlong2/latlong.dart';
@@ -49,6 +51,77 @@ class Sls extends Equatable {
                         .toList(),
               )
               : null,
+    );
+  }
+
+  factory Sls.fromSameLevelServerJson(
+    Map<String, dynamic> slsJson,
+    Map<String, dynamic> villageJson,
+    Map<String, dynamic> subdistrictJson,
+    Map<String, dynamic> regencyJson,
+  ) {
+    try {
+      return Sls(
+        id: slsJson['id'].toString(),
+        shortCode: slsJson['short_code'] as String,
+        longCode: slsJson['long_code'] as String,
+        name: slsJson['name'] as String,
+        villageId: slsJson['village_id'] as String,
+        village: Village(
+          id: villageJson['id'].toString(),
+          shortCode: villageJson['short_code'] as String,
+          longCode: villageJson['long_code'] as String,
+          name: villageJson['name'] as String,
+          subdistrictId: villageJson['subdistrict_id'] as String,
+          subdistrict: Subdistrict(
+            id: subdistrictJson['id'].toString(),
+            shortCode: subdistrictJson['short_code'] as String,
+            longCode: subdistrictJson['long_code'] as String,
+            name: subdistrictJson['name'] as String,
+            regencyId: subdistrictJson['regency_id'] as String,
+            regency: Regency(
+              id: regencyJson['id'].toString(),
+              shortCode: regencyJson['short_code'] as String,
+              longCode: regencyJson['long_code'] as String,
+              name: regencyJson['name'] as String,
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      throw FormatException('Failed to parse Sls from same-level JSON: $e');
+    }
+  }
+
+  static Sls? fromLocalDbJson(Map<String, dynamic> json) {
+    if (json['sls_id'] == null) return null;
+
+    return Sls(
+      id: json['sls_id'],
+      shortCode: json['sls_short_code'],
+      longCode: json['sls_long_code'],
+      name: json['sls_name'],
+      villageId: json['village_id'],
+      village: Village(
+        id: json['village_id'],
+        shortCode: json['village_short_code'],
+        longCode: json['village_long_code'],
+        name: json['village_name'],
+        subdistrictId: json['subdistrict_id'],
+        subdistrict: Subdistrict(
+          id: json['subdistrict_id'],
+          shortCode: json['subdistrict_short_code'],
+          longCode: json['subdistrict_long_code'],
+          name: json['subdistrict_name'],
+          regencyId: json['regency_id'],
+          regency: Regency(
+            id: json['regency_id'],
+            shortCode: json['regency_short_code'],
+            longCode: json['regency_long_code'],
+            name: json['regency_name'],
+          ),
+        ),
+      ),
     );
   }
 

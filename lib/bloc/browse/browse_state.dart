@@ -23,7 +23,9 @@ class BrowseState extends Equatable {
 }
 
 class InitializingStarted extends BrowseState {
-  InitializingStarted()
+  final String message;
+
+  InitializingStarted({required this.message})
     : super(
         data: BrowseStateData(
           currentZoom: MapConfig.initialZoom,

@@ -77,7 +77,7 @@ class BrowseDbProvider {
     );
   }
 
-  Future<void> insertTagDataBatch(List<Map<String, dynamic>> dataList) async {
+  Future<void> insertBusinessesDataBatch(List<Map<String, dynamic>> dataList) async {
     final db = _dbProvider.db;
 
     await db.transaction((txn) async {

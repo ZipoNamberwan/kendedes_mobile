@@ -80,11 +80,12 @@ class MarkerBrowseDialog extends StatelessWidget {
                       'Posisi',
                       '${tagData.positionLat.toStringAsFixed(6)}, ${tagData.positionLng.toStringAsFixed(6)}',
                     ),
+                    if (_hasAreaInfo(tagData))
+                      _buildInfoRow('Wilayah', _buildAreaInfo(tagData)),
                     if (tagData.user != null)
                       _buildInfoRow('Ditagging oleh', tagData.user!.firstname),
                     if (tagData.survey != null)
                       _buildInfoRow('Survei', tagData.survey!.name),
-                    
                   ],
                 ),
               ),
@@ -93,6 +94,30 @@ class MarkerBrowseDialog extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _buildAreaInfo(TagData tagData) {
+    final sls = tagData.sls;
+    if (sls == null) return '-';
+
+    final regencyName = sls.village?.subdistrict?.regency?.name ?? '';
+    final subdistrictName = sls.village?.subdistrict?.name ?? '';
+    final villageName = sls.village?.name ?? '';
+    final slsName = sls.name;
+    final slsLongCode = sls.longCode;
+
+    return '[$slsLongCode] $regencyName, $subdistrictName, $villageName, $slsName';
+  }
+
+  bool _hasAreaInfo(TagData tagData) {
+    final sls = tagData.sls;
+    if (sls == null) return false;
+
+    return sls.longCode.isNotEmpty ||
+        sls.name.isNotEmpty ||
+        (sls.village?.name.isNotEmpty ?? false) ||
+        (sls.village?.subdistrict?.name.isNotEmpty ?? false) ||
+        (sls.village?.subdistrict?.regency?.name.isNotEmpty ?? false);
   }
 
   Widget _buildInfoRow(String label, String value) {

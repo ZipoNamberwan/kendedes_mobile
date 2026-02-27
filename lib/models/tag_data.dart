@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/survey.dart';
 import 'package:kendedes_mobile/models/user.dart';
@@ -35,6 +36,9 @@ class TagData {
   // ID in server
   final String remoteId;
 
+  // Attribute Area
+  final Sls? sls;
+
   TagData({
     required this.id,
     required this.positionLat,
@@ -65,6 +69,9 @@ class TagData {
 
     // ID in server
     required this.remoteId,
+
+    // Area
+    this.sls,
   });
 
   TagData copyWith({
@@ -93,6 +100,7 @@ class TagData {
     Survey? survey,
     bool? isLocked,
     String? remoteId,
+    Sls? sls,
   }) {
     return TagData(
       id: id ?? this.id,
@@ -120,6 +128,7 @@ class TagData {
       survey: survey ?? this.survey,
       isLocked: isLocked ?? this.isLocked,
       remoteId: remoteId ?? this.remoteId,
+      sls: sls ?? this.sls,
     );
   }
 
@@ -244,6 +253,24 @@ class TagData {
       'note': note,
       'user_id': user?.id,
       'is_locked': isLocked ? 1 : 0,
+
+      // save area to local db
+      'sls_id': sls?.id,
+      'sls_short_code': sls?.shortCode,
+      'sls_long_code': sls?.longCode,
+      'sls_name': sls?.name,
+      'village_id': sls?.village?.id,
+      'village_short_code': sls?.village?.shortCode,
+      'village_long_code': sls?.village?.longCode,
+      'village_name': sls?.village?.name,
+      'subdistrict_id': sls?.village?.subdistrict?.id,
+      'subdistrict_short_code': sls?.village?.subdistrict?.shortCode,
+      'subdistrict_long_code': sls?.village?.subdistrict?.longCode,
+      'subdistrict_name': sls?.village?.subdistrict?.name,
+      'regency_id': sls?.village?.subdistrict?.regency?.id,
+      'regency_short_code': sls?.village?.subdistrict?.regency?.shortCode,
+      'regency_long_code': sls?.village?.subdistrict?.regency?.longCode,
+      'regency_name': sls?.village?.subdistrict?.regency?.name,
     };
   }
 
@@ -301,6 +328,17 @@ class TagData {
           json['survey'] != null
               ? Survey.fromJson(json['survey'] as Map<String, dynamic>)
               : null,
+
+      // area from server json is nested in sls
+      sls:
+          json['sls'] != null
+              ? Sls.fromSameLevelServerJson(
+                json['sls'] as Map<String, dynamic>,
+                json['village'] as Map<String, dynamic>,
+                json['subdistrict'] as Map<String, dynamic>,
+                json['regency'] as Map<String, dynamic>,
+              )
+              : null,
     );
   }
 
@@ -342,6 +380,9 @@ class TagData {
       user:
           user ??
           User(id: '', email: '', firstname: '', organization: null, roles: []),
+
+      // area from from local db
+      sls: Sls.fromLocalDbJson(map),
     );
   }
 

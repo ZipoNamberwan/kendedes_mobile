@@ -119,6 +119,22 @@ class LocalDbProvider {
       note TEXT,
       user_id TEXT,
       remote_id TEXT,
+      sls_id TEXT,
+      sls_short_code TEXT,
+      sls_long_code TEXT,
+      sls_name TEXT,
+      village_id TEXT,
+      village_short_code TEXT,
+      village_long_code TEXT,
+      village_name TEXT,
+      subdistrict_id TEXT,
+      subdistrict_short_code TEXT,
+      subdistrict_long_code TEXT,
+      subdistrict_name TEXT,
+      regency_id TEXT,
+      regency_short_code TEXT,
+      regency_long_code TEXT,
+      regency_name TEXT,
       FOREIGN KEY(project_id) REFERENCES projects(id),
       FOREIGN KEY(user_id) REFERENCES users(id)
     )
@@ -355,8 +371,71 @@ class LocalDbProvider {
       ''');
 
       await db.execute('''
-        ALTER TABLE tag_data 
-        ADD COLUMN remote_id TEXT;
+        ALTER TABLE tag_data ADD COLUMN remote_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN sls_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN sls_short_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN sls_long_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN sls_name TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN village_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN village_short_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN village_long_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN village_name TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN subdistrict_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN subdistrict_short_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN subdistrict_long_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN subdistrict_name TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN regency_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN regency_short_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN regency_long_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN regency_name TEXT;
       ''');
 
       await db.execute('''

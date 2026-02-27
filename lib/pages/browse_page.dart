@@ -32,6 +32,8 @@ import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/map_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/polygon_sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/zoom_level_notification_dialog.dart';
@@ -1002,6 +1004,21 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
         }
       },
       builder: (context, state) {
+        if (state is InitializingStarted) {
+          return LoadingScaffold(
+            title: state.message,
+            subtitle: 'Mohon tunggu sebentar',
+          );
+        } else if (state is InitializingError) {
+          return ErrorScaffold(
+            title: 'Gagal Memuat Peta',
+            errorMessage: state.errorMessage,
+            retryButtonText: 'Coba Lagi',
+            onRetry: () {
+              _browseBloc.add(Initialize());
+            },
+          );
+        }
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
           body: SafeArea(

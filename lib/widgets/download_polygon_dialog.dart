@@ -10,8 +10,13 @@ import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 
 class DownloadPolygonDialog extends StatefulWidget {
-  final String projectId;
-  const DownloadPolygonDialog({super.key, required this.projectId});
+  final PolygonPairType pairType;
+  final String dataId;
+  const DownloadPolygonDialog({
+    super.key,
+    required this.dataId,
+    required this.pairType,
+  });
 
   @override
   State<DownloadPolygonDialog> createState() => _DownloadPolygonDialogState();
@@ -559,7 +564,8 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                             : () {
                               _polygonBloc.add(
                                 DownloadInstallPolygon(
-                                  projectId: widget.projectId,
+                                  pairType: widget.pairType,
+                                  id: widget.dataId,
                                 ),
                               );
                             },

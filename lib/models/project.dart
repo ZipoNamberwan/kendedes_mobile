@@ -50,6 +50,29 @@ class Project {
     );
   }
 
+  factory Project.fromLocalDbJson(Map<String, dynamic> json) {
+    return Project(
+      id: json['id'],
+      remoteId: json['remote_id'],
+      name: json['name'],
+      description: json['description'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      deletedAt:
+          json['deleted_at'] != null
+              ? DateTime.parse(json['deleted_at'])
+              : null,
+      type: ProjectType.fromKey(json['type']) ?? ProjectType.supplementMobile,
+      user:
+          json['user'] != null
+              ? User.fromJson(json['user'] as Map<String, dynamic>)
+              : null,
+      interactionMode:
+          InteractionMode.fromKey(json['interaction_mode']) ??
+          InteractionMode.browse,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -114,7 +137,7 @@ class ProjectType {
   static const jenggala = ProjectType._('jenggala', 'Jenggala');
   static const survey = ProjectType._('survey', 'Survei BPS');
   static const other = ProjectType._('other', 'Lainnya');
-  static const browse = ProjectType._('browse', 'Browse Mode');
+  // static const browse = ProjectType._('browse', 'Browse Mode');
 
   static const values = [
     marketSwmaps,

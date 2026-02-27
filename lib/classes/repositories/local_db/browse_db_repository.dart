@@ -1,10 +1,10 @@
 import 'package:kendedes_mobile/classes/providers/local_db/browse_db_provider.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository.dart';
-import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
+import 'package:uuid/uuid.dart';
 
 class BrowseDbRepository {
   static final BrowseDbRepository _instance = BrowseDbRepository._internal();
@@ -15,6 +15,7 @@ class BrowseDbRepository {
   late BrowseDbProvider _browseDbProvider;
   late UserDbRepository _userDbRepository;
   bool _initialized = false;
+  final Uuid _uuid = const Uuid();
 
   Future<void> init() async {
     if (_initialized) return;
@@ -26,53 +27,33 @@ class BrowseDbRepository {
     await _userDbRepository.init();
   }
 
-  Future<bool> hasBrowseProject(String userId) async {
-    return await _browseDbProvider.hasBrowseProject(userId);
-  }
+  Future<List<Project>> getProjectsByUser(String userId) async {
+    final user = await _userDbRepository.getById(userId);
+    final userJson = user?.toJson();
 
-  Future<void> saveBrowseProject({
-    required String projectId,
-    required String userId,
-    String name = 'Browse Mode',
-    String? description,
-  }) async {
-    final now = DateTime.now();
-
-    await _browseDbProvider.insertBrowseProject({
-      'id': projectId,
-      'name': name,
-      'description': description,
-      'created_at': now.toIso8601String(),
-      'updated_at': now.toIso8601String(),
-      'deleted_at': null,
-      'type': ProjectType.browse.key,
-      'user_id': userId,
-      'interaction_mode': InteractionMode.browse.key,
-    });
-  }
-
-  Future<Project?> getBrowseProject(String userId) async {
-    final map = await _browseDbProvider.getBrowseProject(userId);
-    if (map == null) return null;
-
-    return Project(
-      id: map['id'],
-      remoteId: map['remote_id'],
-      name: map['name'],
-      description: map['description'],
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: DateTime.parse(map['updated_at']),
-      deletedAt:
-          map['deleted_at'] != null ? DateTime.parse(map['deleted_at']) : null,
-      type: ProjectType.browse,
-      user: null,
-      interactionMode: InteractionMode.browse,
-    );
+    final maps = await _browseDbProvider.getProjectsByUser(userId);
+    return maps.map((map) {
+      final mutableMap = Map<String, dynamic>.from(map);
+      if (userJson != null) {
+        mutableMap['user'] = userJson;
+      }
+      return Project.fromLocalDbJson(mutableMap);
+    }).toList();
   }
 
   // sls_with_business CRUD
-  Future<void> createSlsWithBusiness(SlsWithBusiness item) async {
-    await _browseDbProvider.createSlsWithBusiness(item.toJson());
+  Future<bool> createSlsWithBusiness(SlsWithBusiness item) async {
+    final existingSlsWithBusinessList = await getSlsWithBusinessList(
+      userId: item.user.id,
+    );
+
+    final pairExists = existingSlsWithBusinessList.any(
+      (existing) => existing.sls.id == item.sls.id,
+    );
+    if (!pairExists) {
+      await _browseDbProvider.createSlsWithBusiness(item.toJson());
+    }
+    return !pairExists;
   }
 
   Future<void> updateSlsWithBusiness(SlsWithBusiness item) async {
@@ -110,10 +91,12 @@ class BrowseDbRepository {
   }
 
   Future<void> insertTagDataBatch(
-    String? browseProjectId,
-    List<TagData> tags, {
+    List<TagData> tags,
+    String userId, {
     int chunkSize = 500,
   }) async {
+    final existingProjects = await getProjectsByUser(userId);
+
     for (int i = 0; i < tags.length; i += chunkSize) {
       final chunk = tags.sublist(
         i,
@@ -122,31 +105,16 @@ class BrowseDbRepository {
 
       final mappedChunk =
           chunk.map((tag) {
-            return {
-              'id': tag.id,
-              'position_lat': tag.positionLat,
-              'position_lng': tag.positionLng,
-              'has_changed': tag.hasChanged ? 1 : 0,
-              'has_sent_to_server': tag.hasSentToServer ? 1 : 0,
-              'tag_type': tag.type.name,
-              'initial_position_lat': tag.initialPositionLat,
-              'initial_position_lng': tag.initialPositionLng,
-              'is_deleted': tag.isDeleted ? 1 : 0,
-              'created_at': tag.createdAt?.toIso8601String(),
-              'updated_at': tag.updatedAt?.toIso8601String(),
-              'deleted_at': tag.deletedAt?.toIso8601String(),
-              'incremental_id': tag.incrementalId,
-              'project_id': tag.project.id,
-              'business_name': tag.businessName,
-              'business_owner': tag.businessOwner,
-              'business_address': tag.businessAddress,
-              'building_status': tag.buildingStatus?.key,
-              'description': tag.description,
-              'sector': tag.sector?.key,
-              'note': tag.note,
-              'user_id': tag.user?.id,
-              'is_locked': tag.isLocked ? 1 : 0,
-            };
+            final tagJson = Map<String, dynamic>.from(tag.toLocalDbJson());
+
+            // Find existing project that matches tag's project_id with remote_id
+            final matchingProject = existingProjects.firstWhere(
+              (project) => project.remoteId == tagJson['project_id'],
+            );
+            // Replace project_id with existing project's local id
+            tagJson['project_id'] = matchingProject.id;
+
+            return tagJson;
           }).toList();
 
       await _browseDbProvider.insertTagDataBatch(mappedChunk);
@@ -158,6 +126,7 @@ class BrowseDbRepository {
         projects.map((project) {
           return {
             'id': project.id,
+            'remote_id': project.remoteId,
             'name': project.name,
             'description': project.description,
             'created_at': project.createdAt.toIso8601String(),
@@ -165,16 +134,43 @@ class BrowseDbRepository {
             'deleted_at': project.deletedAt?.toIso8601String(),
             'type': project.type.key,
             'user_id': project.user?.id,
+            'interaction_mode': project.interactionMode.key,
           };
         }).toList();
 
     await _browseDbProvider.insertProjectsBatch(dataList);
   }
 
+  Future<void> insertUniqueProjects(
+    List<Project> projects,
+    String userId,
+  ) async {
+    final existingProjects = await getProjectsByUser(userId);
+
+    final newProjects =
+        projects
+            .map(
+              (project) =>
+                  project.copyWith(id: _uuid.v4(), remoteId: project.remoteId),
+            )
+            .where((project) {
+              final match =
+                  !existingProjects.any(
+                    (existing) => existing.remoteId == project.remoteId,
+                  );
+              return match;
+            })
+            .toList();
+
+    if (newProjects.isNotEmpty) {
+      await insertProjectBatch(newProjects.map((project) => project).toList());
+    }
+  }
+
   Future<List<Project>> getAllProjects() async {
     final maps = await _browseDbProvider.getAllProjects();
     return maps.map((map) {
-      return Project.fromServerJson(map);
+      return Project.fromLocalDbJson(map);
     }).toList();
   }
 
@@ -207,9 +203,26 @@ class BrowseDbRepository {
     }
   }
 
-  Future<List<TagData>> getBusinessByBrowseProjectId(String projectId) async {
-    final businessMaps = await _browseDbProvider.getBusinessByBrowseProjectId(
-      projectId,
+  Future<void> insertUniqueUsers(List<User> users) async {
+    final existingUsers = await getAllUsers();
+
+    final newUsers =
+        users
+            .where(
+              (user) =>
+                  !existingUsers.any((existing) => existing.id == user.id),
+            )
+            .toList();
+    if (newUsers.isNotEmpty) {
+      await insertUsersBatch(newUsers.map((user) => user).toList());
+    }
+  }
+
+  Future<List<TagData>> getBusinessByBrowseProjects(
+    List<String> projectIds,
+  ) async {
+    final businessMaps = await _browseDbProvider.getBusinessByBrowseProjects(
+      projectIds,
     );
 
     final projectMaps = await _browseDbProvider.getAllProjects();
@@ -227,54 +240,10 @@ class BrowseDbRepository {
         orElse: () => {},
       );
 
-      final tag = TagData(
-        id: map['id'] as String,
-        remoteId: map['id'] as String,
-        positionLat: map['position_lat'],
-        positionLng: map['position_lng'],
-        hasChanged: false,
-        hasSentToServer: true,
-        isLocked: map['is_locked'] == 1,
-        type: TagType.auto,
-        initialPositionLat: map['position_lat'],
-        initialPositionLng: map['position_lng'],
-        isDeleted: map['deleted_at'] != null,
-        createdAt:
-            map['created_at'] != null
-                ? DateTime.parse(map['created_at'] as String)
-                : null,
-        updatedAt:
-            map['updated_at'] != null
-                ? DateTime.parse(map['updated_at'] as String)
-                : null,
-        deletedAt:
-            map['deleted_at'] != null
-                ? DateTime.parse(map['deleted_at'] as String)
-                : null,
-        incrementalId: 1,
-        project: Project.fromServerJson(projectMap),
-        businessName: map['business_name'] as String,
-        businessOwner: map['business_owner'] as String?,
-        businessAddress: map['business_address'] as String?,
-        buildingStatus:
-            map['building_status'] != null
-                ? BuildingStatus.fromKey(
-                  map['building_status'].toString().toLowerCase().replaceAll(
-                    ' ',
-                    '_',
-                  ),
-                )
-                : null,
-        description: map['description'] as String,
-        sector:
-            (() {
-              final sectorStr = map['sector']?.toString();
-              return sectorStr != null && sectorStr.isNotEmpty
-                  ? Sector.fromKey(sectorStr[0].toUpperCase())
-                  : null;
-            })(),
-        note: map['note'] as String?,
-        user: userMap.isNotEmpty ? User.fromJson(userMap) : null,
+      final tag = TagData.fromLocalDbJson(
+        map,
+        User.fromJson(userMap),
+        Project.fromLocalDbJson(projectMap),
       );
       return tag;
     }).toList();

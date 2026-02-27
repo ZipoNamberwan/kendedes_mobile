@@ -27,27 +27,14 @@ class BrowseDbProvider {
     );
   }
 
-  Future<bool> hasBrowseProject(String userId) async {
-    final result = await _dbProvider.db.query(
-      'projects',
-      columns: ['id'],
-      where: 'user_id = ? AND interaction_mode = ?',
-      whereArgs: [userId, InteractionMode.browse.key],
-      limit: 1,
-    );
-
-    return result.isNotEmpty;
-  }
-
-  Future<Map<String, dynamic>?> getBrowseProject(String userId) async {
+  Future<List<Map<String, dynamic>>> getProjectsByUser(String userId) async {
     final result = await _dbProvider.db.query(
       'projects',
       where: 'user_id = ? AND interaction_mode = ?',
       whereArgs: [userId, InteractionMode.browse.key],
-      limit: 1,
     );
 
-    return result.isNotEmpty ? result.first : null;
+    return result;
   }
 
   // sls_with_business table operations
@@ -120,23 +107,23 @@ class BrowseDbProvider {
       );
     }
 
-    await batch.commit(
-      noResult: true,
-    ); // Set `noResult` to true for faster insert
+    await batch.commit(noResult: true);
   }
 
   Future<List<Map<String, dynamic>>> getAllProjects() async {
     return await _dbProvider.db.query('projects');
   }
 
-  Future<List<Map<String, dynamic>>> getBusinessByBrowseProjectId(
-    String projectId,
+  Future<List<Map<String, dynamic>>> getBusinessByBrowseProjects(
+    List<String> projectIds,
   ) async {
-    return await _dbProvider.db.query(
+    final placeholders = List.filled(projectIds.length, '?').join(', ');
+    final result = await _dbProvider.db.query(
       'tag_data',
-      // where: 'project_id = ?',
-      // whereArgs: [projectId],
+      where: 'project_id IN ($placeholders)',
+      whereArgs: projectIds,
     );
+    return result;
   }
 
   Future<List<Map<String, dynamic>>> getAllUsers() async {

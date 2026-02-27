@@ -249,64 +249,59 @@ class TagData {
 
   /// Parse from Server JSON
   factory TagData.fromServerJson(Map<String, dynamic> json) {
-    try {
-      return TagData(
-        id: json['id'] as String,
-        remoteId: json['id'] as String,
-        positionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
-        positionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
-        hasChanged: false,
-        hasSentToServer: true,
-        isLocked: json['is_locked'],
-        type: TagType.auto,
-        initialPositionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
-        initialPositionLng:
-            double.tryParse(json['longitude'].toString()) ?? 0.0,
-        isDeleted: json['deleted_at'] != null,
-        createdAt:
-            json['created_at'] != null
-                ? DateTime.parse(json['created_at'] as String)
-                : null,
-        updatedAt:
-            json['updated_at'] != null
-                ? DateTime.parse(json['updated_at'] as String)
-                : null,
-        deletedAt:
-            json['deleted_at'] != null
-                ? DateTime.parse(json['deleted_at'] as String)
-                : null,
-        incrementalId: 1,
-        project: Project.fromServerJson(json['project'] as Map<String, dynamic>),
-        businessName: json['name'] as String,
-        businessOwner: json['owner'] as String?,
-        businessAddress: json['address'] as String?,
-        buildingStatus:
-            json['status'] != null
-                ? BuildingStatus.fromKey(
-                  json['status'].toString().toLowerCase().replaceAll(' ', '_'),
-                )
-                : null,
-        description: json['description'] as String,
-        sector:
-            (() {
-              final sectorStr = json['sector']?.toString();
-              return sectorStr != null && sectorStr.isNotEmpty
-                  ? Sector.fromKey(sectorStr[0].toUpperCase())
-                  : null;
-            })(),
-        note: json['note'] as String?,
-        user:
-            json['user'] != null
-                ? User.fromJson(json['user'] as Map<String, dynamic>)
-                : null,
-        survey:
-            json['survey'] != null
-                ? Survey.fromJson(json['survey'] as Map<String, dynamic>)
-                : null,
-      );
-    } catch (e) {
-      throw Exception('Failed to parse TagData: $e');
-    }
+    return TagData(
+      id: json['id'] as String,
+      remoteId: json['id'] as String,
+      positionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
+      positionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
+      hasChanged: false,
+      hasSentToServer: true,
+      isLocked: json['is_locked'],
+      type: TagType.auto,
+      initialPositionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
+      initialPositionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
+      isDeleted: json['deleted_at'] != null,
+      createdAt:
+          json['created_at'] != null
+              ? DateTime.parse(json['created_at'] as String)
+              : null,
+      updatedAt:
+          json['updated_at'] != null
+              ? DateTime.parse(json['updated_at'] as String)
+              : null,
+      deletedAt:
+          json['deleted_at'] != null
+              ? DateTime.parse(json['deleted_at'] as String)
+              : null,
+      incrementalId: 1,
+      project: Project.fromServerJson(json['project'] as Map<String, dynamic>),
+      businessName: json['name'] as String,
+      businessOwner: json['owner'] as String?,
+      businessAddress: json['address'] as String?,
+      buildingStatus:
+          json['status'] != null
+              ? BuildingStatus.fromKey(
+                json['status'].toString().toLowerCase().replaceAll(' ', '_'),
+              )
+              : null,
+      description: json['description'] as String,
+      sector:
+          (() {
+            final sectorStr = json['sector']?.toString();
+            return sectorStr != null && sectorStr.isNotEmpty
+                ? Sector.fromKey(sectorStr[0].toUpperCase())
+                : null;
+          })(),
+      note: json['note'] as String?,
+      user:
+          json['user'] != null
+              ? User.fromJson(json['user'] as Map<String, dynamic>)
+              : null,
+      survey:
+          json['survey'] != null
+              ? Survey.fromJson(json['survey'] as Map<String, dynamic>)
+              : null,
+    );
   }
 
   /// Parse from JSON from local db
@@ -315,55 +310,39 @@ class TagData {
     User? user,
     Project project,
   ) {
-    try {
-      return TagData(
-        id: map['id'],
-        remoteId: map['remote_id'],
-        positionLat: map['position_lat'],
-        positionLng: map['position_lng'],
-        hasChanged: map['has_changed'] == 1,
-        hasSentToServer: map['has_sent_to_server'] == 1,
-        type: TagType.values.firstWhere((e) => e.name == map['tag_type']),
-        initialPositionLat: map['initial_position_lat'],
-        initialPositionLng: map['initial_position_lng'],
-        isDeleted: map['is_deleted'] == 1,
-        createdAt:
-            map['created_at'] != null
-                ? DateTime.parse(map['created_at'])
-                : null,
-        updatedAt:
-            map['updated_at'] != null
-                ? DateTime.parse(map['updated_at'])
-                : null,
-        deletedAt:
-            map['deleted_at'] != null
-                ? DateTime.parse(map['deleted_at'])
-                : null,
-        incrementalId: map['incremental_id'],
-        project: project,
-        businessName: map['business_name'],
-        businessOwner: map['business_owner'],
-        businessAddress: map['business_address'],
-        buildingStatus: BuildingStatus.values.firstWhere(
-          (e) => e.key == map['building_status'],
-        ),
-        description: map['description'],
-        sector: Sector.values.firstWhere((e) => e.key == map['sector']),
-        note: map['note'],
-        isLocked: map['is_locked'] == 1,
-        user:
-            user ??
-            User(
-              id: '',
-              email: '',
-              firstname: '',
-              organization: null,
-              roles: [],
-            ),
-      );
-    } catch (e) {
-      throw Exception('Failed to parse TagData from local db: $e');
-    }
+    return TagData(
+      id: map['id'],
+      remoteId: map['remote_id'],
+      positionLat: map['position_lat'],
+      positionLng: map['position_lng'],
+      hasChanged: map['has_changed'] == 1,
+      hasSentToServer: map['has_sent_to_server'] == 1,
+      type: TagType.values.firstWhere((e) => e.name == map['tag_type']),
+      initialPositionLat: map['initial_position_lat'],
+      initialPositionLng: map['initial_position_lng'],
+      isDeleted: map['is_deleted'] == 1,
+      createdAt:
+          map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
+      updatedAt:
+          map['updated_at'] != null ? DateTime.parse(map['updated_at']) : null,
+      deletedAt:
+          map['deleted_at'] != null ? DateTime.parse(map['deleted_at']) : null,
+      incrementalId: map['incremental_id'],
+      project: project,
+      businessName: map['business_name'],
+      businessOwner: map['business_owner'],
+      businessAddress: map['business_address'],
+      buildingStatus: BuildingStatus.values.firstWhere(
+        (e) => e.key == map['building_status'],
+      ),
+      description: map['description'],
+      sector: Sector.values.firstWhere((e) => e.key == map['sector']),
+      note: map['note'],
+      isLocked: map['is_locked'] == 1,
+      user:
+          user ??
+          User(id: '', email: '', firstname: '', organization: null, roles: []),
+    );
   }
 
   @override

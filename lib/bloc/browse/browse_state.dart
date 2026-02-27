@@ -4,11 +4,9 @@ import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
-import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
-import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -59,16 +57,6 @@ class InitializingStarted extends BrowseState {
           isSubdistrictError: false,
           isVillageError: false,
           isSlsError: false,
-          browseProject: Project(
-            id: '',
-            name: '',
-            description: '',
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            type: ProjectType.supplementMobile,
-            interactionMode: InteractionMode.browse,
-            remoteId: '',
-          ),
           isSaveToLocalDbByArea: true,
           isSaveToLocalDbByScreen: true,
           slsWithBusinessList: [],
@@ -258,7 +246,6 @@ class BrowseStateData {
   final List<TagData> businesses;
   final List<TagData> filteredBusinesses;
   final List<TagData> selectedBusinesses;
-  final Project browseProject;
   final List<SlsWithBusiness> slsWithBusinessList;
 
   // Load Business data state
@@ -315,7 +302,6 @@ class BrowseStateData {
     required this.businesses,
     required this.filteredBusinesses,
     required this.selectedBusinesses,
-    required this.browseProject,
     required this.slsWithBusinessList,
 
     required this.regencies,
@@ -369,7 +355,6 @@ class BrowseStateData {
     List<TagData>? businesses,
     List<TagData>? filteredBusinesses,
     List<TagData>? selectedBusinesses,
-    Project? browseProject,
     List<SlsWithBusiness>? slsWithBusinessList,
 
     List<Regency>? regencies,
@@ -434,7 +419,6 @@ class BrowseStateData {
       businesses: businesses ?? this.businesses,
       filteredBusinesses: filteredBusinesses ?? this.filteredBusinesses,
       selectedBusinesses: selectedBusinesses ?? this.selectedBusinesses,
-      browseProject: browseProject ?? this.browseProject,
       slsWithBusinessList: slsWithBusinessList ?? this.slsWithBusinessList,
 
       regencies: regencies ?? this.regencies,

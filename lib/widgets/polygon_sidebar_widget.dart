@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:kendedes_mobile/bloc/polygon/polygon_event.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/widgets/download_polygon_dialog.dart';
 
 class PolygonSidebarWidget extends StatelessWidget {
-  final String projectId;
+  final String dataId;
+  final PolygonPairType pairType;
   final bool isPolygonSideBarOpen;
   final VoidCallback onClose;
   final VoidCallback onUpdate;
@@ -13,13 +15,14 @@ class PolygonSidebarWidget extends StatelessWidget {
 
   const PolygonSidebarWidget({
     super.key,
-    required this.projectId,
+    required this.dataId,
     required this.isPolygonSideBarOpen,
     required this.onClose,
     required this.onUpdate,
     required this.polygons,
     required this.onSelect,
     required this.onDelete,
+    required this.pairType,
   });
 
   @override
@@ -114,7 +117,8 @@ class PolygonSidebarWidget extends StatelessWidget {
                               context: context,
                               builder:
                                   (context) => DownloadPolygonDialog(
-                                    projectId: projectId,
+                                    dataId: dataId,
+                                    pairType: pairType,
                                   ),
                             );
 

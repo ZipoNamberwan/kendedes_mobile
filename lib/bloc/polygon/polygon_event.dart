@@ -68,9 +68,15 @@ class SearchPolygon extends PolygonEvent {
 }
 
 class DownloadInstallPolygon extends PolygonEvent {
-  final String projectId;
-  const DownloadInstallPolygon({required this.projectId});
+  final PolygonPairType pairType;
+  final String id;
+  const DownloadInstallPolygon({
+    required this.pairType,
+    required this.id,
+  });
 
   @override
-  List<Object?> get props => [projectId];
+  List<Object?> get props => [pairType, id];
 }
+
+enum PolygonPairType { project, user }

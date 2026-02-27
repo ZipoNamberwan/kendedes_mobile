@@ -13,7 +13,6 @@ import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 
 class PolygonBloc extends Bloc<PolygonEvent, PolygonState> {
-
   PolygonBloc() : super(Initialized()) {
     on<Initialize>((event, emit) async {
       emit(Initialized());
@@ -298,19 +297,36 @@ class PolygonBloc extends Bloc<PolygonEvent, PolygonState> {
 
           await PolygonDbRepository().savePolygonWithPoints(updatedPolygon!);
 
-          // Check if project-polygon pair already exists before adding
-          final existingPolygons = await PolygonDbRepository()
-              .getPolygonsForProject(event.projectId);
+          if (event.pairType == PolygonPairType.project) {
+            // Check if project-polygon pair already exists before adding
+            final existingPolygons = await PolygonDbRepository()
+                .getPolygonsForProject(event.id);
 
-          final pairExists = existingPolygons.any(
-            (polygon) => polygon.id == updatedPolygon.id,
-          );
-
-          if (!pairExists) {
-            await PolygonDbRepository().addProjectPolygonPair(
-              event.projectId,
-              updatedPolygon.id,
+            final pairExists = existingPolygons.any(
+              (polygon) => polygon.id == updatedPolygon.id,
             );
+
+            if (!pairExists) {
+              await PolygonDbRepository().addProjectPolygonPair(
+                event.id,
+                updatedPolygon.id,
+              );
+            }
+          } else if (event.pairType == PolygonPairType.user) {
+            // Check if user-polygon pair already exists before adding
+            final existingPolygons = await PolygonDbRepository()
+                .getPolygonsByUser(event.id);
+
+            final pairExists = existingPolygons.any(
+              (polygon) => polygon.id == updatedPolygon.id,
+            );
+
+            if (!pairExists) {
+              await PolygonDbRepository().addUserPolygonPair(
+                event.id,
+                updatedPolygon.id,
+              );
+            }
           }
 
           // Update state with the polygon containing coordinates

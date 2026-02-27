@@ -70,6 +70,7 @@ class ProjectDbRepository {
     // 4. Insert project
     final map = {
       'id': project.id,
+      'remote_id': project.id,
       'name': project.name,
       'description': project.description,
       'created_at': project.createdAt.toIso8601String(),
@@ -160,6 +161,7 @@ class ProjectDbRepository {
         projects.map((project) {
           return {
             'id': project.id,
+            'remote_id': project.id,
             'name': project.name,
             'description': project.description,
             'created_at': project.createdAt.toIso8601String(),

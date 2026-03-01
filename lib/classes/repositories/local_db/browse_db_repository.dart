@@ -1,5 +1,8 @@
 import 'package:kendedes_mobile/classes/providers/local_db/browse_db_provider.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/polygon_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
+import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -14,6 +17,8 @@ class BrowseDbRepository {
 
   late BrowseDbProvider _browseDbProvider;
   late UserDbRepository _userDbRepository;
+  late PolygonDbRepository _polygonDbRepository;
+
   bool _initialized = false;
   final Uuid _uuid = const Uuid();
 
@@ -25,13 +30,16 @@ class BrowseDbRepository {
 
     _userDbRepository = UserDbRepository();
     await _userDbRepository.init();
+
+    _polygonDbRepository = PolygonDbRepository();
+    await _polygonDbRepository.init();
   }
 
-  Future<List<Project>> getProjectsByUser(String userId) async {
-    final user = await _userDbRepository.getById(userId);
+  Future<List<Project>> getProjectsByUser(String currentUserId) async {
+    final user = await _userDbRepository.getById(currentUserId);
     final userJson = user?.toJson();
 
-    final maps = await _browseDbProvider.getProjectsByUser(userId);
+    final maps = await _browseDbProvider.getProjectsByUser(currentUserId);
     return maps.map((map) {
       final mutableMap = Map<String, dynamic>.from(map);
       if (userJson != null) {
@@ -44,7 +52,7 @@ class BrowseDbRepository {
   // sls_with_business CRUD
   Future<bool> createSlsWithBusiness(SlsWithBusiness item) async {
     final existingSlsWithBusinessList = await getSlsWithBusinessList(
-      userId: item.user.id,
+      currentUserId: item.user.id,
     );
 
     final pairExists = existingSlsWithBusinessList.any(
@@ -69,22 +77,31 @@ class BrowseDbRepository {
   }
 
   Future<List<SlsWithBusiness>> getSlsWithBusinessList({
-    required String userId,
+    required String currentUserId,
   }) async {
-    final rows = await _browseDbProvider.getSlsWithBusinessList(userId: userId);
+    final rows = await _browseDbProvider.getSlsWithBusinessList(
+      currentUserId: currentUserId,
+    );
 
-    final user = await _userDbRepository.getById(userId);
-    if (user == null) {
-      throw StateError('User not found for userId=$userId');
+    final polygons = await _polygonDbRepository.getPolygonsByUser(
+      currentUserId,
+    );
+
+    final currentUser = await _userDbRepository.getById(currentUserId);
+    if (currentUser == null) {
+      throw StateError('User not found for current user id=$currentUserId');
     }
 
     final List<SlsWithBusiness> items = [];
 
     for (final row in rows) {
       final json = Map<String, dynamic>.from(row);
-      json['user'] = user.toJson();
-
-      items.add(SlsWithBusiness.fromJson(json));
+      json['user'] = currentUser.toJson();
+      final polygon = polygons.cast<Polygon?>().firstWhere(
+        (polygon) => polygon?.id == json['sls_id'],
+        orElse: () => null,
+      );
+      items.add(SlsWithBusiness.fromJson(json, polygon));
     }
 
     return items;
@@ -104,8 +121,9 @@ class BrowseDbRepository {
     final existingBusiness =
         existingProjects.isEmpty
             ? <TagData>[]
-            : await getBusinessByBrowseProjects(
+            : await getBusinessesByBrowseProjects(
               existingProjects.map((project) => project.id).toList(),
+              userId,
             );
     final existingBusinessRemoteIds =
         existingBusiness
@@ -135,7 +153,9 @@ class BrowseDbRepository {
 
       final mappedChunk =
           newBusinesses.map((business) {
-            final businessJson = Map<String, dynamic>.from(business.toLocalDbJson());
+            final businessJson = Map<String, dynamic>.from(
+              business.toLocalDbJson(),
+            );
 
             // Find existing project that matches business's project_id with remote_id
             final matchingProject =
@@ -164,16 +184,25 @@ class BrowseDbRepository {
     await _browseDbProvider.insertProjectsBatch(dataList);
   }
 
-  Future<void> insertUniqueProjects(
-    List<Project> projects,
-    String userId,
+  Future<void> insertUniqueProjectsFromBusinesses(
+    List<TagData> businesses,
+    User? currentUser,
   ) async {
-    final existingProjects = await getProjectsByUser(userId);
+    List<Project> uniqueProjects =
+        {
+          for (var business in businesses)
+            business.project.remoteId: business.project.copyWith(
+              user: currentUser,
+              interactionMode: InteractionMode.browse,
+            ),
+        }.values.toList();
+
+    final existingProjects = await getProjectsByUser(currentUser?.id ?? '');
     final existingRemoteIds =
         existingProjects.map((project) => project.remoteId).toSet();
 
     final newProjects =
-        projects
+        uniqueProjects
             .map(
               (project) =>
                   project.copyWith(id: _uuid.v4(), remoteId: project.remoteId),
@@ -184,13 +213,6 @@ class BrowseDbRepository {
     if (newProjects.isNotEmpty) {
       await insertProjectBatch(newProjects);
     }
-  }
-
-  Future<List<Project>> getAllProjects() async {
-    final maps = await _browseDbProvider.getAllProjects();
-    return maps.map((map) {
-      return Project.fromLocalDbJson(map);
-    }).toList();
   }
 
   Future<List<User>> getAllUsers() async {
@@ -222,11 +244,16 @@ class BrowseDbRepository {
     }
   }
 
-  Future<void> insertUniqueUsers(List<User> users) async {
+  Future<void> insertUniqueUsersFromBusinesses(List<TagData> businesses) async {
+    final uniqueUsers =
+        {
+          for (var business in businesses)
+            if (business.user != null) business.user!.id: business.user!,
+        }.values.toList();
     final existingUsers = await getAllUsers();
 
     final newUsers =
-        users
+        uniqueUsers
             .where(
               (user) =>
                   !existingUsers.any((existing) => existing.id == user.id),
@@ -237,34 +264,102 @@ class BrowseDbRepository {
     }
   }
 
-  Future<List<TagData>> getBusinessByBrowseProjects(
+  Future<List<TagData>> getBusinessesByBrowseProjects(
     List<String> projectIds,
+    String userId,
   ) async {
-    final businessMaps = await _browseDbProvider.getBusinessByBrowseProjects(
+    final businessMaps = await _browseDbProvider.getBusinessesByBrowseProjects(
       projectIds,
     );
 
-    final projectMaps = await _browseDbProvider.getAllProjects();
-    final userMaps = await _browseDbProvider.getAllUsers();
+    final existingProjects = await getProjectsByUser(userId);
+    final existingUsers = await getAllUsers();
 
     // return list of business data with business details
     return businessMaps.map((map) {
-      final projectMap = projectMaps.firstWhere(
-        (p) => p['id'] == map['project_id'],
-        orElse: () => {},
+      final project = existingProjects.firstWhere(
+        (p) => p.id == map['project_id'],
       );
 
-      final userMap = userMaps.firstWhere(
-        (u) => u['id'] == map['user_id'],
-        orElse: () => {},
-      );
+      final user = existingUsers.firstWhere((u) => u.id == map['user_id']);
 
-      final business = TagData.fromLocalDbJson(
-        map,
-        User.fromJson(userMap),
-        Project.fromLocalDbJson(projectMap),
-      );
+      final business = TagData.fromLocalDbJson(map, user, project);
       return business;
     }).toList();
+  }
+
+  Future<List<TagData>> getBusinessesBySls(String slsId, String userId) async {
+    final existingProjects = await getProjectsByUser(userId);
+    final projectIds = existingProjects.map((p) => p.id).toList();
+
+    final businessMaps = await _browseDbProvider.getBusinessesBySls(
+      slsId,
+      projectIds,
+    );
+    final existingUsers = await getAllUsers();
+
+    // return list of business data with business details
+    return businessMaps.map((map) {
+      final project = existingProjects.firstWhere(
+        (p) => p.id == map['project_id'],
+      );
+
+      final user = existingUsers.firstWhere((u) => u.id == map['user_id']);
+
+      final business = TagData.fromLocalDbJson(map, user, project);
+      return business;
+    }).toList();
+  }
+
+  Future<bool> deleteBusinessesBySlsId(String slsId, String userId) async {
+    final existingProjects = await getProjectsByUser(userId);
+    final projectIds = existingProjects.map((p) => p.id).toList();
+    
+    return await _browseDbProvider.deleteBusinessesBySlsId(slsId, projectIds);
+  }
+
+  Future<int?> getSlsWithBusinessCountBySlsId(
+    String slsId,
+    String userId,
+  ) async {
+    return _browseDbProvider.getSlsWithBusinessCountBySlsId(slsId, userId);
+  }
+
+  Future<int?> getBusinessCountBySlsId(
+    String slsId,
+    List<String> projectIds,
+  ) async {
+    return _browseDbProvider.getBusinessCountBySlsId(slsId, projectIds);
+  }
+
+  Future<bool> hasPolygonBySlsId(String slsId, String userId) async {
+    return _browseDbProvider.hasPolygonBySlsId(slsId, userId);
+  }
+
+  Future<bool> needToDownloadBusinessFromServer(
+    String slsId,
+    String userId,
+  ) async {
+    final slsWithBusinessCount = await getSlsWithBusinessCountBySlsId(
+      slsId,
+      userId,
+    );
+    if (slsWithBusinessCount == null) {
+      return true;
+    }
+
+    List<String> projectIds =
+        (await getProjectsByUser(userId)).map((p) => p.id).toList();
+    final businessCount = await getBusinessCountBySlsId(slsId, projectIds);
+    if (businessCount == null) {
+      return true;
+    }
+
+    if (slsWithBusinessCount != businessCount) {
+      return true;
+    }
+
+    final hasPolygon = await hasPolygonBySlsId(slsId, userId);
+    return !hasPolygon;
   }
 }

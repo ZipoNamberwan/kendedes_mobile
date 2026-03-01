@@ -13,7 +13,6 @@ import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
-import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
@@ -59,13 +58,14 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
         // 4. Init SLS with business list
         List<SlsWithBusiness> slsWithBusinessList = await BrowseDbRepository()
-            .getSlsWithBusinessList(userId: currentUser.id);
+            .getSlsWithBusinessList(currentUserId: currentUser.id);
 
         // 5. Init businesses list from the local DB based on the browse project id
         List<TagData> businesses = [];
         if (browseProjectList.isNotEmpty) {
-          businesses = await BrowseDbRepository().getBusinessByBrowseProjects(
+          businesses = await BrowseDbRepository().getBusinessesByBrowseProjects(
             browseProjectList.map((project) => project.id).toList(),
+            currentUser.id,
           );
         }
 
@@ -289,7 +289,39 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             ),
           );
 
-          // Get businesses from API based on SLS
+          // 1. Check if local data is up-to-date
+          final needToDownload = await browseDbRepository
+              .needToDownloadBusinessFromServer(event.sls.id, currentUserId);
+
+          // 2. If local data is sufficient, load from DB and return early
+          if (!needToDownload) {
+            final localBusinesses = await browseDbRepository.getBusinessesBySls(
+              event.sls.id,
+              currentUserId,
+            );
+
+            final mergedBusinesses = List.of(state.data.businesses);
+            final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
+            mergedBusinesses.addAll(
+              localBusinesses.where((b) => existingIds.add(b.remoteId)),
+            );
+
+            emit(
+              BusinessBySlsSuccess(
+                centerLocation: LatLng(
+                  localBusinesses.first.positionLat,
+                  localBusinesses.first.positionLng,
+                ),
+                data: state.data.copyWith(
+                  isBusinessBySlsLoading: false,
+                  businesses: mergedBusinesses,
+                ),
+              ),
+            );
+            return;
+          }
+
+          // 3. Fetch businesses from server
           final response = await BrowseRepository().getBusinessesBySls(
             event.sls.id,
           );
@@ -307,95 +339,81 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                 data: state.data.copyWith(isBusinessBySlsLoading: false),
               ),
             );
-          } else {
-            // 1. Modify the business id to new uuid
-            businesses =
-                businesses
-                    .map((business) => business.copyWith(id: _uuid.v4()))
-                    .toList();
+            return;
+          }
 
-            // 2. Save users to local DB if not already exist
-            final uniqueUsers =
-                {
-                  for (var business in businesses)
-                    if (business.user != null)
-                      business.user!.id: business.user!,
-                }.values.toList();
-            await browseDbRepository.insertUniqueUsers(uniqueUsers);
+          // 4. Modify the business id to new uuid
+          businesses =
+              businesses.map((b) => b.copyWith(id: _uuid.v4())).toList();
 
-            // 3. Get unique business.project values from the fetched businesses and save to local DB if not already exist
-            // Modify the user_id field of the project to be the current user's id before saving to local DB
-            // Modify the unique projects id to new uuid
-            List<Project> uniqueProjects =
-                {
-                  for (var business in businesses)
-                    business.project.remoteId: business.project.copyWith(
-                      user: state.data.currentUser,
-                      interactionMode: InteractionMode.browse,
-                    ),
-                }.values.toList();
-            await browseDbRepository.insertUniqueProjects(
-              uniqueProjects,
-              currentUserId,
-            );
+          // 5. Save users to local DB if not already exist
+          await browseDbRepository.insertUniqueUsersFromBusinesses(businesses);
 
-            // 4. Save the business data to local DB
-            await browseDbRepository.insertBusinessesDataBatch(
-              businesses,
-              currentUserId,
-            );
+          // 6. Get unique business.project values from the fetched businesses and save to local DB if not already exist
+          // Modify the user_id field of the project to be the current user's id before saving to local DB
+          // Modify the unique projects id to new uuid
+          await browseDbRepository.insertUniqueProjectsFromBusinesses(
+            businesses,
+            state.data.currentUser,
+          );
 
-            // 5. Save the polygon to local DB and link it with the current project
-            Sls slsWithPolygon = Sls.fromJson(response['sls']);
-            Polygon updatedPolygon = slsWithPolygon.polygon!;
+          // 7. Save the business data to local DB
+          await browseDbRepository.insertBusinessesDataBatch(
+            businesses,
+            currentUserId,
+          );
+
+          // 8. Save the polygon to local DB and link it with the current user
+          final Sls slsWithPolygon = Sls.fromJson(response['sls']);
+          final Polygon? updatedPolygon = slsWithPolygon.polygon;
+          bool pairAdded = false;
+
+          if (updatedPolygon != null) {
             await polygonDbRepository.savePolygonWithPoints(updatedPolygon);
             // Check if user-polygon pair already exists before adding
-            final pairAdded = await polygonDbRepository
-                .addUniqueUserPolygonPair(currentUserId, updatedPolygon.id);
-
-            // 6. Save SlsWithBusiness to local DB
-            SlsWithBusiness slsWithBusiness = SlsWithBusiness(
-              id: _uuid.v4(),
-              sls: slsWithPolygon,
-              businessCount: businesses.length,
-              user: state.data.currentUser!,
-            );
-            final bool slsWithBusinessCreated = await browseDbRepository
-                .createSlsWithBusiness(slsWithBusiness);
-
-            // 7. Update businesses list in state, ensuring no duplicates
-            final updatedNearbyBusiness = List.of(state.data.businesses);
-            // Use a Set for efficient duplicate checks
-            final existingIds =
-                updatedNearbyBusiness.map((e) => e.remoteId).toSet();
-            // Add only new businesses
-            updatedNearbyBusiness.addAll(
-              businesses.where(
-                (business) => existingIds.add(business.remoteId),
-              ),
-            );
-
-            emit(
-              BusinessBySlsSuccess(
-                centerLocation: LatLng(
-                  businesses.first.positionLat,
-                  businesses.first.positionLng,
-                ),
-                data: state.data.copyWith(
-                  isBusinessBySlsLoading: false,
-                  businesses: updatedNearbyBusiness,
-                  polygons:
-                      pairAdded
-                          ? [...state.data.polygons, updatedPolygon]
-                          : state.data.polygons,
-                  slsWithBusinessList:
-                      slsWithBusinessCreated
-                          ? [...state.data.slsWithBusinessList, slsWithBusiness]
-                          : state.data.slsWithBusinessList,
-                ),
-              ),
+            pairAdded = await polygonDbRepository.addUniqueUserPolygonPair(
+              currentUserId,
+              updatedPolygon.id,
             );
           }
+
+          // 9. Save SlsWithBusiness to local DB
+          final slsWithBusiness = SlsWithBusiness(
+            id: _uuid.v4(),
+            sls: slsWithPolygon,
+            businessCount: businesses.length,
+            user: state.data.currentUser!,
+          );
+          final slsWithBusinessCreated = await browseDbRepository
+              .createSlsWithBusiness(slsWithBusiness);
+
+          // 10. Update businesses list in state, ensuring no duplicates
+          final mergedBusinesses = List.of(state.data.businesses);
+          final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
+          mergedBusinesses.addAll(
+            businesses.where((b) => existingIds.add(b.remoteId)),
+          );
+
+          emit(
+            BusinessBySlsSuccess(
+              centerLocation: LatLng(
+                businesses.first.positionLat,
+                businesses.first.positionLng,
+              ),
+              data: state.data.copyWith(
+                isBusinessBySlsLoading: false,
+                businesses: mergedBusinesses,
+                polygons:
+                    pairAdded
+                        ? [...state.data.polygons, updatedPolygon!]
+                        : state.data.polygons,
+                slsWithBusinessList:
+                    slsWithBusinessCreated
+                        ? [...state.data.slsWithBusinessList, slsWithBusiness]
+                        : state.data.slsWithBusinessList,
+              ),
+            ),
+          );
         },
         onLoginExpired: (e) {
           emit(
@@ -690,7 +708,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       emit(
         PolygonSelected(
           center,
-          data: state.data.copyWith(isPolygonSideBarOpen: false),
+          data: state.data.copyWith(
+            isPolygonSideBarOpen: false,
+            isSlsWithBusinessSidebarOpen: false,
+          ),
         ),
       );
     });
@@ -734,14 +755,28 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
       await PolygonDbRepository().removeUserPolygonPair(
         state.data.currentUser?.id ?? '',
-        event.slsWithBusiness.sls.polygon!.id,
+        event.slsWithBusiness.sls.polygon?.id ?? event.slsWithBusiness.sls.id,
+      );
+
+      await BrowseDbRepository().deleteBusinessesBySlsId(
+        event.slsWithBusiness.sls.id,
+        state.data.currentUser?.id ?? '',
       );
 
       List<Polygon> updatedPolygons =
           state.data.polygons
               .where(
                 (polygon) =>
-                    polygon.id != event.slsWithBusiness.sls.polygon!.id,
+                    polygon.id !=
+                    (event.slsWithBusiness.sls.polygon?.id ??
+                        event.slsWithBusiness.sls.id),
+              )
+              .toList();
+
+      List<TagData> updatedBusinesses =
+          state.data.businesses
+              .where(
+                (business) => business.sls?.id != event.slsWithBusiness.sls.id,
               )
               .toList();
 
@@ -751,6 +786,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             slsWithBusinessList: updatedSlsWithBusinessList,
             polygons: updatedPolygons,
             isDeletingSlsWithBusiness: false,
+            businesses: updatedBusinesses,
           ),
         ),
       );

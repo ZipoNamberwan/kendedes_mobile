@@ -2,6 +2,7 @@ import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/user.dart';
 
 class SlsWithBusiness {
@@ -43,7 +44,10 @@ class SlsWithBusiness {
     };
   }
 
-  factory SlsWithBusiness.fromJson(Map<String, dynamic> json) {
+  factory SlsWithBusiness.fromJson(
+    Map<String, dynamic> json,
+    Polygon? polygon,
+  ) {
     return SlsWithBusiness(
       id: json['id'] as String,
       sls: Sls(
@@ -72,6 +76,7 @@ class SlsWithBusiness {
             ),
           ),
         ),
+        polygon: polygon,
       ),
       businessCount: json['business_count'] as int,
       user: User.fromJson(json['user'] as Map<String, dynamic>),

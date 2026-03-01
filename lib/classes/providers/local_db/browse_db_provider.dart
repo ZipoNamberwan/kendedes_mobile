@@ -67,17 +67,19 @@ class BrowseDbProvider {
   }
 
   Future<List<Map<String, dynamic>>> getSlsWithBusinessList({
-    required String userId,
+    required String currentUserId,
   }) async {
     return await _dbProvider.db.query(
       'sls_with_business',
       where: 'user_id = ?',
-      whereArgs: [userId],
+      whereArgs: [currentUserId],
       orderBy: 'sls_long_code ASC',
     );
   }
 
-  Future<void> insertBusinessesDataBatch(List<Map<String, dynamic>> dataList) async {
+  Future<void> insertBusinessesDataBatch(
+    List<Map<String, dynamic>> dataList,
+  ) async {
     final db = _dbProvider.db;
 
     await db.transaction((txn) async {
@@ -110,11 +112,7 @@ class BrowseDbProvider {
     await batch.commit(noResult: true);
   }
 
-  Future<List<Map<String, dynamic>>> getAllProjects() async {
-    return await _dbProvider.db.query('projects');
-  }
-
-  Future<List<Map<String, dynamic>>> getBusinessByBrowseProjects(
+  Future<List<Map<String, dynamic>>> getBusinessesByBrowseProjects(
     List<String> projectIds,
   ) async {
     final placeholders = List.filled(projectIds.length, '?').join(', ');
@@ -124,6 +122,32 @@ class BrowseDbProvider {
       whereArgs: projectIds,
     );
     return result;
+  }
+
+  Future<List<Map<String, dynamic>>> getBusinessesBySls(
+    String slsId,
+    List<String> projectIds,
+  ) async {
+    final placeholders = List.filled(projectIds.length, '?').join(', ');
+    final result = await _dbProvider.db.query(
+      'tag_data',
+      where: 'sls_id = ? AND project_id IN ($placeholders)',
+      whereArgs: [slsId, ...projectIds],
+    );
+    return result;
+  }
+
+  Future<bool> deleteBusinessesBySlsId(
+    String slsId,
+    List<String> projectIds,
+  ) async {
+    final placeholders = List.filled(projectIds.length, '?').join(', ');
+    final count = await _dbProvider.db.delete(
+      'tag_data',
+      where: 'sls_id = ? AND project_id IN ($placeholders)',
+      whereArgs: [slsId, ...projectIds],
+    );
+    return count > 0;
   }
 
   Future<List<Map<String, dynamic>>> getAllUsers() async {
@@ -140,5 +164,56 @@ class BrowseDbProvider {
     }
 
     await batch.commit(noResult: true);
+  }
+
+  Future<int?> getSlsWithBusinessCountBySlsId(
+    String slsId,
+    String userId,
+  ) async {
+    final result = await _dbProvider.db.query(
+      'sls_with_business',
+      where: 'sls_id = ? AND user_id = ?',
+      whereArgs: [slsId, userId],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      final businessCountValue = result.first['business_count'];
+      if (businessCountValue is int) return businessCountValue;
+      if (businessCountValue is num) return businessCountValue.toInt();
+      return null;
+    }
+    return null;
+  }
+
+  Future<int?> getBusinessCountBySlsId(
+    String slsId,
+    List<String> projectIds,
+  ) async {
+    final placeholders = List.filled(projectIds.length, '?').join(', ');
+    final result = await _dbProvider.db.query(
+      'tag_data',
+      columns: ['COUNT(*) AS count'],
+      where: 'sls_id = ? AND project_id IN ($placeholders)',
+      whereArgs: [slsId, ...projectIds],
+    );
+    if (result.isNotEmpty) {
+      final countValue = result.first['count'];
+      if (countValue is int) return countValue;
+      if (countValue is num) return countValue.toInt();
+    }
+    return null;
+  }
+
+  Future<bool> hasPolygonBySlsId(String slsId, String userId) async {
+    final result = await _dbProvider.db.query(
+      'user_polygons',
+      columns: ['id'],
+      where: 'user_id = ? AND polygon_id = ?',
+      whereArgs: [userId, slsId],
+      limit: 1,
+    );
+
+    return result.isNotEmpty;
   }
 }

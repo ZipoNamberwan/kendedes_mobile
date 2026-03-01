@@ -1719,7 +1719,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                                             Colors
                                                                 .grey
                                                                 .shade900,
-                                                        fontSize: 14,
+                                                        fontSize: 15,
                                                         fontWeight:
                                                             FontWeight.w700,
                                                         letterSpacing: 0.2,
@@ -1879,6 +1879,13 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                       isOpen: state.data.isSlsWithBusinessSidebarOpen,
                       items: state.data.slsWithBusinessList,
                       onClose: () => _toggleSlsWithBusinessSidebar(false),
+                      onItemTap: (item) {
+                        if (item.sls.polygon != null) {
+                          _browseBloc.add(
+                            SelectPolygon(polygon: item.sls.polygon!),
+                          );
+                        }
+                      },
                       onDeleteTap: (item) {
                         _showSlsWithBusinessDeleteConfirmationDialog(
                           item,

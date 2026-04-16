@@ -10,6 +10,7 @@ import 'package:kendedes_mobile/bloc/polygon/polygon_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
+import 'package:kendedes_mobile/bloc/home/home_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_event.dart';
 import 'package:kendedes_mobile/bloc/version/version_state.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
@@ -123,7 +124,7 @@ Future<void> _initializeApp() async {
   await AreaDbRepository().init();
   await PolygonRepository().init();
   await BrowseRepository().init();
-  await BrowseDbRepository().init();  
+  await BrowseDbRepository().init();
 }
 
 class MyApp extends StatefulWidget {
@@ -140,6 +141,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late VersionBloc _versionBloc;
   late PolygonBloc _polygonBloc;
   late BrowseBloc _browseBloc;
+  late HomeBloc _homeBloc;
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -153,6 +155,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _versionBloc = VersionBloc();
     _polygonBloc = PolygonBloc();
     _browseBloc = BrowseBloc();
+    _homeBloc = HomeBloc();
 
     // Check once on cold start
     _checkForUpdate();
@@ -235,6 +238,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         BlocProvider<VersionBloc>(create: (context) => _versionBloc),
         BlocProvider<PolygonBloc>(create: (context) => _polygonBloc),
         BlocProvider<BrowseBloc>(create: (context) => _browseBloc),
+        BlocProvider<HomeBloc>(create: (context) => _homeBloc),
       ],
       child: BlocListener<VersionBloc, VersionState>(
         listener: (context, versionState) {

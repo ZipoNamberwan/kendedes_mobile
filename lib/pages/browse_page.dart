@@ -8,7 +8,7 @@ import 'package:kendedes_mobile/bloc/browse/browse_bloc.dart';
 import 'package:kendedes_mobile/bloc/browse/browse_event.dart';
 import 'package:kendedes_mobile/bloc/browse/browse_state.dart';
 import 'package:kendedes_mobile/bloc/polygon/polygon_event.dart'
-    as polygonEvent;
+    as polygonevent;
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/marker_display_strategy.dart';
 import 'package:kendedes_mobile/models/area/regency.dart';
@@ -1897,7 +1897,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                     // Polygon sidebar
                     PolygonSidebarWidget(
                       dataId: state.data.currentUser?.id ?? '',
-                      pairType: polygonEvent.PolygonPairType.user,
+                      pairType: polygonevent.PolygonPairType.user,
                       isPolygonSideBarOpen: state.data.isPolygonSideBarOpen,
                       polygons: state.data.polygons,
                       onClose: () => _togglePolygonSidebar(false),

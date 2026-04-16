@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:kendedes_mobile/bloc/polygon/polygon_event.dart'
-    as polygonEvent;
+    as polygonevent;
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_event.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_state.dart';
@@ -1863,7 +1863,7 @@ class _TaggingPageState extends State<TaggingPage>
                     // Polygon sidebar
                     PolygonSidebarWidget(
                       dataId: state.data.project.id,
-                      pairType: polygonEvent.PolygonPairType.project,
+                      pairType: polygonevent.PolygonPairType.project,
                       isPolygonSideBarOpen: state.data.isPolygonSideBarOpen,
                       polygons: state.data.polygons,
                       onClose: () => _togglePolygonSidebar(false),

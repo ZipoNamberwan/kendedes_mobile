@@ -34,7 +34,6 @@ class InitializingStarted extends BrowseState {
           isLoadingPolygon: false,
           isLoadingBusiness: false,
           loadMode: BusinessLoadMode.area,
-          viewMode: BrowseViewMode.map,
           polygons: [],
           requestedAreas: [],
           rotation: 0,
@@ -64,6 +63,7 @@ class InitializingStarted extends BrowseState {
           slsWithBusinessList: [],
           isSlsWithBusinessSidebarOpen: false,
           isDeletingSlsWithBusiness: false,
+          isBrowseSideBarOpen: false,
         ),
       );
 
@@ -219,9 +219,22 @@ class SlsWithBusinessDeleted extends BrowseState {
   List<Object> get props => [data];
 }
 
+class BrowseSideBarOpened extends BrowseState {
+  const BrowseSideBarOpened({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class BrowseSideBarClosed extends BrowseState {
+  const BrowseSideBarClosed({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class BrowseStateData {
   // UI data state
-  final BrowseViewMode viewMode;
   final BusinessLoadMode loadMode;
   final bool isLoadBusinessContainerExpanded;
   final LabelType? selectedLabelType;
@@ -233,6 +246,7 @@ class BrowseStateData {
   final bool isPolygonSideBarOpen;
   final bool isSlsWithBusinessSidebarOpen;
   final bool isDeletingSlsWithBusiness;
+  final bool isBrowseSideBarOpen;
 
   // Map data state
   final double currentZoom;
@@ -279,7 +293,6 @@ class BrowseStateData {
   final bool isDeletingPolygon;
 
   BrowseStateData({
-    required this.viewMode,
     required this.loadMode,
     required this.isLoadBusinessContainerExpanded,
     this.selectedLabelType,
@@ -291,7 +304,8 @@ class BrowseStateData {
     required this.isPolygonSideBarOpen,
     required this.isSlsWithBusinessSidebarOpen,
     required this.isDeletingSlsWithBusiness,
-
+    required this.isBrowseSideBarOpen,
+    
     required this.currentZoom,
     required this.rotation,
     required this.isLoadingCurrentLocation,
@@ -332,7 +346,6 @@ class BrowseStateData {
     required this.isDeletingPolygon,
   });
   BrowseStateData copyWith({
-    BrowseViewMode? viewMode,
     BusinessLoadMode? loadMode,
     bool? isLoadBusinessContainerExpanded,
     LabelType? selectedLabelType,
@@ -344,6 +357,8 @@ class BrowseStateData {
     bool? isPolygonSideBarOpen,
     bool? isSlsWithBusinessSidebarOpen,
     bool? isDeletingSlsWithBusiness,
+    bool? isBrowseSideBarOpen,
+    bool? resetAllFilter,
 
     double? currentZoom,
     double? rotation,
@@ -389,7 +404,6 @@ class BrowseStateData {
     bool? isDeletingPolygon,
   }) {
     return BrowseStateData(
-      viewMode: viewMode ?? this.viewMode,
       loadMode: loadMode ?? this.loadMode,
       isLoadBusinessContainerExpanded:
           isLoadBusinessContainerExpanded ??
@@ -408,7 +422,7 @@ class BrowseStateData {
           isSlsWithBusinessSidebarOpen ?? this.isSlsWithBusinessSidebarOpen,
       isDeletingSlsWithBusiness:
           isDeletingSlsWithBusiness ?? this.isDeletingSlsWithBusiness,
-
+      isBrowseSideBarOpen: isBrowseSideBarOpen ?? this.isBrowseSideBarOpen,
       currentZoom: currentZoom ?? this.currentZoom,
       rotation: rotation ?? this.rotation,
       isLoadingCurrentLocation:
@@ -466,7 +480,5 @@ class BrowseStateData {
     );
   }
 }
-
-enum BrowseViewMode { map, table }
 
 enum BusinessLoadMode { area, screen }

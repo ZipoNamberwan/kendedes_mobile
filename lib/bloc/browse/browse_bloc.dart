@@ -450,10 +450,6 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       );
     });
 
-    on<SetBrowseViewMode>((event, emit) {
-      emit(BrowseState(data: state.data.copyWith(viewMode: event.viewMode)));
-    });
-
     on<SetBusinessLoadMode>((event, emit) {
       emit(BrowseState(data: state.data.copyWith(loadMode: event.loadMode)));
     });
@@ -790,6 +786,22 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           ),
         ),
       );
+    });
+
+    on<SetBrowseSideBarOpen>((event, emit) {
+      final newDataState = state.data.copyWith(
+        isBrowseSideBarOpen: event.isOpen,
+        filteredBusinesses:
+            event.isOpen
+                ? state.data.businesses
+                : state.data.filteredBusinesses,
+        resetAllFilter: event.isOpen,
+      );
+      if (event.isOpen) {
+        emit(BrowseSideBarOpened(data: newDataState));
+      } else {
+        emit(BrowseSideBarClosed(data: newDataState));
+      }
     });
   }
 

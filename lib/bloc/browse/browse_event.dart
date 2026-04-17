@@ -54,11 +54,6 @@ class GetBusinessByArea extends BrowseEvent {
   const GetBusinessByArea({required this.sls});
 }
 
-class SetBrowseViewMode extends BrowseEvent {
-  final BrowseViewMode viewMode;
-  const SetBrowseViewMode({required this.viewMode});
-}
-
 class SetBusinessLoadMode extends BrowseEvent {
   final BusinessLoadMode loadMode;
   const SetBusinessLoadMode({required this.loadMode});
@@ -165,4 +160,9 @@ class SetSlsWithBusinessSidebarOpen extends BrowseEvent {
 class DeleteSlsWithBusiness extends BrowseEvent {
   final SlsWithBusiness slsWithBusiness;
   const DeleteSlsWithBusiness({required this.slsWithBusiness});
+}
+
+class SetBrowseSideBarOpen extends BrowseEvent {
+  final bool isOpen;
+  const SetBrowseSideBarOpen(this.isOpen);
 }

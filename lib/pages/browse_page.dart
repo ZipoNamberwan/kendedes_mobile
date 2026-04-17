@@ -21,6 +21,7 @@ import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/polygon.dart' as polygonmodel;
 import 'package:kendedes_mobile/pages/login_page.dart';
+import 'package:kendedes_mobile/widgets/browse_widgets/browse_sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/complex_marker_browse_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/delete_sls_with_business_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart';
@@ -569,7 +570,6 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
           icon: Icons.center_focus_strong_rounded,
           gradientColors: const [Colors.orange, Colors.deepOrange],
           isLoading: data.isBusinessInsideBoundsLoading,
-          isEnabled: data.viewMode == BrowseViewMode.map,
           onPressed: () {
             _browseBloc.add(const GetBusinessInsideBounds());
           },
@@ -647,50 +647,6 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildViewSegment({
-    required BrowseViewMode mode,
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-          curve: Curves.easeInOut,
-          decoration: BoxDecoration(
-            color:
-                isSelected
-                    ? Colors.white.withValues(alpha: 0.92)
-                    : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-            boxShadow:
-                isSelected
-                    ? [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                    : [],
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color:
-                isSelected
-                    ? Colors.deepOrange.shade600
-                    : Colors.white.withValues(alpha: 0.85),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showPolygonDeleteConfirmationDialog(
     polygonmodel.Polygon polygon,
     bool isDeletingPolygon,
@@ -732,6 +688,10 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
 
   void _togglePolygonSidebar(bool isOpen) {
     _browseBloc.add(SetPolygonSideBarOpen(isOpen));
+  }
+
+  void _toggleBrowseSidebar(bool isOpen) {
+    _browseBloc.add(SetBrowseSideBarOpen(isOpen));
   }
 
   void _showLabelTypeDialog(LabelType? selectedLabelType) {
@@ -1031,208 +991,192 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                 );
                 return Stack(
                   children: [
-                    if (state.data.viewMode == BrowseViewMode.map)
-                      FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: LatLng(-7.9666, 112.6326),
-                          initialZoom: state.data.currentZoom,
+                    FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: LatLng(-7.9666, 112.6326),
+                        initialZoom: state.data.currentZoom,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              state.data.selectedMapType?.url ??
+                              MapType.openStreetMapDefault.url,
+                          userAgentPackageName: 'com.example.kendedes_mobile',
                         ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                state.data.selectedMapType?.url ??
-                                MapType.openStreetMapDefault.url,
-                            userAgentPackageName: 'com.example.kendedes_mobile',
-                          ),
 
-                          // SLS Polygon layer
-                          PolygonLayer(
-                            polygons:
-                                state.data.polygons
-                                    .where(
-                                      (polygonData) =>
-                                          polygonData.type.name.toLowerCase() ==
-                                          'sls',
-                                    )
-                                    .map(
-                                      (polygonData) => Polygon(
-                                        points: polygonData.points,
-                                        color: Colors.purple.withValues(
-                                          alpha: 0.05,
-                                        ),
-                                        borderStrokeWidth: 2,
-                                        borderColor: Colors.purple,
-                                        label:
-                                            '${polygonData.longCode}\n${polygonData.fullName}',
-                                        labelStyle: const TextStyle(
-                                          color: Colors.black87,
-                                          fontSize: 12,
-                                          backgroundColor: Colors.white70,
-                                        ),
-                                        labelPlacement:
-                                            PolygonLabelPlacement.centroid,
+                        // SLS Polygon layer
+                        PolygonLayer(
+                          polygons:
+                              state.data.polygons
+                                  .where(
+                                    (polygonData) =>
+                                        polygonData.type.name.toLowerCase() ==
+                                        'sls',
+                                  )
+                                  .map(
+                                    (polygonData) => Polygon(
+                                      points: polygonData.points,
+                                      color: Colors.purple.withValues(
+                                        alpha: 0.05,
                                       ),
-                                    )
-                                    .toList(),
-                          ),
+                                      borderStrokeWidth: 2,
+                                      borderColor: Colors.purple,
+                                      label:
+                                          '${polygonData.longCode}\n${polygonData.fullName}',
+                                      labelStyle: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 12,
+                                        backgroundColor: Colors.white70,
+                                      ),
+                                      labelPlacement:
+                                          PolygonLabelPlacement.centroid,
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
 
-                          // Village Polygon layer
-                          PolygonLayer(
-                            polygons:
-                                state.data.polygons
-                                    .where(
-                                      (polygonData) =>
-                                          polygonData.type.name.toLowerCase() ==
-                                          'village',
-                                    )
-                                    .map(
-                                      (polygonData) => Polygon(
-                                        points: polygonData.points,
-                                        color: Colors.orange.withValues(
-                                          alpha: 0.05,
-                                        ),
-                                        borderStrokeWidth: 2,
-                                        borderColor: Colors.orange,
-                                        label:
-                                            '${polygonData.longCode}\n${polygonData.fullName}',
-                                        labelStyle: const TextStyle(
-                                          color: Colors.black87,
-                                          fontSize: 12,
-                                          backgroundColor: Colors.white70,
-                                        ),
-                                        labelPlacement:
-                                            PolygonLabelPlacement.centroid,
+                        // Village Polygon layer
+                        PolygonLayer(
+                          polygons:
+                              state.data.polygons
+                                  .where(
+                                    (polygonData) =>
+                                        polygonData.type.name.toLowerCase() ==
+                                        'village',
+                                  )
+                                  .map(
+                                    (polygonData) => Polygon(
+                                      points: polygonData.points,
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.05,
                                       ),
-                                    )
-                                    .toList(),
-                          ),
+                                      borderStrokeWidth: 2,
+                                      borderColor: Colors.orange,
+                                      label:
+                                          '${polygonData.longCode}\n${polygonData.fullName}',
+                                      labelStyle: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 12,
+                                        backgroundColor: Colors.white70,
+                                      ),
+                                      labelPlacement:
+                                          PolygonLabelPlacement.centroid,
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
 
-                          // Marker layer from bloc state
-                          MarkerLayer(
-                            markers: [
-                              // User businesses: show selected businesses above non-selected businesses
-                              ...[
-                                ...state.data.businesses.where(
-                                  (business) =>
-                                      !state.data.selectedBusinesses.contains(
-                                        business,
-                                      ),
-                                ),
-                                ...state.data.selectedBusinesses,
-                              ].map((business) {
-                                return _buildTagMarker(
+                        // Marker layer from bloc state
+                        MarkerLayer(
+                          markers: [
+                            // User businesses: show selected businesses above non-selected businesses
+                            ...[
+                              ...state.data.businesses.where(
+                                (business) =>
+                                    !state.data.selectedBusinesses.contains(
+                                      business,
+                                    ),
+                              ),
+                              ...state.data.selectedBusinesses,
+                            ].map((business) {
+                              return _buildTagMarker(
+                                business,
+                                state.data.selectedBusinesses.contains(
                                   business,
-                                  state.data.selectedBusinesses.contains(
-                                    business,
-                                  ),
-                                  state.data.selectedLabelType?.key,
-                                  state.data.currentZoom,
-                                  mapSize,
-                                );
-                              }),
+                                ),
+                                state.data.selectedLabelType?.key,
+                                state.data.currentZoom,
+                                mapSize,
+                              );
+                            }),
 
-                              // Current location marker
-                              if (state.data.currentLocation != null)
-                                Marker(
-                                  point: state.data.currentLocation!,
-                                  width: 70,
-                                  height: 70,
-                                  child: IgnorePointer(
-                                    ignoring: true,
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        // Animated ripple effect
-                                        AnimatedBuilder(
-                                          animation: _rippleAnimation,
-                                          builder: (context, child) {
-                                            return Container(
-                                              width:
-                                                  70 * _rippleAnimation.value,
-                                              height:
-                                                  70 * _rippleAnimation.value,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
+                            // Current location marker
+                            if (state.data.currentLocation != null)
+                              Marker(
+                                point: state.data.currentLocation!,
+                                width: 70,
+                                height: 70,
+                                child: IgnorePointer(
+                                  ignoring: true,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      // Animated ripple effect
+                                      AnimatedBuilder(
+                                        animation: _rippleAnimation,
+                                        builder: (context, child) {
+                                          return Container(
+                                            width: 70 * _rippleAnimation.value,
+                                            height: 70 * _rippleAnimation.value,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: Colors.blue.withValues(
+                                                alpha:
+                                                    (1 -
+                                                        _rippleAnimation
+                                                            .value) *
+                                                    0.3,
+                                              ),
+                                              border: Border.all(
                                                 color: Colors.blue.withValues(
                                                   alpha:
-                                                      (1 -
-                                                          _rippleAnimation
-                                                              .value) *
-                                                      0.3,
+                                                      1 -
+                                                      _rippleAnimation.value,
                                                 ),
-                                                border: Border.all(
-                                                  color: Colors.blue.withValues(
-                                                    alpha:
-                                                        1 -
-                                                        _rippleAnimation.value,
-                                                  ),
-                                                  width: 2,
-                                                ),
+                                                width: 2,
                                               ),
-                                            );
-                                          },
-                                        ),
-                                        // Main location dot
-                                        Container(
-                                          width: 20,
-                                          height: 20,
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: Colors.white,
-                                              width: 3,
                                             ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.4,
-                                                ),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 3),
-                                              ),
-                                            ],
+                                          );
+                                        },
+                                      ),
+                                      // Main location dot
+                                      Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 3,
                                           ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.4,
+                                              ),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                            ],
-                          ),
-
-                          // Scalebar
-                          Scalebar(
-                            textStyle: TextStyle(
-                              color: Colors.grey.shade700,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            padding: const EdgeInsets.only(
-                              right: 10,
-                              left: 50,
-                              bottom: 120,
-                            ),
-                            lineColor: Colors.grey.shade700,
-                            alignment: Alignment.bottomLeft,
-                            length: ScalebarLength.l,
-                          ),
-                        ],
-                      )
-                    else
-                      Container(
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Table view (coming soon)',
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                              ),
+                          ],
                         ),
-                      ),
+
+                        // Scalebar
+                        Scalebar(
+                          textStyle: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          padding: const EdgeInsets.only(
+                            right: 10,
+                            left: 50,
+                            bottom: 120,
+                          ),
+                          lineColor: Colors.grey.shade700,
+                          alignment: Alignment.bottomLeft,
+                          length: ScalebarLength.l,
+                        ),
+                      ],
+                    ),
 
                     // Floating title bar (Tagging-like)
                     Positioned(
@@ -1315,56 +1259,25 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                     ],
                                   ),
                                 ),
-                                SizedBox(
-                                  width: 100,
-                                  height: 40,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.15,
+                                // Toggle Sidebar Button
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(14),
+                                      onTap: () => _toggleBrowseSidebar(true),
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: Icon(
+                                          Icons.menu_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
                                       ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.35,
-                                        ),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        _buildViewSegment(
-                                          mode: BrowseViewMode.map,
-                                          icon: Icons.map_rounded,
-                                          label: 'Map',
-                                          isSelected:
-                                              state.data.viewMode ==
-                                              BrowseViewMode.map,
-                                          onTap: () {
-                                            _browseBloc.add(
-                                              SetBrowseViewMode(
-                                                viewMode: BrowseViewMode.map,
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                        _buildViewSegment(
-                                          mode: BrowseViewMode.table,
-                                          icon: Icons.table_rows_rounded,
-                                          label: 'Table',
-                                          isSelected:
-                                              state.data.viewMode ==
-                                              BrowseViewMode.table,
-                                          onTap: () {
-                                            _browseBloc.add(
-                                              SetBrowseViewMode(
-                                                viewMode: BrowseViewMode.table,
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
                                     ),
                                   ),
                                 ),
@@ -1376,215 +1289,213 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                     ),
 
                     // Right-side action buttons (map only)
-                    if (state.data.viewMode == BrowseViewMode.map)
-                      Positioned(
-                        top: topPadding + 92,
-                        right: 16,
-                        child: Column(
-                          children: [
-                            // Compass
+                    Positioned(
+                      top: topPadding + 92,
+                      right: 16,
+                      child: Column(
+                        children: [
+                          // Compass
+                          _buildActionButton(
+                            icon: Icons.navigation_rounded,
+                            iconColor: Colors.red,
+                            onPressed: () {
+                              _mapController.rotate(0.0);
+                            },
+                            child: Transform.rotate(
+                              angle: state.data.rotation * math.pi / 180,
+                              child: const Icon(
+                                Icons.navigation_rounded,
+                                color: Colors.red,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Label type button
+                          _buildActionButton(
+                            icon: Icons.label,
+                            iconColor: Colors.green,
+                            onPressed: () {
+                              _showLabelTypeDialog(
+                                state.data.selectedLabelType,
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Map type button
+                          _buildActionButton(
+                            icon: Icons.layers_rounded,
+                            iconColor: Colors.blue.shade600,
+                            onPressed: () {
+                              _showMapTypeDialog(state.data.selectedMapType);
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Polygon button
+                          _buildActionButton(
+                            icon: Icons.pentagon_outlined,
+                            iconColor: Colors.purple.shade600,
+                            onPressed: () {
+                              _togglePolygonSidebar(true);
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Clear selection button
+                          if (state.data.selectedBusinesses.isNotEmpty) ...[
                             _buildActionButton(
-                              icon: Icons.navigation_rounded,
+                              icon: Icons.clear_all_rounded,
                               iconColor: Colors.red,
-                              onPressed: () {
-                                _mapController.rotate(0.0);
-                              },
-                              child: Transform.rotate(
-                                angle: state.data.rotation * math.pi / 180,
-                                child: const Icon(
-                                  Icons.navigation_rounded,
-                                  color: Colors.red,
-                                  size: 22,
-                                ),
-                              ),
+                              onPressed: () {},
                             ),
-
-                            const SizedBox(height: 12),
-
-                            // Label type button
-                            _buildActionButton(
-                              icon: Icons.label,
-                              iconColor: Colors.green,
-                              onPressed: () {
-                                _showLabelTypeDialog(
-                                  state.data.selectedLabelType,
-                                );
-                              },
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // Map type button
-                            _buildActionButton(
-                              icon: Icons.layers_rounded,
-                              iconColor: Colors.blue.shade600,
-                              onPressed: () {
-                                _showMapTypeDialog(state.data.selectedMapType);
-                              },
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // Polygon button
-                            _buildActionButton(
-                              icon: Icons.pentagon_outlined,
-                              iconColor: Colors.purple.shade600,
-                              onPressed: () {
-                                _togglePolygonSidebar(true);
-                              },
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // Clear selection button
-                            if (state.data.selectedBusinesses.isNotEmpty) ...[
-                              _buildActionButton(
-                                icon: Icons.clear_all_rounded,
-                                iconColor: Colors.red,
-                                onPressed: () {},
-                              ),
-                            ],
                           ],
-                        ),
+                        ],
                       ),
+                    ),
 
                     // Zoom level indicator
-                    if (state.data.viewMode == BrowseViewMode.map)
-                      Positioned(
-                        top: MediaQuery.of(context).padding.top + 100,
-                        left: 16,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.location_on,
-                                        size: 12,
-                                        color: Colors.orange.shade600,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Total tagging:',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade800,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 16),
-                                    child: Text(
-                                      '${state.data.businesses.length} di map',
+                    Positioned(
+                      top: MediaQuery.of(context).padding.top + 100,
+                      left: 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.location_on,
+                                      size: 12,
+                                      color: Colors.orange.shade600,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Total tagging:',
                                       style: TextStyle(
                                         color: Colors.grey.shade800,
                                         fontSize: 10,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                'Zoom Level: ${state.data.currentZoom.toStringAsFixed(1)}',
-                                style: TextStyle(
-                                  color: Colors.grey.shade800,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
+                                  ],
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            // Color Legend Button
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: _showColorLegendDialog,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.palette,
-                                          size: 12,
-                                          color: Colors.purple.shade600,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Legenda',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.grey.shade800,
-                                          ),
-                                        ),
-                                      ],
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 16),
+                                  child: Text(
+                                    '${state.data.businesses.length} di map',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade800,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              'Zoom Level: ${state.data.currentZoom.toStringAsFixed(1)}',
+                              style: TextStyle(
+                                color: Colors.grey.shade800,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Color Legend Button
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: _showColorLegendDialog,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.palette,
+                                        size: 12,
+                                        color: Colors.purple.shade600,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Legenda',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
 
                     // Bottom load business container with current location button
                     Positioned(
@@ -1863,11 +1774,13 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
 
                     // Sidebar overlay
                     if (state.data.isSlsWithBusinessSidebarOpen ||
-                        state.data.isPolygonSideBarOpen)
+                        state.data.isPolygonSideBarOpen ||
+                        state.data.isBrowseSideBarOpen)
                       GestureDetector(
                         onTap: () {
                           _toggleSlsWithBusinessSidebar(false);
                           _togglePolygonSidebar(false);
+                          _toggleBrowseSidebar(false);
                         },
                         child: Container(
                           color: Colors.black.withValues(alpha: 0.3),
@@ -1893,6 +1806,9 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                         );
                       },
                     ),
+
+                    // Business Sidebar
+                    const BrowseSidebarWidget(),
 
                     // Polygon sidebar
                     PolygonSidebarWidget(

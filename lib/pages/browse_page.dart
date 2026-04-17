@@ -907,6 +907,18 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
               state.data.currentZoom,
             );
           }
+        } else if (state is BusinessSelected) {
+          if (state.data.selectedBusinesses.isNotEmpty) {
+            final selectedBusiness = state.data.selectedBusinesses.first;
+            _mapController.move(
+              LatLng(
+                selectedBusiness.positionLat,
+                selectedBusiness.positionLng,
+              ),
+              state.data.currentZoom,
+            );
+            _toggleBrowseSidebar(false);
+          }
         } else if (state is ZoomLevelNotification) {
           _showZoomLevelNotificationDialog(state.message);
         } else if (state is NoBusinessInsideBounds) {
@@ -1353,7 +1365,8 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                             _buildActionButton(
                               icon: Icons.clear_all_rounded,
                               iconColor: Colors.red,
-                              onPressed: () {},
+                              onPressed:
+                                  () => _browseBloc.add(ClearBrowseSelection()),
                             ),
                           ],
                         ],

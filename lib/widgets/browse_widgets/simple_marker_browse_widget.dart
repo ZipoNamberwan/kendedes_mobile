@@ -15,13 +15,15 @@ class SimpleMarkerBrowseWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final markerColor =
+        isSelected ? Colors.green : tagData.getBrowseColorScheme();
     return GestureDetector(
       onTap: onTap, // Disable tap when in move mode
       child: Container(
         width: isSelected ? 28 : 20,
         height: isSelected ? 28 : 20,
         decoration: BoxDecoration(
-          color: tagData.getBrowseColorScheme(),
+          color: markerColor,
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: isSelected ? 3 : 2),
         ),

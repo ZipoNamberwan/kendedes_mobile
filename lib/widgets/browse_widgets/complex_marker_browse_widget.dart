@@ -17,6 +17,10 @@ class ComplexMarkerBrowseWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final markerColor =
+        isSelected
+            ? Colors.green
+            : tagData.getBrowseColorScheme();
     return Center(
       child: Stack(
         alignment: Alignment.center,
@@ -52,7 +56,7 @@ class ComplexMarkerBrowseWidget extends StatelessWidget {
               width: isSelected ? 40 : 30,
               height: isSelected ? 40 : 30,
               decoration: BoxDecoration(
-                color: tagData.getBrowseColorScheme(),
+                color: markerColor,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: Colors.white,

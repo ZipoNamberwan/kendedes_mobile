@@ -803,6 +803,99 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         emit(BrowseSideBarClosed(data: newDataState));
       }
     });
+
+    on<ResetAllFilter>((event, emit) {
+      emit(
+        AllFilterCleared(
+          data: state.data.copyWith(
+            resetAllFilter: true,
+            filteredBusinesses: state.data.businesses,
+          ),
+        ),
+      );
+    });
+
+    on<SearchBusiness>((event, emit) {
+      final newQuery = event.query;
+      final filtered = _applyFilters(
+        allTags: state.data.businesses,
+        query: newQuery,
+        projectType: state.data.selectedProjectTypeFilter,
+      );
+
+      final newDataState = state.data.copyWith(
+        filteredBusinesses: filtered,
+        searchQuery: newQuery,
+        resetSearchQuery: event.reset ?? false,
+      );
+      if (event.reset ?? false) {
+        emit(SearchQueryCleared(data: newDataState));
+      } else {
+        emit(BrowseState(data: newDataState));
+      }
+    });
+
+    on<FilterBusinessByProjectType>((event, emit) {
+      final selectedProjectType = event.projectType;
+      final filtered = _applyFilters(
+        allTags: state.data.businesses,
+        query: state.data.searchQuery,
+        projectType: selectedProjectType,
+      );
+
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            filteredBusinesses: filtered,
+            selectedProjectTypeFilter: selectedProjectType,
+            resetProjectTypeFilter: event.reset ?? false,
+          ),
+        ),
+      );
+    });
+
+    on<SelectBusiness>((event, emit) {
+      emit(
+        BusinessSelected(
+          data: state.data.copyWith(selectedBusinesses: [event.business]),
+        ),
+      );
+    });
+
+    on<ClearBrowseSelection>((event, emit) {
+      emit(BrowseState(data: state.data.copyWith(selectedBusinesses: [])));
+    });
+  }
+
+  List<TagData> _applyFilters({
+    required List<TagData> allTags,
+    required String? query,
+    required ProjectType? projectType,
+  }) {
+    final normalizedQuery = query?.trim().toLowerCase();
+
+    // No filters applied → return all
+    if ((normalizedQuery == null || normalizedQuery.isEmpty) &&
+        projectType == null) {
+      return allTags;
+    }
+
+    return allTags.where((tag) {
+      final matchesQuery =
+          normalizedQuery == null ||
+          normalizedQuery.isEmpty ||
+          tag.businessName.toLowerCase().contains(normalizedQuery) ||
+          (tag.businessOwner?.toLowerCase().contains(normalizedQuery) ??
+              false) ||
+          (tag.businessAddress?.toLowerCase().contains(normalizedQuery) ??
+              false) ||
+          tag.description.toLowerCase().contains(normalizedQuery);
+
+      final matchesProjectType =
+          projectType == null || tag.project.type.key == projectType.key;
+
+      return matchesQuery && matchesProjectType;
+    }).toList();
   }
 
   Future<Position> _getCurrentPosition() async {

@@ -7,6 +7,7 @@ import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -233,6 +234,27 @@ class BrowseSideBarClosed extends BrowseState {
   List<Object> get props => [data];
 }
 
+class SearchQueryCleared extends BrowseState {
+  const SearchQueryCleared({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class AllFilterCleared extends BrowseState {
+  const AllFilterCleared({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class BusinessSelected extends BrowseState {
+  const BusinessSelected({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class BrowseStateData {
   // UI data state
   final BusinessLoadMode loadMode;
@@ -287,10 +309,14 @@ class BrowseStateData {
   // User data state
   final User? currentUser;
 
-  //Polygon attribute
+  // Polygon attribute
   final List<Polygon> polygons;
   final bool isLoadingPolygon;
   final bool isDeletingPolygon;
+
+  // Filter attribute
+  final String? searchQuery;
+  final ProjectType? selectedProjectTypeFilter;
 
   BrowseStateData({
     required this.loadMode,
@@ -305,7 +331,7 @@ class BrowseStateData {
     required this.isSlsWithBusinessSidebarOpen,
     required this.isDeletingSlsWithBusiness,
     required this.isBrowseSideBarOpen,
-    
+
     required this.currentZoom,
     required this.rotation,
     required this.isLoadingCurrentLocation,
@@ -344,6 +370,9 @@ class BrowseStateData {
     required this.polygons,
     required this.isLoadingPolygon,
     required this.isDeletingPolygon,
+
+    this.searchQuery,
+    this.selectedProjectTypeFilter,
   });
   BrowseStateData copyWith({
     BusinessLoadMode? loadMode,
@@ -358,7 +387,6 @@ class BrowseStateData {
     bool? isSlsWithBusinessSidebarOpen,
     bool? isDeletingSlsWithBusiness,
     bool? isBrowseSideBarOpen,
-    bool? resetAllFilter,
 
     double? currentZoom,
     double? rotation,
@@ -402,6 +430,12 @@ class BrowseStateData {
     List<Polygon>? polygons,
     bool? isLoadingPolygon,
     bool? isDeletingPolygon,
+
+    String? searchQuery,
+    ProjectType? selectedProjectTypeFilter,
+    bool? resetAllFilter,
+    bool? resetSearchQuery,
+    bool? resetProjectTypeFilter,
   }) {
     return BrowseStateData(
       loadMode: loadMode ?? this.loadMode,
@@ -477,7 +511,50 @@ class BrowseStateData {
       polygons: polygons ?? this.polygons,
       isLoadingPolygon: isLoadingPolygon ?? this.isLoadingPolygon,
       isDeletingPolygon: isDeletingPolygon ?? this.isDeletingPolygon,
+
+      searchQuery:
+          resetAllFilter ?? false
+              ? null
+              : resetSearchQuery ?? false
+              ? null
+              : searchQuery ?? this.searchQuery,
+      selectedProjectTypeFilter:
+          resetAllFilter ?? false
+              ? null
+              : resetProjectTypeFilter ?? false
+              ? null
+              : selectedProjectTypeFilter ?? this.selectedProjectTypeFilter,
     );
+  }
+
+  List<TagData> getSortedFilteredBusinesses() {
+    if (currentLocation == null) {
+      return List.from(filteredBusinesses);
+    }
+
+    final lat = currentLocation!.latitude;
+    final lng = currentLocation!.longitude;
+    List<TagData> sortedBusinesses = List.from(filteredBusinesses);
+
+    sortedBusinesses.sort((a, b) {
+      final aIsZero = a.positionLat == 0 && a.positionLng == 0;
+      final bIsZero = b.positionLat == 0 && b.positionLng == 0;
+
+      if (aIsZero && bIsZero) return 0;
+      if (aIsZero) return 1;
+      if (bIsZero) return -1;
+
+      final distA =
+          (a.positionLat - lat) * (a.positionLat - lat) +
+          (a.positionLng - lng) * (a.positionLng - lng);
+      final distB =
+          (b.positionLat - lat) * (b.positionLat - lat) +
+          (b.positionLng - lng) * (b.positionLng - lng);
+
+      return distA.compareTo(distB);
+    });
+
+    return sortedBusinesses;
   }
 }
 

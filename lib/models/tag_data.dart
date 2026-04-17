@@ -1,9 +1,12 @@
+import 'dart:math';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/survey.dart';
 import 'package:kendedes_mobile/models/user.dart';
+import 'package:latlong2/latlong.dart';
 
 class TagData {
   final String id;
@@ -177,6 +180,8 @@ class TagData {
     } else if (project.type.key == ProjectType.supplementMobile.key ||
         project.type.key == ProjectType.supplementSwmaps.key) {
       return Colors.cyan;
+    } else if (project.type.key == ProjectType.agriculture.key) {
+      return Colors.green;
     } else {
       return Colors.grey;
     }
@@ -201,6 +206,56 @@ class TagData {
       return true;
     }
     return false;
+  }
+
+  /// Calculate distance in meters from this business position to a given location.
+  /// Returns null if business position is (0, 0) or the given location is null.
+  double? distanceTo(LatLng? currentLocation) {
+    if (currentLocation == null) return null;
+    if (positionLat == 0 && positionLng == 0) return null;
+
+    const double earthRadius = 6371000; // meters
+    final dLat = _toRadians(currentLocation.latitude - positionLat);
+    final dLng = _toRadians(currentLocation.longitude - positionLng);
+    final a =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_toRadians(positionLat)) *
+            cos(_toRadians(currentLocation.latitude)) *
+            sin(dLng / 2) *
+            sin(dLng / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
+  }
+
+  static double _toRadians(double degrees) => degrees * pi / 180;
+
+  bool get hasAreaInfo {
+    if (sls == null) return false;
+    return sls!.longCode.isNotEmpty ||
+        sls!.name.isNotEmpty ||
+        (sls!.village?.name.isNotEmpty ?? false) ||
+        (sls!.village?.subdistrict?.name.isNotEmpty ?? false) ||
+        (sls!.village?.subdistrict?.regency?.name.isNotEmpty ?? false);
+  }
+
+  String get areaInfo {
+    if (sls == null) return '-';
+    return '[$areaCode] $areaName';
+  }
+
+  String get areaCode {
+    return sls?.longCode ?? '';
+  }
+
+  String get areaName {
+    if (sls == null) return '-';
+
+    final regencyName = sls!.village?.subdistrict?.regency?.name ?? '';
+    final subdistrictName = sls!.village?.subdistrict?.name ?? '';
+    final villageName = sls!.village?.name ?? '';
+    final slsName = sls!.name;
+
+    return '$regencyName, $subdistrictName, $villageName, $slsName';
   }
 
   /// Convert to JSON to sent to server

@@ -7,7 +7,9 @@ import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:latlong2/latlong.dart';
 
 abstract class BrowseEvent extends Equatable {
@@ -165,4 +167,32 @@ class DeleteSlsWithBusiness extends BrowseEvent {
 class SetBrowseSideBarOpen extends BrowseEvent {
   final bool isOpen;
   const SetBrowseSideBarOpen(this.isOpen);
+}
+
+class ResetAllFilter extends BrowseEvent {
+  const ResetAllFilter();
+}
+
+class SearchBusiness extends BrowseEvent {
+  final String? query;
+  final bool? reset;
+  const SearchBusiness({this.query, this.reset});
+}
+
+class FilterBusinessByProjectType extends BrowseEvent {
+  final ProjectType? projectType;
+  final bool? reset;
+  const FilterBusinessByProjectType({this.projectType, this.reset});
+}
+
+class SelectBusiness extends BrowseEvent {
+  final TagData business;
+  const SelectBusiness(this.business);
+
+  @override
+  List<Object?> get props => [business];
+}
+
+class ClearBrowseSelection extends BrowseEvent {
+  const ClearBrowseSelection();
 }

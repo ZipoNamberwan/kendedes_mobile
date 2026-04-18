@@ -182,6 +182,8 @@ class TagData {
       return Colors.cyan;
     } else if (project.type.key == ProjectType.agriculture.key) {
       return Colors.green;
+    } else if (project.type.key == ProjectType.eform.key) {
+      return Colors.yellow;
     } else {
       return Colors.grey;
     }

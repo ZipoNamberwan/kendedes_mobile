@@ -21,6 +21,7 @@ import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/polygon.dart' as polygonmodel;
 import 'package:kendedes_mobile/pages/login_page.dart';
+import 'package:kendedes_mobile/widgets/browse_widgets/browse_color_legend_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/browse_sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/complex_marker_browse_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/delete_sls_with_business_dialog.dart';
@@ -28,7 +29,6 @@ import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart
 import 'package:kendedes_mobile/widgets/browse_widgets/simple_marker_browse_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/sls_with_business_sidebar.dart';
 import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
-import 'package:kendedes_mobile/widgets/color_legend_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 import 'package:kendedes_mobile/widgets/label_type_selection_dialog.dart';
 import 'package:kendedes_mobile/widgets/map_type_selection_dialog.dart';
@@ -730,7 +730,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return ColorLegendDialog();
+        return BrowseColorLegendDialog();
       },
     );
   }
@@ -1803,8 +1803,16 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                     // Sls with business sidebar
                     SlsWithBusinessSidebar(
                       isOpen: state.data.isSlsWithBusinessSidebarOpen,
-                      items: state.data.slsWithBusinessList,
+                      items: state.data.filteredSlsWithBusinessList,
                       onClose: () => _toggleSlsWithBusinessSidebar(false),
+                      onSearch:
+                          (value) => _browseBloc.add(
+                            SearchSlsWithBusiness(query: value),
+                          ),
+                      onClear:
+                          () => _browseBloc.add(
+                            const SearchSlsWithBusiness(reset: true),
+                          ),
                       onItemTap: (item) {
                         if (item.sls.polygon != null) {
                           _browseBloc.add(

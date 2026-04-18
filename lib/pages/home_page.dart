@@ -362,7 +362,7 @@ class _HomePageState extends State<HomePage> {
                     context: context,
                     title: 'Mode Tagging',
                     subtitle: 'Memulai tagging usaha, sinkronisasi data, dan manajemen proyek',
-                    icon: Icons.local_offer_rounded,
+                    icon: Icons.location_on,
                     iconColor: Colors.deepOrange,
                     onTap: () {
                       Navigator.of(context).push(

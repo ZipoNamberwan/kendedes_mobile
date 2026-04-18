@@ -69,6 +69,17 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           );
         }
 
+        // 6. Init filter options for project type and sls filter based on the initialized businesses list
+        final projectTypesFilterOptions = <ProjectType>[
+          ProjectType.marketSwmaps,
+          ProjectType.supplementSwmaps,
+          ProjectType.supplementMobile,
+          ProjectType.sbr,
+          ProjectType.agriculture,
+          ProjectType.eform,
+          ProjectType.other,
+        ];
+
         emit(
           InitializingSuccess(
             data: state.data.copyWith(
@@ -76,9 +87,12 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               regencies: regencies,
               polygons: polygons,
               slsWithBusinessList: slsWithBusinessList,
+              filteredSlsWithBusinessList: slsWithBusinessList,
               businesses: businesses,
               filteredBusinesses:
                   businesses, // Initialize filteredBusinesses with the full list of businesses
+              projectTypesFilterOptions: projectTypesFilterOptions,
+              slsFilterOptions: _getSlsFilterOptions(businesses),
             ),
           ),
         );
@@ -227,6 +241,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                   data: state.data.copyWith(
                     isBusinessInsideBoundsLoading: false,
                     businesses: updatedNearbyBusiness,
+                    slsFilterOptions: _getSlsFilterOptions(
+                      updatedNearbyBusiness,
+                    ),
                     requestedAreas: [
                       ...state.data.requestedAreas,
                       requestedArea,
@@ -315,6 +332,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                 data: state.data.copyWith(
                   isBusinessBySlsLoading: false,
                   businesses: mergedBusinesses,
+                  slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
                 ),
               ),
             );
@@ -403,11 +421,16 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               data: state.data.copyWith(
                 isBusinessBySlsLoading: false,
                 businesses: mergedBusinesses,
+                slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
                 polygons:
                     pairAdded
                         ? [...state.data.polygons, updatedPolygon!]
                         : state.data.polygons,
                 slsWithBusinessList:
+                    slsWithBusinessCreated
+                        ? [...state.data.slsWithBusinessList, slsWithBusiness]
+                        : state.data.slsWithBusinessList,
+                filteredSlsWithBusinessList:
                     slsWithBusinessCreated
                         ? [...state.data.slsWithBusinessList, slsWithBusiness]
                         : state.data.slsWithBusinessList,
@@ -780,6 +803,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         SlsWithBusinessDeleted(
           data: state.data.copyWith(
             slsWithBusinessList: updatedSlsWithBusinessList,
+            filteredSlsWithBusinessList: updatedSlsWithBusinessList,
             polygons: updatedPolygons,
             isDeletingSlsWithBusiness: false,
             businesses: updatedBusinesses,
@@ -821,6 +845,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         allTags: state.data.businesses,
         query: newQuery,
         projectType: state.data.selectedProjectTypeFilter,
+        sls: state.data.selectedSlsFilter,
       );
 
       final newDataState = state.data.copyWith(
@@ -841,6 +866,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         allTags: state.data.businesses,
         query: state.data.searchQuery,
         projectType: selectedProjectType,
+        sls: state.data.selectedSlsFilter,
       );
 
       emit(
@@ -849,6 +875,26 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             filteredBusinesses: filtered,
             selectedProjectTypeFilter: selectedProjectType,
             resetProjectTypeFilter: event.reset ?? false,
+          ),
+        ),
+      );
+    });
+
+    on<FilterBusinessBySls>((event, emit) {
+      final selectedSls = event.sls;
+      final filtered = _applyFilters(
+        allTags: state.data.businesses,
+        query: state.data.searchQuery,
+        projectType: state.data.selectedProjectTypeFilter,
+        sls: selectedSls,
+      );
+
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            filteredBusinesses: filtered,
+            selectedSlsFilter: selectedSls,
+            resetSlsFilter: event.reset ?? false,
           ),
         ),
       );
@@ -865,18 +911,64 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     on<ClearBrowseSelection>((event, emit) {
       emit(BrowseState(data: state.data.copyWith(selectedBusinesses: [])));
     });
+
+    on<SearchSlsWithBusiness>((event, emit) {
+      final newQuery = event.query;
+
+      final filtered =
+          (newQuery == null || newQuery.trim().isEmpty)
+              ? state.data.slsWithBusinessList
+              : state.data.slsWithBusinessList.where((slsWithBusiness) {
+                final lowerQuery = newQuery.toLowerCase();
+                final sls = slsWithBusiness.sls;
+                return sls.name.toLowerCase().contains(lowerQuery) ||
+                    sls.longCode.toLowerCase().contains(lowerQuery) ||
+                    (sls.village?.name.toLowerCase().contains(lowerQuery) ??
+                        false) ||
+                    (sls.village?.subdistrict?.name.toLowerCase().contains(
+                          lowerQuery,
+                        ) ??
+                        false) ||
+                    (sls.village?.subdistrict?.regency?.name
+                            .toLowerCase()
+                            .contains(lowerQuery) ??
+                        false);
+              }).toList();
+
+      final newDataState = state.data.copyWith(
+        filteredSlsWithBusinessList: filtered,
+        slsWithBusinessSearchQuery: newQuery,
+        resetSlsWithBusinessSearchQuery: event.reset ?? false,
+      );
+      if (event.reset ?? false) {
+        emit(SearchSlsWithBusinessQueryCleared(data: newDataState));
+      } else {
+        emit(BrowseState(data: newDataState));
+      }
+    });
+  }
+
+  List<Sls> _getSlsFilterOptions(List<TagData> businesses) {
+    return businesses
+        .where((business) => business.sls != null)
+        .map((business) => business.sls!)
+        .toSet()
+        .toList()
+      ..sort((a, b) => a.longCode.compareTo(b.longCode));
   }
 
   List<TagData> _applyFilters({
     required List<TagData> allTags,
     required String? query,
     required ProjectType? projectType,
+    required Sls? sls,
   }) {
     final normalizedQuery = query?.trim().toLowerCase();
 
     // No filters applied → return all
     if ((normalizedQuery == null || normalizedQuery.isEmpty) &&
-        projectType == null) {
+        projectType == null &&
+        sls == null) {
       return allTags;
     }
 
@@ -894,7 +986,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       final matchesProjectType =
           projectType == null || tag.project.type.key == projectType.key;
 
-      return matchesQuery && matchesProjectType;
+      final matchesSls = sls == null || tag.sls?.id == sls.id;
+
+      return matchesQuery && matchesProjectType && matchesSls;
     }).toList();
   }
 

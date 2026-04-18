@@ -185,6 +185,12 @@ class FilterBusinessByProjectType extends BrowseEvent {
   const FilterBusinessByProjectType({this.projectType, this.reset});
 }
 
+class FilterBusinessBySls extends BrowseEvent {
+  final Sls? sls;
+  final bool? reset;
+  const FilterBusinessBySls({this.sls, this.reset});
+}
+
 class SelectBusiness extends BrowseEvent {
   final TagData business;
   const SelectBusiness(this.business);
@@ -195,4 +201,10 @@ class SelectBusiness extends BrowseEvent {
 
 class ClearBrowseSelection extends BrowseEvent {
   const ClearBrowseSelection();
+}
+
+class SearchSlsWithBusiness extends BrowseEvent {
+  final String? query;
+  final bool? reset;
+  const SearchSlsWithBusiness({this.query, this.reset});
 }

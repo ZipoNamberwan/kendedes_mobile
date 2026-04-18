@@ -5,6 +5,8 @@ class SlsWithBusinessSidebar extends StatefulWidget {
   final List<SlsWithBusiness> items;
   final void Function(SlsWithBusiness item) onDeleteTap;
   final void Function(SlsWithBusiness item) onItemTap;
+  final void Function(String value) onSearch;
+  final VoidCallback onClear;
   final bool isOpen;
   final VoidCallback onClose;
   final String title;
@@ -13,15 +15,16 @@ class SlsWithBusinessSidebar extends StatefulWidget {
     super.key,
     required this.items,
     required this.onDeleteTap,
+    required this.onSearch,
     required this.onItemTap,
+    required this.onClear,
     required this.isOpen,
     required this.onClose,
     this.title = 'Prelist SLS yang Sudah Diunduh',
   });
 
   @override
-  State<SlsWithBusinessSidebar> createState() =>
-      _SlsWithBusinessSidebarState();
+  State<SlsWithBusinessSidebar> createState() => _SlsWithBusinessSidebarState();
 }
 
 class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
@@ -78,83 +81,83 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
             border: Border.all(color: Colors.grey.shade200, width: 1),
           ),
           child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _valueOrDash(slsName),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.grey.shade900,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  _valueOrDash(slsLongCode),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${_valueOrDash(regencyName)}, ${_valueOrDash(subdistrictName)}, ${_valueOrDash(villageName)}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                _buildCountBadge(context, item.businessCount),
-              ],
-            ),
-          ),
-          const SizedBox(width: 4),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (hasPolygon) ...[
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 20,
-                  color: Colors.grey.shade400,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _valueOrDash(slsName),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey.shade900,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _valueOrDash(slsLongCode),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_valueOrDash(regencyName)}, ${_valueOrDash(subdistrictName)}, ${_valueOrDash(villageName)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    _buildCountBadge(context, item.businessCount),
+                  ],
                 ),
-                const SizedBox(height: 2),
-              ],
-              SizedBox(
-                width: 32,
-                height: 32,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () => widget.onDeleteTap(item),
-                    child: Center(
-                      child: Icon(
-                        Icons.delete_outline_rounded,
-                        size: 18,
-                        color: Colors.red.shade600,
+              ),
+              const SizedBox(width: 4),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (hasPolygon) ...[
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 2),
+                  ],
+                  SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => widget.onDeleteTap(item),
+                        child: Center(
+                          child: Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                            color: Colors.red.shade600,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
         ),
       ),
     );
@@ -234,6 +237,9 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
               child: TextField(
                 controller: _searchController,
+                onChanged: (value) {
+                  widget.onSearch(value);
+                },
                 style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Cari SLS...',
@@ -246,6 +252,20 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
                     size: 20,
                     color: Colors.grey.shade500,
                   ),
+                  suffixIcon:
+                      _searchController.text.isNotEmpty
+                          ? GestureDetector(
+                            onTap: () {
+                              _searchController.clear();
+                              widget.onClear();
+                            },
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 18,
+                              color: Colors.grey.shade500,
+                            ),
+                          )
+                          : null,
                   filled: true,
                   fillColor: Colors.grey.shade100,
                   contentPadding: const EdgeInsets.symmetric(
@@ -277,10 +297,7 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
                   decoration: BoxDecoration(
                     // color: Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.grey.shade200,
-                      width: 1,
-                    ),
+                    border: Border.all(color: Colors.grey.shade200, width: 1),
                   ),
                   child:
                       widget.items.isEmpty
@@ -288,8 +305,7 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   const Icon(
                                     Icons.download_done_rounded,
@@ -322,8 +338,7 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
                             padding: const EdgeInsets.all(8),
                             itemCount: widget.items.length,
                             separatorBuilder:
-                                (context, index) =>
-                                    const SizedBox(height: 6),
+                                (context, index) => const SizedBox(height: 6),
                             itemBuilder: (context, index) {
                               final item = widget.items[index];
                               return _buildRowItem(context, item);

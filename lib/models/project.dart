@@ -151,7 +151,9 @@ class ProjectType {
   static const wilkerstat = ProjectType._('wilkerstat', 'Suplemen Wilkerstat');
   static const jenggala = ProjectType._('jenggala', 'Jenggala');
   static const survey = ProjectType._('survey', 'Survei BPS');
+  static const sbr = ProjectType._('sbr', 'SBR');
   static const agriculture = ProjectType._('agriculture', 'ST2023');
+  static const eform = ProjectType._('eform', 'E-Form Jatim 2025');
   static const other = ProjectType._('other', 'Lainnya');
   // static const browse = ProjectType._('browse', 'Browse Mode');
 
@@ -162,7 +164,9 @@ class ProjectType {
     // wilkerstat,
     // jenggala,
     survey,
+    sbr,
     agriculture,
+    eform,
     // other,
   ];
 

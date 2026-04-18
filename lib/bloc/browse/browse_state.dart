@@ -62,9 +62,12 @@ class InitializingStarted extends BrowseState {
           isSaveToLocalDbByArea: true,
           isSaveToLocalDbByScreen: true,
           slsWithBusinessList: [],
+          filteredSlsWithBusinessList: [],
           isSlsWithBusinessSidebarOpen: false,
           isDeletingSlsWithBusiness: false,
           isBrowseSideBarOpen: false,
+          projectTypesFilterOptions: [],
+          slsFilterOptions: [],
         ),
       );
 
@@ -255,6 +258,13 @@ class BusinessSelected extends BrowseState {
   List<Object> get props => [data];
 }
 
+class SearchSlsWithBusinessQueryCleared extends BrowseState {
+  const SearchSlsWithBusinessQueryCleared({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class BrowseStateData {
   // UI data state
   final BusinessLoadMode loadMode;
@@ -285,6 +295,8 @@ class BrowseStateData {
   final List<TagData> filteredBusinesses;
   final List<TagData> selectedBusinesses;
   final List<SlsWithBusiness> slsWithBusinessList;
+  final List<SlsWithBusiness> filteredSlsWithBusinessList;
+  final String? slsWithBusinessSearchQuery;
 
   // Load Business data state
   final List<Regency> regencies;
@@ -316,7 +328,10 @@ class BrowseStateData {
 
   // Filter attribute
   final String? searchQuery;
+  final List<ProjectType> projectTypesFilterOptions;
   final ProjectType? selectedProjectTypeFilter;
+  final List<Sls> slsFilterOptions;
+  final Sls? selectedSlsFilter;
 
   BrowseStateData({
     required this.loadMode,
@@ -345,6 +360,8 @@ class BrowseStateData {
     required this.filteredBusinesses,
     required this.selectedBusinesses,
     required this.slsWithBusinessList,
+    required this.filteredSlsWithBusinessList,
+    this.slsWithBusinessSearchQuery,
 
     required this.regencies,
     required this.subdistricts,
@@ -373,6 +390,9 @@ class BrowseStateData {
 
     this.searchQuery,
     this.selectedProjectTypeFilter,
+    this.selectedSlsFilter,
+    required this.projectTypesFilterOptions,
+    required this.slsFilterOptions,
   });
   BrowseStateData copyWith({
     BusinessLoadMode? loadMode,
@@ -401,6 +421,9 @@ class BrowseStateData {
     List<TagData>? filteredBusinesses,
     List<TagData>? selectedBusinesses,
     List<SlsWithBusiness>? slsWithBusinessList,
+    List<SlsWithBusiness>? filteredSlsWithBusinessList,
+    String? slsWithBusinessSearchQuery,
+    bool? resetSlsWithBusinessSearchQuery,
 
     List<Regency>? regencies,
     List<Subdistrict>? subdistricts,
@@ -432,10 +455,14 @@ class BrowseStateData {
     bool? isDeletingPolygon,
 
     String? searchQuery,
+    List<ProjectType>? projectTypesFilterOptions,
     ProjectType? selectedProjectTypeFilter,
+    List<Sls>? slsFilterOptions,
+    Sls? selectedSlsFilter,
     bool? resetAllFilter,
     bool? resetSearchQuery,
     bool? resetProjectTypeFilter,
+    bool? resetSlsFilter,
   }) {
     return BrowseStateData(
       loadMode: loadMode ?? this.loadMode,
@@ -470,7 +497,12 @@ class BrowseStateData {
       filteredBusinesses: filteredBusinesses ?? this.filteredBusinesses,
       selectedBusinesses: selectedBusinesses ?? this.selectedBusinesses,
       slsWithBusinessList: slsWithBusinessList ?? this.slsWithBusinessList,
-
+      filteredSlsWithBusinessList:
+          filteredSlsWithBusinessList ?? this.filteredSlsWithBusinessList,
+      slsWithBusinessSearchQuery:
+          resetSlsWithBusinessSearchQuery == true
+              ? null
+              : slsWithBusinessSearchQuery ?? this.slsWithBusinessSearchQuery,
       regencies: regencies ?? this.regencies,
       subdistricts:
           (clearSelectedRegency ?? false)
@@ -524,6 +556,15 @@ class BrowseStateData {
               : resetProjectTypeFilter ?? false
               ? null
               : selectedProjectTypeFilter ?? this.selectedProjectTypeFilter,
+      selectedSlsFilter:
+          resetAllFilter ?? false
+              ? null
+              : resetSlsFilter ?? false
+              ? null
+              : selectedSlsFilter ?? this.selectedSlsFilter,
+      projectTypesFilterOptions:
+          projectTypesFilterOptions ?? this.projectTypesFilterOptions,
+      slsFilterOptions: slsFilterOptions ?? this.slsFilterOptions,
     );
   }
 

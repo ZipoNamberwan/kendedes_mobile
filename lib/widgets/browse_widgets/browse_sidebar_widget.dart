@@ -85,8 +85,8 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
   Widget build(BuildContext context) {
     return BlocConsumer<BrowseBloc, BrowseState>(
       listener: (context, state) {
-        if (state is BrowseSideBarOpened ||
-            state is SearchQueryCleared ||
+        if ( /* state is BrowseSideBarOpened || */ state
+                is SearchQueryCleared ||
             state is AllFilterCleared) {
           _searchController.text = '';
         } else if (state is BrowseSideBarClosed) {
@@ -497,9 +497,7 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
                             ),
                           ),
                           const Spacer(),
-                          if ((state.data.searchQuery?.isNotEmpty ?? false) ||
-                              state.data.selectedProjectTypeFilter != null ||
-                              state.data.selectedSlsFilter != null)
+                          if (state.data.isBusinessFilterActive())
                             InkWell(
                               onTap: () => _browseBloc.add(ResetAllFilter()),
                               borderRadius: BorderRadius.circular(10),

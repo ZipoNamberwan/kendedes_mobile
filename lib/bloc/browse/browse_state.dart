@@ -597,6 +597,12 @@ class BrowseStateData {
 
     return sortedBusinesses;
   }
+
+  bool isBusinessFilterActive() {
+    return (searchQuery?.isNotEmpty ?? false) ||
+        selectedProjectTypeFilter != null ||
+        selectedSlsFilter != null;
+  }
 }
 
 enum BusinessLoadMode { area, screen }

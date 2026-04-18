@@ -1,9 +1,10 @@
 // lib/helpers/telegram_logger.dart
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class TelegramLogger {
-  static const String _token = '7701155934:AAF0KR0wxFGlwkOjZ8zOV8tk0gQcDagLFug';
-  static const String _chatId = '-4976940750'; // group ID
+  static final String _token = dotenv.env['TELEGRAM_TOKEN'] ?? '';
+  static final String _chatId = dotenv.env['TELEGRAM_CHAT_ID'] ?? ''; // group ID
 
   static final Dio _dio = Dio();
 

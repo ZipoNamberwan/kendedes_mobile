@@ -35,8 +35,11 @@ import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/version_update_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'pages/login_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future<void> main() async {
+  await dotenv.load(fileName: ".env");
+  
   FlutterError.onError = (FlutterErrorDetails details) {
     try {
       final fullStack = details.stack.toString();

@@ -252,6 +252,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                   ),
                 ),
               );
+
+              // Reset filter when new business inside bounds is fetched
+              add(ResetAllFilter());
             }
           },
           onLoginExpired: (e) {
@@ -336,6 +339,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                 ),
               ),
             );
+
+            // Reset filter when business by SLS is loaded from local DB
+            add(ResetAllFilter());
             return;
           }
 
@@ -437,6 +443,8 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               ),
             ),
           );
+          // Reset filter when business by SLS is loaded from local DB
+          add(ResetAllFilter());
         },
         onLoginExpired: (e) {
           emit(
@@ -815,11 +823,11 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     on<SetBrowseSideBarOpen>((event, emit) {
       final newDataState = state.data.copyWith(
         isBrowseSideBarOpen: event.isOpen,
-        filteredBusinesses:
-            event.isOpen
-                ? state.data.businesses
-                : state.data.filteredBusinesses,
-        resetAllFilter: event.isOpen,
+        // filteredBusinesses:
+        //     event.isOpen
+        //         ? state.data.businesses
+        //         : state.data.filteredBusinesses,
+        // resetAllFilter: event.isOpen,
       );
       if (event.isOpen) {
         emit(BrowseSideBarOpened(data: newDataState));

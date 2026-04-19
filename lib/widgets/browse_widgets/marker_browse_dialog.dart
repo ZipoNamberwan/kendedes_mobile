@@ -65,7 +65,8 @@ class MarkerBrowseDialog extends StatelessWidget {
                       _buildInfoRow('Pemilik Usaha', tagData.businessOwner!),
                     if (tagData.businessAddress != null)
                       _buildInfoRow('Alamat', tagData.businessAddress!),
-                    _buildInfoRow('Deskripsi', tagData.description),
+                    if (tagData.description != null)
+                      _buildInfoRow('Deskripsi', tagData.description!),
                     if (tagData.buildingStatus != null)
                       _buildInfoRow(
                         'Status Bangunan',

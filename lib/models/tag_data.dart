@@ -30,7 +30,7 @@ class TagData {
   final String? businessOwner;
   final String? businessAddress;
   final BuildingStatus? buildingStatus;
-  final String description;
+  final String? description;
   final Sector? sector;
   final String? note;
   final User? user;
@@ -65,7 +65,7 @@ class TagData {
     this.businessOwner,
     this.businessAddress,
     required this.buildingStatus,
-    required this.description,
+    this.description,
     required this.sector,
     this.note,
     this.survey,

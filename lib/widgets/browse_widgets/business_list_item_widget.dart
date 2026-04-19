@@ -28,7 +28,7 @@ class BusinessListItemWidget extends StatelessWidget {
     final browseColor = business.getBrowseColorScheme();
     final distance = business.distanceTo(currentLocation);
     final hasDescription =
-        business.description.isNotEmpty && business.description != '-';
+        business.description?.isNotEmpty == true && business.description != '-';
 
     return Card(
       elevation: isSelected ? 6 : 1,
@@ -55,9 +55,7 @@ class BusinessListItemWidget extends StatelessWidget {
                       end: Alignment.centerRight,
                     )
                     : null,
-            border: Border(
-              left: BorderSide(color: browseColor, width: 4),
-            ),
+            border: Border(left: BorderSide(color: browseColor, width: 4)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -94,7 +92,7 @@ class BusinessListItemWidget extends StatelessWidget {
                       if (hasDescription) ...[
                         const SizedBox(height: 2),
                         Text(
-                          business.description,
+                          business.description ?? '',
                           style: TextStyle(
                             fontSize: 12,
                             color:

@@ -989,7 +989,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               false) ||
           (tag.businessAddress?.toLowerCase().contains(normalizedQuery) ??
               false) ||
-          tag.description.toLowerCase().contains(normalizedQuery);
+          (tag.description?.toLowerCase().contains(normalizedQuery) ?? false);
 
       final matchesProjectType =
           projectType == null || tag.project.type.key == projectType.key;

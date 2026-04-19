@@ -27,7 +27,9 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
           action: () async {
             if (TaggingDbRepository().hasCheckLockedTags(event.project.id) !=
                 true) {
-              emit(InitializingStarted(message: 'Mengambil data dari server...'));
+              emit(
+                InitializingStarted(message: 'Mengambil data dari server...'),
+              );
 
               final lockedTags = await TaggingRepository().getLockedTags(
                 event.project.id,
@@ -1375,7 +1377,7 @@ class TaggingBloc extends Bloc<TaggingEvent, TaggingState> {
               false) ||
           (tag.businessAddress?.toLowerCase().contains(normalizedQuery) ??
               false) ||
-          tag.description.toLowerCase().contains(normalizedQuery);
+          (tag.description?.toLowerCase().contains(normalizedQuery) ?? false);
 
       final matchesSector = sector == null || tag.sector?.key == sector.key;
 

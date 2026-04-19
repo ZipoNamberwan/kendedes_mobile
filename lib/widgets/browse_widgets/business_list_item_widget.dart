@@ -105,10 +105,10 @@ class BusinessListItemWidget extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                      if (business.hasAreaInfo) ...[
+                      if (business.sls?.hasAreaInfo ?? false) ...[
                         const SizedBox(height: 2),
                         Text(
-                          '[${business.areaCode}]',
+                          '[${business.sls!.areaCode}]',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -120,7 +120,7 @@ class BusinessListItemWidget extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          business.areaName,
+                          business.sls!.areaName(ascending: true),
                           style: TextStyle(
                             fontSize: 11,
                             color:

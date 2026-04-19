@@ -125,6 +125,34 @@ class Sls extends Equatable {
     );
   }
 
+  bool get hasAreaInfo {
+    return longCode.isNotEmpty ||
+        name.isNotEmpty ||
+        (village?.name.isNotEmpty ?? false) ||
+        (village?.subdistrict?.name.isNotEmpty ?? false) ||
+        (village?.subdistrict?.regency?.name.isNotEmpty ?? false);
+  }
+
+  String areaInfo({bool ascending = false}) {
+    return '[$areaCode] ${areaName(ascending: ascending)}';
+  }
+
+  String get areaCode {
+    return longCode;
+  }
+
+  String areaName({bool ascending = false}) {
+    final regencyName = village?.subdistrict?.regency?.name ?? '';
+    final subdistrictName = village?.subdistrict?.name ?? '';
+    final villageName = village?.name ?? '';
+    final slsName = name;
+
+    if (ascending) {
+      return '$slsName, $villageName, $subdistrictName, $regencyName';
+    }
+    return '$regencyName, $subdistrictName, $villageName, $slsName';
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

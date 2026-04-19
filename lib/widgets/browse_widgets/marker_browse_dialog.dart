@@ -80,8 +80,8 @@ class MarkerBrowseDialog extends StatelessWidget {
                       'Posisi',
                       '${tagData.positionLat.toStringAsFixed(6)}, ${tagData.positionLng.toStringAsFixed(6)}',
                     ),
-                    if (tagData.hasAreaInfo)
-                      _buildInfoRow('Wilayah', tagData.areaInfo),
+                    if (tagData.sls?.hasAreaInfo ?? false)
+                      _buildInfoRow('Wilayah', tagData.sls!.areaInfo()),
                     if (tagData.user != null)
                       _buildInfoRow('Ditagging oleh', tagData.user!.firstname),
                     if (tagData.survey != null)

@@ -231,35 +231,6 @@ class TagData {
 
   static double _toRadians(double degrees) => degrees * pi / 180;
 
-  bool get hasAreaInfo {
-    if (sls == null) return false;
-    return sls!.longCode.isNotEmpty ||
-        sls!.name.isNotEmpty ||
-        (sls!.village?.name.isNotEmpty ?? false) ||
-        (sls!.village?.subdistrict?.name.isNotEmpty ?? false) ||
-        (sls!.village?.subdistrict?.regency?.name.isNotEmpty ?? false);
-  }
-
-  String get areaInfo {
-    if (sls == null) return '-';
-    return '[$areaCode] $areaName';
-  }
-
-  String get areaCode {
-    return sls?.longCode ?? '';
-  }
-
-  String get areaName {
-    if (sls == null) return '-';
-
-    final regencyName = sls!.village?.subdistrict?.regency?.name ?? '';
-    final subdistrictName = sls!.village?.subdistrict?.name ?? '';
-    final villageName = sls!.village?.name ?? '';
-    final slsName = sls!.name;
-
-    return '$regencyName, $subdistrictName, $villageName, $slsName';
-  }
-
   /// Convert to JSON to sent to server
   Map<String, dynamic> toServerJson() {
     return {

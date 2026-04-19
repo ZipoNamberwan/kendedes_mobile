@@ -53,8 +53,7 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
     return SearchFieldListItem<Sls>(
       sls.id,
       item: sls,
-      value:
-          '${sls.name}${sls.village != null ? ', ${sls.village!.name}' : ''}',
+      value: sls.areaName(ascending: true),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
@@ -62,7 +61,7 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '[${sls.longCode}]',
+              '[${sls.areaCode}]',
               style: TextStyle(
                 fontSize: 10,
                 color: Colors.grey[500],
@@ -70,7 +69,7 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
               ),
             ),
             Text(
-              '${sls.name}${sls.village != null ? ', ${sls.village!.name}' : ''}',
+              sls.areaName(ascending: true),
               style: const TextStyle(fontSize: 12, color: Colors.black87),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
@@ -332,8 +331,8 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
                                       ? SearchFieldListItem<Sls>(
                                         state.data.selectedSlsFilter!.id,
                                         item: state.data.selectedSlsFilter,
-                                        value:
-                                            '${state.data.selectedSlsFilter!.name}${state.data.selectedSlsFilter!.village != null ? ', ${state.data.selectedSlsFilter!.village!.name}' : ''}',
+                                        value: state.data.selectedSlsFilter!
+                                            .areaName(ascending: true),
                                       )
                                       : null,
                               suggestions:
@@ -358,14 +357,8 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
                                 return state.data.slsFilterOptions
                                     .where(
                                       (sls) =>
-                                          sls.name.toLowerCase().contains(q) ||
-                                          sls.longCode.toLowerCase().contains(
-                                            q,
-                                          ) ||
-                                          (sls.village?.name
-                                                  .toLowerCase()
-                                                  .contains(q) ??
-                                              false),
+                                          sls.areaName().toLowerCase().contains(q) ||
+                                          sls.areaCode.toLowerCase().contains(q),
                                     )
                                     .map(_buildSlsItem)
                                     .toList();

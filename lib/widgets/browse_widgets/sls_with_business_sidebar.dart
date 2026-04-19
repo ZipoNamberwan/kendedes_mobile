@@ -61,12 +61,8 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
   }
 
   Widget _buildRowItem(BuildContext context, SlsWithBusiness item) {
-    final regencyName = item.sls.village?.subdistrict?.regency?.name;
-    final subdistrictName = item.sls.village?.subdistrict?.name;
-    final villageName = item.sls.village?.name;
-    final slsName = item.sls.name;
-    final slsLongCode = item.sls.longCode;
-    final hasPolygon = item.sls.polygon != null;
+    final sls = item.sls;
+    final hasPolygon = sls.polygon != null;
 
     return Material(
       color: Colors.transparent,
@@ -88,7 +84,7 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _valueOrDash(slsName),
+                      _valueOrDash(sls.name),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -99,7 +95,7 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      _valueOrDash(slsLongCode),
+                      _valueOrDash(sls.areaCode),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -110,7 +106,7 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${_valueOrDash(regencyName)}, ${_valueOrDash(subdistrictName)}, ${_valueOrDash(villageName)}',
+                      sls.areaName(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

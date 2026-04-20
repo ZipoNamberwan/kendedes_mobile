@@ -378,6 +378,9 @@ class TagData {
     User? user,
     Project project,
   ) {
+    final buildingStatusKey = map['building_status']?.toString();
+    final sectorKey = map['sector']?.toString();
+
     return TagData(
       id: map['id'],
       remoteId: map['remote_id'],
@@ -397,15 +400,16 @@ class TagData {
           map['deleted_at'] != null ? DateTime.parse(map['deleted_at']) : null,
       incrementalId: map['incremental_id'],
       project: project,
-      businessName: map['business_name'],
-      businessOwner: map['business_owner'],
-      businessAddress: map['business_address'],
-      buildingStatus: BuildingStatus.values.firstWhere(
-        (e) => e.key == map['building_status'],
-      ),
-      description: map['description'],
-      sector: Sector.values.firstWhere((e) => e.key == map['sector']),
-      note: map['note'],
+      businessName: map['business_name'] as String,
+      businessOwner: map['business_owner'] as String?,
+      businessAddress: map['business_address'] as String?,
+      buildingStatus:
+          buildingStatusKey != null
+              ? BuildingStatus.fromKey(buildingStatusKey)
+              : null,
+      description: map['description'] as String?,
+      sector: sectorKey != null ? Sector.fromKey(sectorKey) : null,
+      note: map['note'] as String?,
       isLocked: map['is_locked'] == 1,
       user:
           user ??

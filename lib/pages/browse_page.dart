@@ -21,6 +21,7 @@ import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/polygon.dart' as polygonmodel;
 import 'package:kendedes_mobile/pages/login_page.dart';
+import 'package:kendedes_mobile/widgets/browse_widgets/browse_clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/browse_color_legend_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/browse_sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/complex_marker_browse_widget.dart';
@@ -29,7 +30,6 @@ import 'package:kendedes_mobile/widgets/browse_widgets/map_options_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/simple_marker_browse_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/sls_with_business_sidebar.dart';
-import 'package:kendedes_mobile/widgets/clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
@@ -801,7 +801,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
       showDialog(
         context: context,
         builder:
-            (context) => ClusteredMarkersDialog(
+            (context) => BrowseClusteredMarkersDialog(
               tags: stackedTags,
               selectedTags: selectedTags,
               onClose: () => Navigator.of(context).pop(),

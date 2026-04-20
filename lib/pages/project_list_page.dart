@@ -3,21 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_event.dart';
 import 'package:kendedes_mobile/bloc/project/project_state.dart';
-import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/models/project.dart';
-import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/pages/tagging_page.dart';
-import 'package:kendedes_mobile/widgets/other_widgets/about_app_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/project_form_dialog.dart';
 import 'package:kendedes_mobile/widgets/delete_project_confirmation_dialog.dart';
-import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
-import 'package:kendedes_mobile/widgets/project_list_app_bar.dart';
 import 'package:kendedes_mobile/widgets/sync_project_dialog.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ProjectListPage extends StatefulWidget {
   const ProjectListPage({super.key});
@@ -77,74 +71,22 @@ class _ProjectListPageState extends State<ProjectListPage>
     );
   }
 
-  void _showLogoutConfirmation() {
-    showDialog(
-      context: context,
-      builder: (context) => LogoutConfirmationDialog(),
-    );
-  }
-
-  void _showAboutDialog() {
-    showDialog(context: context, builder: (context) => const AboutAppDialog());
-  }
-
-  void _showUserInfo(User user) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.orange.shade100,
-                  child: Icon(Icons.person, color: Colors.orange.shade600),
-                ),
-                const SizedBox(width: 12),
-                const Text('Informasi Pengguna'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoRow('Nama', user.firstname),
-                const SizedBox(height: 12),
-                _buildInfoRow('Email', user.email),
-                const SizedBox(height: 12),
-                _buildInfoRow(
-                  'Role',
-                  user.roles.isNotEmpty
-                      ? user.roles.map((e) => e.name).join(', ')
-                      : '-',
-                ),
-                const SizedBox(height: 12),
-                _buildInfoRow('Satker', user.organization?.name ?? '-'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Kembali'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _showLogoutConfirmation();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Logout'),
-              ),
-            ],
+  Widget _appBarIconButton({required IconData icon, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 1,
           ),
+        ),
+        child: Icon(icon, size: 24, color: Colors.white),
+      ),
     );
   }
 
@@ -172,62 +114,6 @@ class _ProjectListPageState extends State<ProjectListPage>
             ],
           ),
         ),
-        PopupMenuItem(
-          value: 'help',
-          child: Row(
-            children: [
-              Icon(Icons.help_rounded, size: 18, color: Colors.grey[600]),
-              const SizedBox(width: 12),
-              const Text(
-                'Panduan',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'feedback',
-          child: Row(
-            children: [
-              Icon(Icons.feedback_rounded, size: 18, color: Colors.grey[600]),
-              const SizedBox(width: 12),
-              const Text(
-                'Saran & Masukan',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'about',
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, size: 18, color: Colors.grey[600]),
-              const SizedBox(width: 12),
-              const Text(
-                'Tentang Aplikasi',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-        ),
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          value: 'logout',
-          child: Row(
-            children: [
-              Icon(Icons.logout_rounded, size: 18, color: Colors.red[600]),
-              const SizedBox(width: 12),
-              Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.red[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
 
@@ -235,50 +121,7 @@ class _ProjectListPageState extends State<ProjectListPage>
       case 'sync':
         _sync();
         break;
-      case 'help':
-        _openUrl(AppConfig.helpUrl);
-        break;
-      case 'feedback':
-        _openUrl(AppConfig.feedbackUrl);
-        break;
-      case 'logout':
-        _showLogoutConfirmation();
-        break;
-      case 'about':
-        _showAboutDialog();
-        break;
     }
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ),
-        const Text(': '),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _openUrl(String url) async {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } else {}
   }
 
   void _sync() {
@@ -339,20 +182,79 @@ class _ProjectListPageState extends State<ProjectListPage>
         }
         return Scaffold(
           backgroundColor: Colors.grey[50],
-          appBar: ProjectListAppBar(
-            onLeadingTap:
-                () => _showUserInfo(
-                  state.data.currentUser ??
-                      User(
-                        email: '',
-                        firstname: '',
-                        id: '',
-                        organization: null,
-                        roles: [],
-                      ),
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(80),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.deepOrange.shade700,
+                    Colors.deepOrange.shade400,
+                    Colors.orange.shade700,
+                    Colors.orange.shade500,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-            onMoreTap:
-                (tapPosition) => _showAppBarPopupMenu(context, tapPosition),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.withValues(alpha: 0.4),
+                    blurRadius: 30,
+                    offset: const Offset(0, 12),
+                    spreadRadius: 2,
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _appBarIconButton(
+                        icon: Icons.arrow_back_rounded,
+                        onTap: () => Navigator.of(context).pop(),
+                      ),
+                      const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Mode Tagging',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            'Pilih projek untuk mulai tagging',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                      GestureDetector(
+                        onTapDown:
+                            (details) => _showAppBarPopupMenu(
+                              context,
+                              details.globalPosition,
+                            ),
+                        child: _appBarIconButton(icon: Icons.more_vert_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
           body: Column(
             children: [

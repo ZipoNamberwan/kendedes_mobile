@@ -1,4 +1,5 @@
 import 'package:kendedes_mobile/classes/providers/local_db/local_db_provider.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ProjectDbProvider {
@@ -40,8 +41,8 @@ class ProjectDbProvider {
   Future<List<Map<String, dynamic>>> getAllProjectByUser(String userId) async {
     return await _dbProvider.db.query(
       'projects',
-      where: 'user_id = ?',
-      whereArgs: [userId],
+      where: 'user_id = ? AND interaction_mode = ?',
+      whereArgs: [userId, InteractionMode.tag.key],
     );
   }
 

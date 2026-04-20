@@ -10,8 +10,13 @@ import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 
 class DownloadPolygonDialog extends StatefulWidget {
-  final String projectId;
-  const DownloadPolygonDialog({super.key, required this.projectId});
+  final PolygonPairType pairType;
+  final String dataId;
+  const DownloadPolygonDialog({
+    super.key,
+    required this.dataId,
+    required this.pairType,
+  });
 
   @override
   State<DownloadPolygonDialog> createState() => _DownloadPolygonDialogState();
@@ -477,9 +482,6 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                                         final polygon =
                                             state.data.filteredPolygons[index];
                                         return _buildPolygonItem(
-                                          polygon.id,
-                                          polygon.fullName,
-                                          polygon.type.name,
                                           polygon,
                                           state.data.selectedPolygon?.id ==
                                               polygon.id,
@@ -562,7 +564,8 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                             : () {
                               _polygonBloc.add(
                                 DownloadInstallPolygon(
-                                  projectId: widget.projectId,
+                                  pairType: widget.pairType,
+                                  id: widget.dataId,
                                 ),
                               );
                             },
@@ -846,13 +849,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
     }
   }
 
-  Widget _buildPolygonItem(
-    String id,
-    String fullName,
-    String type,
-    Polygon polygon,
-    bool isSelected,
-  ) {
+  Widget _buildPolygonItem(Polygon polygon, bool isSelected) {
     return GestureDetector(
       onTap: () {
         _polygonBloc.add(SelectPolygon(polygon: polygon));
@@ -863,11 +860,14 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? _getTypeColor(type).withValues(alpha: 0.1)
+                  ? _getTypeColor(polygon.type.name).withValues(alpha: 0.1)
                   : Colors.white,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isSelected ? _getTypeColor(type) : Colors.grey.shade200,
+            color:
+                isSelected
+                    ? _getTypeColor(polygon.type.name)
+                    : Colors.grey.shade200,
             width: 2,
           ),
         ),
@@ -876,12 +876,12 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: _getIconBackgroundColor(type),
+                color: _getIconBackgroundColor(polygon.type.name),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Icon(
                 Icons.pentagon_outlined,
-                color: _getIconColor(type),
+                color: _getIconColor(polygon.type.name),
                 size: 18,
               ),
             ),
@@ -901,7 +901,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                         ),
                       ),
                       Text(
-                        id,
+                        polygon.shortCode,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -912,7 +912,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    fullName,
+                    polygon.fullName,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -927,11 +927,11 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: _getTypeColor(type),
+                      color: _getTypeColor(polygon.type.name),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      _getIndonesianTypeName(type),
+                      _getIndonesianTypeName(polygon.type.name),
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -946,7 +946,7 @@ class _DownloadPolygonDialogState extends State<DownloadPolygonDialog> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: _getTypeColor(type),
+                  color: _getTypeColor(polygon.type.name),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.check, color: Colors.white, size: 16),

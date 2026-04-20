@@ -20,7 +20,7 @@ class LocalDbProvider {
     final String path = '${documentsDirectory.path}/tagging_app.db';
     _database = await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -86,6 +86,8 @@ class LocalDbProvider {
       deleted_at TEXT,
       type TEXT,
       user_id TEXT,
+      interaction_mode TEXT,
+      remote_id TEXT,
       FOREIGN KEY(user_id) REFERENCES users(id)
     )
   ''');
@@ -116,6 +118,23 @@ class LocalDbProvider {
       sector TEXT,
       note TEXT,
       user_id TEXT,
+      remote_id TEXT,
+      sls_id TEXT,
+      sls_short_code TEXT,
+      sls_long_code TEXT,
+      sls_name TEXT,
+      village_id TEXT,
+      village_short_code TEXT,
+      village_long_code TEXT,
+      village_name TEXT,
+      subdistrict_id TEXT,
+      subdistrict_short_code TEXT,
+      subdistrict_long_code TEXT,
+      subdistrict_name TEXT,
+      regency_id TEXT,
+      regency_short_code TEXT,
+      regency_long_code TEXT,
+      regency_name TEXT,
       FOREIGN KEY(project_id) REFERENCES projects(id),
       FOREIGN KEY(user_id) REFERENCES users(id)
     )
@@ -127,6 +146,8 @@ class LocalDbProvider {
           id TEXT PRIMARY KEY,
           full_name TEXT,
           short_name TEXT,
+          long_code TEXT,
+          short_code TEXT,
           type TEXT
         )
       ''');
@@ -196,6 +217,45 @@ class LocalDbProvider {
           name TEXT,
           village_id TEXT,
           FOREIGN KEY(village_id) REFERENCES villages(id)
+        )
+      ''');
+
+    // 14. Create sls_with_business table
+    await db.execute('''
+        CREATE TABLE sls_with_business (
+          id TEXT PRIMARY KEY,
+          sls_id TEXT,
+          sls_short_code TEXT,
+          sls_long_code TEXT,
+          sls_name TEXT,
+          village_id TEXT,
+          village_short_code TEXT,
+          village_long_code TEXT,
+          village_name TEXT,
+          subdistrict_id TEXT,
+          subdistrict_short_code TEXT,
+          subdistrict_long_code TEXT,
+          subdistrict_name TEXT,
+          regency_id TEXT,
+          regency_short_code TEXT,
+          regency_long_code TEXT,
+          regency_name TEXT,
+
+          business_count INTEGER DEFAULT 0,
+
+          user_id TEXT,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+      ''');
+
+    // 9. Create user_polygons many-to-many table
+    await db.execute('''
+        CREATE TABLE user_polygons (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT,
+          polygon_id TEXT,
+          FOREIGN KEY(user_id) REFERENCES users(id),
+          FOREIGN KEY(polygon_id) REFERENCES polygons(id)
         )
       ''');
   }
@@ -290,6 +350,135 @@ class LocalDbProvider {
       await db.execute('''
         ALTER TABLE tag_data
         ADD COLUMN is_locked INTEGER DEFAULT 0
+      ''');
+    }
+
+    if (oldVersion < 4) {
+      // Add interaction_mode column to projects table
+      await db.execute('''
+        ALTER TABLE projects
+        ADD COLUMN interaction_mode TEXT
+      ''');
+
+      await db.execute('''
+        ALTER TABLE polygons
+        ADD COLUMN short_code TEXT
+      ''');
+
+      await db.execute('''
+        ALTER TABLE polygons
+        ADD COLUMN long_code TEXT
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN remote_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN sls_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN sls_short_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN sls_long_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN sls_name TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN village_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN village_short_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN village_long_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN village_name TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN subdistrict_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN subdistrict_short_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN subdistrict_long_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN subdistrict_name TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN regency_id TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN regency_short_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN regency_long_code TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE tag_data ADD COLUMN regency_name TEXT;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE projects 
+        ADD COLUMN remote_id TEXT;
+      ''');
+
+      // 14. Create sls_with_business table
+      await db.execute('''
+        CREATE TABLE sls_with_business (
+          id TEXT PRIMARY KEY,
+          sls_id TEXT,
+          sls_short_code TEXT,
+          sls_long_code TEXT,
+          sls_name TEXT,
+          village_id TEXT,
+          village_short_code TEXT,
+          village_long_code TEXT,
+          village_name TEXT,
+          subdistrict_id TEXT,
+          subdistrict_short_code TEXT,
+          subdistrict_long_code TEXT,
+          subdistrict_name TEXT,
+          regency_id TEXT,
+          regency_short_code TEXT,
+          regency_long_code TEXT,
+          regency_name TEXT,
+
+          business_count INTEGER DEFAULT 0,
+
+          user_id TEXT,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE user_polygons (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT,
+          polygon_id TEXT,
+          FOREIGN KEY(user_id) REFERENCES users(id),
+          FOREIGN KEY(polygon_id) REFERENCES polygons(id)
+        )
       ''');
     }
   }

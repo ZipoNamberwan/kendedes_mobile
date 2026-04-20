@@ -4,6 +4,8 @@ class Polygon {
   final String id;
   final String fullName;
   final String shortName;
+  final String longCode;
+  final String shortCode;
   final PolygonType type;
   final List<LatLng> points;
 
@@ -11,6 +13,8 @@ class Polygon {
     required this.id,
     required this.fullName,
     required this.shortName,
+    required this.longCode,
+    required this.shortCode,
     required this.type,
     required this.points,
   });
@@ -20,6 +24,8 @@ class Polygon {
     String? id,
     String? fullName,
     String? shortName,
+    String? longCode,
+    String? shortCode,
     PolygonType? type,
     List<LatLng>? points,
   }) {
@@ -27,6 +33,8 @@ class Polygon {
       id: id ?? this.id,
       fullName: fullName ?? this.fullName,
       shortName: shortName ?? this.shortName,
+      longCode: longCode ?? this.longCode,
+      shortCode: shortCode ?? this.shortCode,
       type: type ?? this.type,
       points: points ?? this.points,
     );
@@ -38,6 +46,8 @@ class Polygon {
       'id': id,
       'full_name': fullName,
       'short_name': shortName,
+      'long_code': longCode,
+      'short_code': shortCode,
       'type': type.name,
     };
   }
@@ -60,6 +70,14 @@ class Polygon {
       id: polygonData['id'] as String,
       fullName: polygonData['full_name'] as String,
       shortName: polygonData['short_name'] as String,
+      longCode:
+          polygonData['long_code'] != null
+              ? polygonData['long_code'] as String
+              : '',
+      shortCode:
+          polygonData['short_code'] != null
+              ? polygonData['short_code'] as String
+              : '',
       type: _parsePolygonType(polygonData['type'] as String),
       points:
           pointsData

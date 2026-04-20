@@ -6,6 +6,7 @@ import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/project_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:uuid/uuid.dart';
 
@@ -128,21 +129,24 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
 
       final now = DateTime.now();
       final user = AuthRepository().getUser();
+      String newId = _uuid.v4();
       final newProject = Project(
-        id: _uuid.v4(),
+        id: newId,
+        remoteId: newId,
         name: formFields['name']?.value as String,
         description: formFields['description']?.value as String?,
         createdAt: now,
         updatedAt: now,
         type: ProjectType.supplementMobile,
         user: user,
+        interactionMode: InteractionMode.tag,
       );
 
       try {
         await ApiServerHandler.run(
           action: () async {
             emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
-            await ProjectRepository().createProject(newProject.toJson());
+            await ProjectRepository().createProject(newProject.toServerJson());
             await ProjectDbRepository().insert(newProject);
             emit(
               ProjectAddedSuccess(
@@ -211,12 +215,14 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       final user = AuthRepository().getUser();
       final updatedProject = Project(
         id: event.project.id,
+        remoteId: event.project.remoteId,
         name: formFields['name']?.value as String,
         description: formFields['description']?.value as String?,
         createdAt: event.project.createdAt,
         updatedAt: now,
         type: ProjectType.supplementMobile,
         user: user,
+        interactionMode: InteractionMode.tag,
       );
 
       try {
@@ -225,7 +231,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
             emit(ProjectState(data: state.data.copyWith(saveLoading: true)));
             await ProjectRepository().updateProject(
               updatedProject.id,
-              updatedProject.toJson(),
+              updatedProject.toServerJson(),
             );
             final updatedProjects =
                 state.data.projects.map((project) {
@@ -434,11 +440,13 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         orElse:
             () => Project(
               id: '',
+              remoteId: '',
               name: '',
               description: null,
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
               type: ProjectType.supplementMobile,
+              interactionMode: InteractionMode.tag,
             ),
       );
 

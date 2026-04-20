@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kendedes_mobile/bloc/browse/browse_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
@@ -9,11 +10,14 @@ import 'package:kendedes_mobile/bloc/polygon/polygon_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_bloc.dart';
+import 'package:kendedes_mobile/bloc/home/home_bloc.dart';
 import 'package:kendedes_mobile/bloc/version/version_event.dart';
 import 'package:kendedes_mobile/bloc/version/version_state.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/browse_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/area_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/browse_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/local_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/organization_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/polygon_db_repository.dart';
@@ -31,8 +35,11 @@ import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/version_update_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'pages/login_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future<void> main() async {
+  await dotenv.load(fileName: ".env");
+  
   FlutterError.onError = (FlutterErrorDetails details) {
     try {
       final fullStack = details.stack.toString();
@@ -119,6 +126,8 @@ Future<void> _initializeApp() async {
   await PolygonDbRepository().init();
   await AreaDbRepository().init();
   await PolygonRepository().init();
+  await BrowseRepository().init();
+  await BrowseDbRepository().init();
 }
 
 class MyApp extends StatefulWidget {
@@ -134,6 +143,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late LogoutBloc _logoutBloc;
   late VersionBloc _versionBloc;
   late PolygonBloc _polygonBloc;
+  late BrowseBloc _browseBloc;
+  late HomeBloc _homeBloc;
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -146,6 +157,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _logoutBloc = LogoutBloc();
     _versionBloc = VersionBloc();
     _polygonBloc = PolygonBloc();
+    _browseBloc = BrowseBloc();
+    _homeBloc = HomeBloc();
 
     // Check once on cold start
     _checkForUpdate();
@@ -227,6 +240,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         BlocProvider<LogoutBloc>(create: (context) => _logoutBloc),
         BlocProvider<VersionBloc>(create: (context) => _versionBloc),
         BlocProvider<PolygonBloc>(create: (context) => _polygonBloc),
+        BlocProvider<BrowseBloc>(create: (context) => _browseBloc),
+        BlocProvider<HomeBloc>(create: (context) => _homeBloc),
       ],
       child: BlocListener<VersionBloc, VersionState>(
         listener: (context, versionState) {

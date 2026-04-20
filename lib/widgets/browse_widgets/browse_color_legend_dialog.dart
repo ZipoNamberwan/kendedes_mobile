@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class ColorLegendDialog extends StatelessWidget {
-  const ColorLegendDialog({super.key});
+class BrowseColorLegendDialog extends StatelessWidget {
+  const BrowseColorLegendDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +65,7 @@ class ColorLegendDialog extends StatelessWidget {
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'Legenda Warna Marker',
+                      'Legenda Warna',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -90,7 +90,7 @@ class ColorLegendDialog extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Warna marker menunjukkan jenis tagging:',
+                      'Warna menunjukkan jenis usaha:',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade700,
@@ -102,51 +102,40 @@ class ColorLegendDialog extends StatelessWidget {
                     // Legend items
                     _buildLegendItem(
                       color: Colors.purple,
-                      title: 'Sentra Ekonomi SWMAPS',
-                      description: 'Tagging dari projek sentra ekonomi SWMAPS',
-                    ),
-                    _buildLegendItem(
-                      color: Colors.indigo,
-                      title: 'Suplemen SWMAPS',
-                      description: 'Tagging dari projek suplemen SWMAPS',
-                    ),
-                    _buildLegendItem(
-                      color: Colors.pink,
-                      title: 'Survei BPS',
+                      title: 'Sentra Ekonomi',
                       description:
-                          'Tagging yang dihimpun dari berbagai Survei BPS',
-                    ),
-                    _buildLegendItem(
-                      color: Colors.deepOrange,
-                      title: 'Tagging di Projek Ini',
-                      description: 'Tagging yang dibuat dalam projek ini',
-                      isCurrentProject: true,
-                    ),
-                    _buildLegendItem(
-                      color: Colors.deepOrange,
-                      title: 'Tagging Terkunci',
-                      description:
-                          'Tagging yang telah diedit oleh Admin melalui Kendedes Web dan tidak dapat diubah melalui Kendedes Mobile',
-                      icon: Icons.lock_rounded,
-                    ),
-                    _buildLegendItem(
-                      color: Colors.amber,
-                      title: 'Tagging Projek Lain',
-                      description:
-                          'Tagging yang dibuat oleh Anda di projek lain di Kendedes Mobile',
+                          'Usaha yang ditagging sebagai Sentra Ekonomi melalui SW Maps',
                     ),
                     _buildLegendItem(
                       color: Colors.cyan,
-                      title: 'Tagging Pengguna Lain',
+                      title: 'Kendedes',
                       description:
-                          'Tagging dari pengguna lain melalui Kendedes Mobile',
+                          'Usaha yang ditagging melalui Kendedes Mobile',
+                    ),
+                    _buildLegendItem(
+                      color: Colors.pink,
+                      title: 'SBR Matchapro',
+                      description:
+                          'Usaha dari prelist yang ada di SBR Matchapro',
                     ),
                     _buildLegendItem(
                       color: Colors.green,
-                      title: 'Tagging Terpilih',
-                      description: 'Tagging yang sedang dipilih',
+                      title: 'ST2023',
+                      description:
+                          'Usaha pertanian dari data wilkerstat ST2023',
+                    ),
+                    _buildLegendItem(
+                      color: Colors.yellow,
+                      title: 'E-Form',
+                      description:
+                          'Usaha yang diisi oleh responden secara mandiri melalui E-Form Jatim di tahun 2025',
                     ),
 
+                    // _buildLegendItem(
+                    //   color: Colors.green,
+                    //   title: 'Tagging Terpilih',
+                    //   description: 'Tagging yang sedang dipilih',
+                    // ),
                     const SizedBox(height: 16),
 
                     // Additional info

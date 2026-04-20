@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:kendedes_mobile/classes/map_config.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
@@ -25,11 +26,13 @@ class InitializingStarted extends TaggingState {
         data: TaggingStateData(
           project: Project(
             id: '',
+            remoteId: '',
             name: '',
             description: '',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
             type: ProjectType.supplementMobile,
+            interactionMode: InteractionMode.tag,
           ),
           tags: [],
           polygons: [],

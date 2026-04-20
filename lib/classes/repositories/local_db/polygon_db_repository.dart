@@ -30,6 +30,22 @@ class PolygonDbRepository {
     await _provider.addProjectPolygonPair(projectId, polygonId);
   }
 
+  /// Add a relationship between a polygon and a user
+  Future<void> addUserPolygonPair(String userId, String polygonId) async {
+    await _provider.addUserPolygonPair(userId, polygonId);
+  }
+
+  Future<bool> addUniqueUserPolygonPair(String userId, String polygonId) async {
+    final existingPolygons = await getPolygonsByUser(userId);
+    final pairExists = existingPolygons.any(
+      (polygon) => polygon.id == polygonId,
+    );
+    if (!pairExists) {
+      await addUserPolygonPair(userId, polygonId);
+    }
+    return !pairExists;
+  }
+
   /// Remove a relationship between a polygon and a project
   Future<void> removeProjectPolygonPair(
     String projectId,
@@ -38,10 +54,32 @@ class PolygonDbRepository {
     await _provider.removeProjectPolygonPair(projectId, polygonId);
   }
 
+  /// Remove a relationship between a polygon and a user
+  Future<void> removeUserPolygonPair(String userId, String polygonId) async {
+    await _provider.removeUserPolygonPair(userId, polygonId);
+  }
+
   /// Get all polygons associated with a project
   Future<List<Polygon>> getPolygonsForProject(String projectId) async {
     // Get polygon IDs for the project
     final polygonIds = await _provider.getPolygonsForProject(projectId);
+
+    // Get full polygon data for each ID
+    final List<Polygon> polygons = [];
+    for (String polygonId in polygonIds) {
+      final polygon = await getPolygonById(polygonId);
+      if (polygon != null) {
+        polygons.add(polygon);
+      }
+    }
+
+    return polygons;
+  }
+
+  /// Get all polygons associated with a user
+  Future<List<Polygon>> getPolygonsByUser(String userId) async {
+    // Get polygon IDs for the user
+    final polygonIds = await _provider.getPolygonsByUser(userId);
 
     // Get full polygon data for each ID
     final List<Polygon> polygons = [];

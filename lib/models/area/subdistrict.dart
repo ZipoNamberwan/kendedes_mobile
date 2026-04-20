@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:kendedes_mobile/models/area/regency.dart';
 
 class Subdistrict extends Equatable {
   final String id;
@@ -6,6 +7,7 @@ class Subdistrict extends Equatable {
   final String longCode;
   final String name;
   final String regencyId;
+  final Regency? regency;
 
   @override
   List<Object?> get props => [id];
@@ -16,6 +18,7 @@ class Subdistrict extends Equatable {
     required this.longCode,
     required this.name,
     required this.regencyId,
+    this.regency,
   });
 
   factory Subdistrict.fromJson(Map<String, dynamic> json) {
@@ -25,6 +28,7 @@ class Subdistrict extends Equatable {
       longCode: json['long_code'] as String,
       name: json['name'] as String,
       regencyId: json['regency_id'] as String,
+      regency: json['regency'] != null ? Regency.fromJson(json['regency']) : null,
     );
   }
 

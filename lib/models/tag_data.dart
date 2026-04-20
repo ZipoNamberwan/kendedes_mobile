@@ -1,8 +1,12 @@
+import 'dart:math';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/survey.dart';
 import 'package:kendedes_mobile/models/user.dart';
+import 'package:latlong2/latlong.dart';
 
 class TagData {
   final String id;
@@ -26,11 +30,17 @@ class TagData {
   final String? businessOwner;
   final String? businessAddress;
   final BuildingStatus? buildingStatus;
-  final String description;
+  final String? description;
   final Sector? sector;
   final String? note;
   final User? user;
   final Survey? survey;
+
+  // ID in server
+  final String remoteId;
+
+  // Attribute Area
+  final Sls? sls;
 
   TagData({
     required this.id,
@@ -55,10 +65,16 @@ class TagData {
     this.businessOwner,
     this.businessAddress,
     required this.buildingStatus,
-    required this.description,
+    this.description,
     required this.sector,
     this.note,
     this.survey,
+
+    // ID in server
+    required this.remoteId,
+
+    // Area
+    this.sls,
   });
 
   TagData copyWith({
@@ -86,6 +102,8 @@ class TagData {
     String? note,
     Survey? survey,
     bool? isLocked,
+    String? remoteId,
+    Sls? sls,
   }) {
     return TagData(
       id: id ?? this.id,
@@ -112,6 +130,8 @@ class TagData {
       note: note ?? this.note,
       survey: survey ?? this.survey,
       isLocked: isLocked ?? this.isLocked,
+      remoteId: remoteId ?? this.remoteId,
+      sls: sls ?? this.sls,
     );
   }
 
@@ -137,7 +157,8 @@ class TagData {
       return Colors.purple;
     } else if (project.type.key == ProjectType.supplementSwmaps.key) {
       return Colors.indigo;
-    } else if (project.type.key == ProjectType.survey.key) {
+    } else if (project.type.key == ProjectType.survey.key ||
+        project.type.key == ProjectType.sbr.key) {
       return Colors.pink;
     } else if (project.type.key == ProjectType.supplementMobile.key) {
       if (currentProjectId == project.id) {
@@ -147,6 +168,24 @@ class TagData {
       }
 
       return Colors.cyan;
+    } else {
+      return Colors.grey;
+    }
+  }
+
+  Color getBrowseColorScheme() {
+    if (project.type.key == ProjectType.marketSwmaps.key) {
+      return Colors.purple;
+    } else if (project.type.key == ProjectType.sbr.key ||
+        project.type.key == ProjectType.survey.key) {
+      return Colors.pink;
+    } else if (project.type.key == ProjectType.supplementMobile.key ||
+        project.type.key == ProjectType.supplementSwmaps.key) {
+      return Colors.cyan;
+    } else if (project.type.key == ProjectType.agriculture.key) {
+      return Colors.green;
+    } else if (project.type.key == ProjectType.eform.key) {
+      return Colors.yellow;
     } else {
       return Colors.grey;
     }
@@ -173,8 +212,29 @@ class TagData {
     return false;
   }
 
-  /// Convert to JSON
-  Map<String, dynamic> toJson() {
+  /// Calculate distance in meters from this business position to a given location.
+  /// Returns null if business position is (0, 0) or the given location is null.
+  double? distanceTo(LatLng? currentLocation) {
+    if (currentLocation == null) return null;
+    if (positionLat == 0 && positionLng == 0) return null;
+
+    const double earthRadius = 6371000; // meters
+    final dLat = _toRadians(currentLocation.latitude - positionLat);
+    final dLng = _toRadians(currentLocation.longitude - positionLng);
+    final a =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_toRadians(positionLat)) *
+            cos(_toRadians(currentLocation.latitude)) *
+            sin(dLng / 2) *
+            sin(dLng / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
+  }
+
+  static double _toRadians(double degrees) => degrees * pi / 180;
+
+  /// Convert to JSON to sent to server
+  Map<String, dynamic> toServerJson() {
     return {
       'id': id,
       'latitude': positionLat,
@@ -196,65 +256,168 @@ class TagData {
     };
   }
 
-  /// Parse from JSON
-  factory TagData.fromJson(Map<String, dynamic> json) {
-    try {
-      return TagData(
-        id: json['id'] as String,
-        positionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
-        positionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
-        hasChanged: false,
-        hasSentToServer: true,
-        isLocked: json['is_locked'],
-        type: TagType.auto,
-        initialPositionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
-        initialPositionLng:
-            double.tryParse(json['longitude'].toString()) ?? 0.0,
-        isDeleted: json['deleted_at'] != null,
-        createdAt:
-            json['created_at'] != null
-                ? DateTime.parse(json['created_at'] as String)
-                : null,
-        updatedAt:
-            json['updated_at'] != null
-                ? DateTime.parse(json['updated_at'] as String)
-                : null,
-        deletedAt:
-            json['deleted_at'] != null
-                ? DateTime.parse(json['deleted_at'] as String)
-                : null,
-        incrementalId: 1,
-        project: Project.fromJson(json['project'] as Map<String, dynamic>),
-        businessName: json['name'] as String,
-        businessOwner: json['owner'] as String?,
-        businessAddress: json['address'] as String?,
-        buildingStatus:
-            json['status'] != null
-                ? BuildingStatus.fromKey(
-                  json['status'].toString().toLowerCase().replaceAll(' ', '_'),
-                )
-                : null,
-        description: json['description'] as String,
-        sector:
-            (() {
-              final sectorStr = json['sector']?.toString();
-              return sectorStr != null && sectorStr.isNotEmpty
-                  ? Sector.fromKey(sectorStr[0].toUpperCase())
-                  : null;
-            })(),
-        note: json['note'] as String?,
-        user:
-            json['user'] != null
-                ? User.fromJson(json['user'] as Map<String, dynamic>)
-                : null,
-        survey:
-            json['survey'] != null
-                ? Survey.fromJson(json['survey'] as Map<String, dynamic>)
-                : null,
-      );
-    } catch (e) {
-      throw Exception('Failed to parse TagData: $e');
-    }
+  /// Convert to JSON to store in local db
+  Map<String, dynamic> toLocalDbJson() {
+    return {
+      'id': id,
+      'remote_id': remoteId,
+      'position_lat': positionLat,
+      'position_lng': positionLng,
+      'has_changed': hasChanged ? 1 : 0,
+      'has_sent_to_server': hasSentToServer ? 1 : 0,
+      'tag_type': type.name,
+      'initial_position_lat': initialPositionLat,
+      'initial_position_lng': initialPositionLng,
+      'is_deleted': isDeleted ? 1 : 0,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
+      'incremental_id': incrementalId,
+      'project_id': project.id,
+      'business_name': businessName,
+      'business_owner': businessOwner,
+      'business_address': businessAddress,
+      'building_status': buildingStatus?.key,
+      'description': description,
+      'sector': sector?.key,
+      'note': note,
+      'user_id': user?.id,
+      'is_locked': isLocked ? 1 : 0,
+
+      // save area to local db
+      'sls_id': sls?.id,
+      'sls_short_code': sls?.shortCode,
+      'sls_long_code': sls?.longCode,
+      'sls_name': sls?.name,
+      'village_id': sls?.village?.id,
+      'village_short_code': sls?.village?.shortCode,
+      'village_long_code': sls?.village?.longCode,
+      'village_name': sls?.village?.name,
+      'subdistrict_id': sls?.village?.subdistrict?.id,
+      'subdistrict_short_code': sls?.village?.subdistrict?.shortCode,
+      'subdistrict_long_code': sls?.village?.subdistrict?.longCode,
+      'subdistrict_name': sls?.village?.subdistrict?.name,
+      'regency_id': sls?.village?.subdistrict?.regency?.id,
+      'regency_short_code': sls?.village?.subdistrict?.regency?.shortCode,
+      'regency_long_code': sls?.village?.subdistrict?.regency?.longCode,
+      'regency_name': sls?.village?.subdistrict?.regency?.name,
+    };
+  }
+
+  /// Parse from Server JSON
+  factory TagData.fromServerJson(Map<String, dynamic> json) {
+    return TagData(
+      id: json['id'] as String,
+      remoteId: json['id'] as String,
+      positionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
+      positionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
+      hasChanged: false,
+      hasSentToServer: true,
+      isLocked: json['is_locked'],
+      type: TagType.auto,
+      initialPositionLat: double.tryParse(json['latitude'].toString()) ?? 0.0,
+      initialPositionLng: double.tryParse(json['longitude'].toString()) ?? 0.0,
+      isDeleted: json['deleted_at'] != null,
+      createdAt:
+          json['created_at'] != null
+              ? DateTime.parse(json['created_at'] as String)
+              : null,
+      updatedAt:
+          json['updated_at'] != null
+              ? DateTime.parse(json['updated_at'] as String)
+              : null,
+      deletedAt:
+          json['deleted_at'] != null
+              ? DateTime.parse(json['deleted_at'] as String)
+              : null,
+      incrementalId: 1,
+      project: Project.fromServerJson(json['project'] as Map<String, dynamic>),
+      businessName: json['name'] as String,
+      businessOwner: json['owner'] as String?,
+      businessAddress: json['address'] as String?,
+      buildingStatus:
+          json['status'] != null
+              ? BuildingStatus.fromKey(
+                json['status'].toString().toLowerCase().replaceAll(' ', '_'),
+              )
+              : null,
+      description: json['description'] as String,
+      sector:
+          (() {
+            final sectorStr = json['sector']?.toString();
+            return sectorStr != null && sectorStr.isNotEmpty
+                ? Sector.fromKey(sectorStr[0].toUpperCase())
+                : null;
+          })(),
+      note: json['note'] as String?,
+      user:
+          json['user'] != null
+              ? User.fromJson(json['user'] as Map<String, dynamic>)
+              : null,
+      survey:
+          json['survey'] != null
+              ? Survey.fromJson(json['survey'] as Map<String, dynamic>)
+              : null,
+
+      // area from server json is nested in sls
+      sls:
+          json['sls'] != null
+              ? Sls.fromSameLevelServerJson(
+                json['sls'] as Map<String, dynamic>,
+                json['village'] as Map<String, dynamic>,
+                json['subdistrict'] as Map<String, dynamic>,
+                json['regency'] as Map<String, dynamic>,
+              )
+              : null,
+    );
+  }
+
+  /// Parse from JSON from local db
+  factory TagData.fromLocalDbJson(
+    Map<String, dynamic> map,
+    User? user,
+    Project project,
+  ) {
+    final buildingStatusKey = map['building_status']?.toString();
+    final sectorKey = map['sector']?.toString();
+
+    return TagData(
+      id: map['id'],
+      remoteId: map['remote_id'],
+      positionLat: map['position_lat'],
+      positionLng: map['position_lng'],
+      hasChanged: map['has_changed'] == 1,
+      hasSentToServer: map['has_sent_to_server'] == 1,
+      type: TagType.values.firstWhere((e) => e.name == map['tag_type']),
+      initialPositionLat: map['initial_position_lat'],
+      initialPositionLng: map['initial_position_lng'],
+      isDeleted: map['is_deleted'] == 1,
+      createdAt:
+          map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
+      updatedAt:
+          map['updated_at'] != null ? DateTime.parse(map['updated_at']) : null,
+      deletedAt:
+          map['deleted_at'] != null ? DateTime.parse(map['deleted_at']) : null,
+      incrementalId: map['incremental_id'],
+      project: project,
+      businessName: map['business_name'] as String,
+      businessOwner: map['business_owner'] as String?,
+      businessAddress: map['business_address'] as String?,
+      buildingStatus:
+          buildingStatusKey != null
+              ? BuildingStatus.fromKey(buildingStatusKey)
+              : null,
+      description: map['description'] as String?,
+      sector: sectorKey != null ? Sector.fromKey(sectorKey) : null,
+      note: map['note'] as String?,
+      isLocked: map['is_locked'] == 1,
+      user:
+          user ??
+          User(id: '', email: '', firstname: '', organization: null, roles: []),
+
+      // area from from local db
+      sls: Sls.fromLocalDbJson(map),
+    );
   }
 
   @override

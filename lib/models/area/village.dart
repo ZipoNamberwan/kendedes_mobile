@@ -1,4 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:kendedes_mobile/models/area/subdistrict.dart';
+import 'package:kendedes_mobile/models/polygon.dart';
+import 'package:latlong2/latlong.dart';
 
 class Village extends Equatable {
   final String id;
@@ -6,6 +9,8 @@ class Village extends Equatable {
   final String longCode;
   final String name;
   final String subdistrictId;
+  final Polygon? polygon;
+  final Subdistrict? subdistrict;
 
   @override
   List<Object?> get props => [id];
@@ -16,6 +21,8 @@ class Village extends Equatable {
     required this.longCode,
     required this.name,
     required this.subdistrictId,
+    this.polygon,
+    this.subdistrict,
   });
 
   factory Village.fromJson(Map<String, dynamic> json) {
@@ -25,6 +32,25 @@ class Village extends Equatable {
       longCode: json['long_code'] as String,
       name: json['name'] as String,
       subdistrictId: json['subdistrict_id'] as String,
+      subdistrict:
+          json['subdistrict'] != null
+              ? Subdistrict.fromJson(json['subdistrict'])
+              : null,
+      polygon:
+          json['geojson'] != null
+              ? Polygon(
+                id: json['id'].toString(),
+                fullName: json['name'] as String,
+                shortName: json['name'] as String,
+                longCode: json['long_code'] as String,
+                shortCode: json['short_code'] as String,
+                type: PolygonType.village,
+                points:
+                    (json['geojson']['coordinates'][0][0] as List)
+                        .map((point) => LatLng(point[1], point[0]))
+                        .toList(),
+              )
+              : null,
     );
   }
 

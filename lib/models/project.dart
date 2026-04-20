@@ -1,4 +1,5 @@
 import 'package:kendedes_mobile/classes/helpers.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/user.dart';
 
 class Project {
@@ -11,6 +12,10 @@ class Project {
   final ProjectType type;
   final User? user;
 
+  final InteractionMode interactionMode;
+
+  final String remoteId;
+
   Project({
     required this.id,
     required this.name,
@@ -20,11 +25,14 @@ class Project {
     this.deletedAt,
     required this.type,
     this.user,
+    required this.interactionMode,
+    required this.remoteId,
   });
 
-  factory Project.fromJson(Map<String, dynamic> json) {
+  factory Project.fromServerJson(Map<String, dynamic> json) {
     return Project(
       id: json['id'],
+      remoteId: json['id'],
       name: json['name'],
       description: json['description'],
       createdAt: DateTime.parse(json['created_at']),
@@ -38,10 +46,34 @@ class Project {
           json['user'] != null
               ? User.fromJson(json['user'] as Map<String, dynamic>)
               : null,
+      interactionMode: InteractionMode.tag,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  factory Project.fromLocalDbJson(Map<String, dynamic> json) {
+    return Project(
+      id: json['id'],
+      remoteId: json['remote_id'],
+      name: json['name'],
+      description: json['description'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      deletedAt:
+          json['deleted_at'] != null
+              ? DateTime.parse(json['deleted_at'])
+              : null,
+      type: ProjectType.fromKey(json['type']) ?? ProjectType.supplementMobile,
+      user:
+          json['user'] != null
+              ? User.fromJson(json['user'] as Map<String, dynamic>)
+              : null,
+      interactionMode:
+          InteractionMode.fromKey(json['interaction_mode']) ??
+          InteractionMode.browse,
+    );
+  }
+
+  Map<String, dynamic> toServerJson() {
     return {
       'id': id,
       'name': name,
@@ -50,6 +82,22 @@ class Project {
       'created_at': DateHelper.format(createdAt),
       'updated_at': DateHelper.format(updatedAt),
       'deleted_at': DateHelper.format(deletedAt),
+      'interaction_mode': interactionMode.key,
+    };
+  }
+
+  Map<String, dynamic> toLocalDbJson() {
+    return {
+      'id': id,
+      'remote_id': remoteId,
+      'name': name,
+      'description': description,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
+      'type': type.key,
+      'user_id': user?.id,
+      'interaction_mode': interactionMode.key,
     };
   }
 
@@ -62,9 +110,12 @@ class Project {
     DateTime? deletedAt,
     ProjectType? type,
     User? user,
+    InteractionMode? interactionMode,
+    String? remoteId,
   }) {
     return Project(
       id: id ?? this.id,
+      remoteId: remoteId ?? this.remoteId,
       name: name ?? this.name,
       description: description ?? this.description,
       createdAt: createdAt ?? this.createdAt,
@@ -72,6 +123,7 @@ class Project {
       deletedAt: deletedAt ?? this.deletedAt,
       type: type ?? this.type,
       user: user ?? this.user,
+      interactionMode: interactionMode ?? this.interactionMode,
     );
   }
 }
@@ -86,20 +138,24 @@ class ProjectType {
 
   static const marketSwmaps = ProjectType._(
     'swmaps market',
-    'Sentra Ekonomi SWMaps',
+    'Sentra Ekonomi (SWMaps)',
   );
   static const supplementSwmaps = ProjectType._(
     'swmaps supplement',
-    'Suplemen SWMaps',
+    'Kendedes Mobile (SWMaps)',
   );
   static const supplementMobile = ProjectType._(
     'kendedes mobile',
-    'Suplemen Mobile',
+    'Kendedes Mobile',
   );
   static const wilkerstat = ProjectType._('wilkerstat', 'Suplemen Wilkerstat');
   static const jenggala = ProjectType._('jenggala', 'Jenggala');
   static const survey = ProjectType._('survey', 'Survei BPS');
+  static const sbr = ProjectType._('sbr', 'SBR');
+  static const agriculture = ProjectType._('agriculture', 'ST2023');
+  static const eform = ProjectType._('eform', 'E-Form Jatim 2025');
   static const other = ProjectType._('other', 'Lainnya');
+  // static const browse = ProjectType._('browse', 'Browse Mode');
 
   static const values = [
     marketSwmaps,
@@ -108,6 +164,9 @@ class ProjectType {
     // wilkerstat,
     // jenggala,
     survey,
+    sbr,
+    agriculture,
+    eform,
     // other,
   ];
 

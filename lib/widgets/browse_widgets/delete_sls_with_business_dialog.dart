@@ -1,24 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:kendedes_mobile/models/polygon.dart';
+import 'package:kendedes_mobile/models/sls_with_business.dart';
 
-class DeletePolygonDialog extends StatelessWidget {
-  final Polygon polygon;
+class DeleteSlsWithBusinessDialog extends StatelessWidget {
+  final SlsWithBusiness slsWithBusiness;
   final VoidCallback onConfirm;
-  final bool isDeletingPolygon;
+  final VoidCallback onCancel;
+  final bool isDeleting;
 
-  const DeletePolygonDialog({
+  const DeleteSlsWithBusinessDialog({
     super.key,
-    required this.polygon,
+    required this.slsWithBusiness,
     required this.onConfirm,
-    required this.isDeletingPolygon,
+    required this.onCancel,
+    this.isDeleting = false,
   });
+
+  String _valueOrDash(String? value) {
+    final trimmed = value?.trim();
+    return (trimmed == null || trimmed.isEmpty) ? '-' : trimmed;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final regencyName = slsWithBusiness.sls.village?.subdistrict?.regency?.name;
+    final subdistrictName = slsWithBusiness.sls.village?.subdistrict?.name;
+    final villageName = slsWithBusiness.sls.village?.name;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.8,
+        width: MediaQuery.of(context).size.width * 0.85,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
@@ -64,7 +75,7 @@ class DeletePolygonDialog extends StatelessWidget {
                       ),
                     ),
                     child:
-                        isDeletingPolygon
+                        isDeleting
                             ? const SizedBox(
                               width: 20,
                               height: 20,
@@ -82,15 +93,15 @@ class DeletePolygonDialog extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      isDeletingPolygon
-                          ? 'Menghapus Poligon...'
-                          : 'Hapus Poligon',
+                      isDeleting ? 'Menghapus Prelist...' : 'Hapus Prelist SLS',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.3,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -102,7 +113,7 @@ class DeletePolygonDialog extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // Polygon info card
+                  // Info card
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -117,14 +128,14 @@ class DeletePolygonDialog extends StatelessWidget {
                         Row(
                           children: [
                             Icon(
-                              Icons.pentagon,
+                              Icons.map_rounded,
                               size: 16,
                               color: Colors.grey.shade600,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                polygon.fullName,
+                                _valueOrDash(slsWithBusiness.sls.name),
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
@@ -140,14 +151,14 @@ class DeletePolygonDialog extends StatelessWidget {
                         Row(
                           children: [
                             Icon(
-                              Icons.tag,
+                              Icons.business_outlined,
                               size: 14,
                               color: Colors.grey.shade500,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                'ID: ${polygon.longCode}',
+                                'Jumlah usaha: ${slsWithBusiness.businessCount}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey.shade700,
@@ -157,26 +168,48 @@ class DeletePolygonDialog extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.category_outlined,
-                              size: 14,
-                              color: Colors.grey.shade500,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                'Type: ${_getIndonesianTypeName(polygon.type.name)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade700,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 8),
+                        Text(
+                          'Kode SLS: ${_valueOrDash(slsWithBusiness.sls.longCode)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Kab: ${_valueOrDash(regencyName)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Kec: ${_valueOrDash(subdistrictName)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Des: ${_valueOrDash(villageName)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -184,11 +217,10 @@ class DeletePolygonDialog extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // Confirmation text
                   Text(
-                    isDeletingPolygon
-                        ? 'Sedang menghapus poligon, mohon tunggu...'
-                        : 'Apakah Anda yakin ingin menghapus poligon ini?',
+                    isDeleting
+                        ? 'Sedang menghapus data, mohon tunggu...'
+                        : 'Apakah Anda yakin ingin menghapus prelist SLS ini dari daftar unduhan? Usaha yang terkait dengan SLS ini juga akan dihapus.',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade700,
@@ -196,37 +228,30 @@ class DeletePolygonDialog extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // Action buttons
                   Row(
                     children: [
                       Expanded(
                         child: TextButton(
-                          onPressed:
-                              isDeletingPolygon
-                                  ? null
-                                  : () {
-                                    Navigator.of(context).pop();
-                                  },
+                          onPressed: isDeleting ? null : onCancel,
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             backgroundColor:
-                                isDeletingPolygon
-                                    ? Colors.grey[200]
-                                    : Colors.grey[100],
+                                isDeleting ? Colors.grey[50] : Colors.grey[100],
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           child: Text(
                             'Batal',
                             style: TextStyle(
                               color:
-                                  isDeletingPolygon
-                                      ? Colors.grey[400]
-                                      : Colors.grey[700],
-                              fontWeight: FontWeight.w500,
+                                  isDeleting
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade700,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -234,47 +259,24 @@ class DeletePolygonDialog extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: isDeletingPolygon ? null : onConfirm,
+                          onPressed: isDeleting ? null : onConfirm,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                isDeletingPolygon
-                                    ? Colors.grey.shade400
-                                    : Colors.red,
-                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            elevation: 0,
+                            backgroundColor: Colors.red.shade600,
+                            disabledBackgroundColor: Colors.grey.shade300,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            isDeleting ? 'Menghapus...' : 'Hapus',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
                             ),
                           ),
-                          child:
-                              isDeletingPolygon
-                                  ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Text(
-                                        'Menghapus...',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                  : const Text(
-                                    'Hapus',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
                         ),
                       ),
                     ],
@@ -286,20 +288,5 @@ class DeletePolygonDialog extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _getIndonesianTypeName(String type) {
-    switch (type.toLowerCase()) {
-      case 'regency':
-        return 'KABUPATEN';
-      case 'subdistrict':
-        return 'KECAMATAN';
-      case 'village':
-        return 'DESA';
-      case 'sls':
-        return 'SLS';
-      default:
-        return type.toUpperCase();
-    }
   }
 }

@@ -2,6 +2,7 @@ import 'package:kendedes_mobile/classes/providers/local_db/organization_db_provi
 import 'package:kendedes_mobile/classes/providers/local_db/project_db_provider.dart';
 import 'package:kendedes_mobile/classes/providers/local_db/user_db_provider.dart';
 import 'package:kendedes_mobile/classes/providers/local_db/user_role_db_provider.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/organization.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/user.dart';
@@ -69,6 +70,7 @@ class ProjectDbRepository {
     // 4. Insert project
     final map = {
       'id': project.id,
+      'remote_id': project.id,
       'name': project.name,
       'description': project.description,
       'created_at': project.createdAt.toIso8601String(),
@@ -125,6 +127,7 @@ class ProjectDbRepository {
 
     return Project(
       id: map['id'],
+      remoteId: map['remote_id'],
       name: map['name'],
       description: map['description'],
       createdAt: DateTime.parse(map['created_at']),
@@ -133,6 +136,7 @@ class ProjectDbRepository {
           map['deleted_at'] != null ? DateTime.parse(map['deleted_at']) : null,
       type: ProjectType.values.firstWhere((e) => e.key == map['type']),
       user: user,
+      interactionMode: InteractionMode.tag,
     );
   }
 
@@ -157,6 +161,7 @@ class ProjectDbRepository {
         projects.map((project) {
           return {
             'id': project.id,
+            'remote_id': project.id,
             'name': project.name,
             'description': project.description,
             'created_at': project.createdAt.toIso8601String(),

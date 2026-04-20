@@ -29,20 +29,20 @@ class TaggingRepository {
       maxLat,
       maxLng,
     );
-    return response.map((data) => TagData.fromJson(data)).toList();
+    return response.map((data) => TagData.fromServerJson(data)).toList();
   }
 
   Future<TagData> storeTagging(TagData tagData) async {
-    final response = await _taggingProvider.storeTagging(tagData.toJson());
-    return TagData.fromJson(response);
+    final response = await _taggingProvider.storeTagging(tagData.toServerJson());
+    return TagData.fromServerJson(response);
   }
 
   Future<TagData> updateTagging(TagData tagData) async {
     final response = await _taggingProvider.updateTagging(
       tagData.id,
-      tagData.toJson(),
+      tagData.toServerJson(),
     );
-    return TagData.fromJson(response);
+    return TagData.fromServerJson(response);
   }
 
   Future<void> deleteTagging(String taggingId) async {
@@ -56,13 +56,13 @@ class TaggingRepository {
 
   Future<Map<String, dynamic>> uploadMultipleTags(List<TagData> tags) async {
     final List<Map<String, dynamic>> tagJsonList =
-        tags.map((tag) => tag.toJson()).toList();
+        tags.map((tag) => tag.toServerJson()).toList();
     final response = await _taggingProvider.uploadMultipleTags(tagJsonList);
     return response;
   }
 
   Future<List<TagData>> getLockedTags(String projectId) async {
     final response = await _taggingProvider.getLockedTags(projectId);
-    return response.map((data) => TagData.fromJson(data)).toList();
+    return response.map((data) => TagData.fromServerJson(data)).toList();
   }
 }

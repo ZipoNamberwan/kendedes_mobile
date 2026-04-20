@@ -69,6 +69,20 @@ class PolygonDbProvider {
     );
   }
 
+  /// Add a relationship between a polygon and a user
+  /// [userId] The ID of the user
+  /// [polygonId] The ID of the polygon
+  Future<void> addUserPolygonPair(String userId, String polygonId) async {
+    final Database db = _dbProvider.db;
+
+    await db.insert(
+      'user_polygons',
+      {'user_id': userId, 'polygon_id': polygonId},
+      conflictAlgorithm:
+          ConflictAlgorithm.ignore, // Ignore if relationship already exists
+    );
+  }
+
   /// Remove a relationship between a polygon and a project
   /// [projectId] The ID of the project
   /// [polygonId] The ID of the polygon
@@ -82,6 +96,22 @@ class PolygonDbProvider {
       'project_polygons',
       where: 'project_id = ? AND polygon_id = ?',
       whereArgs: [projectId, polygonId],
+    );
+  }
+
+  /// Remove a relationship between a polygon and a user
+  /// [userId] The ID of the user
+  /// [polygonId] The ID of the polygon
+  Future<void> removeUserPolygonPair(
+    String userId,
+    String polygonId,
+  ) async {
+    final Database db = _dbProvider.db;
+
+    await db.delete(
+      'user_polygons',
+      where: 'user_id = ? AND polygon_id = ?',
+      whereArgs: [userId, polygonId],
     );
   }
 
@@ -101,18 +131,34 @@ class PolygonDbProvider {
     return result.map((row) => row['polygon_id'] as String).toList();
   }
 
+  /// Get all polygons associated with a user
+  /// [userId] The ID of the user
+  /// Returns a list of polygon IDs
+  Future<List<String>> getPolygonsByUser(String userId) async {
+    final Database db = _dbProvider.db;
+
+    final List<Map<String, dynamic>> result = await db.query(
+      'user_polygons',
+      columns: ['polygon_id'],
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
+
+    return result.map((row) => row['polygon_id'] as String).toList();
+  }
+
   /// Get polygon data by ID
   /// [polygonId] The ID of the polygon
   /// Returns polygon data map or null if not found
   Future<Map<String, dynamic>?> getPolygonById(String polygonId) async {
     final Database db = _dbProvider.db;
-    
+
     final List<Map<String, dynamic>> result = await db.query(
       'polygons',
       where: 'id = ?',
       whereArgs: [polygonId],
     );
-    
+
     return result.isNotEmpty ? result.first : null;
   }
 
@@ -121,31 +167,30 @@ class PolygonDbProvider {
   /// Returns list of point data maps
   Future<List<Map<String, dynamic>>> getPolygonPoints(String polygonId) async {
     final Database db = _dbProvider.db;
-    
+
     final List<Map<String, dynamic>> result = await db.query(
       'polygon_points',
       where: 'polygon_id = ?',
       whereArgs: [polygonId],
       orderBy: 'id', // Maintain point order
     );
-    
+
     return result;
   }
 
   /// Get complete polygon data with points by ID
   /// [polygonId] The ID of the polygon
   /// Returns a map with 'polygon' and 'points' keys, or null if polygon not found
-  Future<Map<String, dynamic>?> getPolygonWithPointsById(String polygonId) async {
+  Future<Map<String, dynamic>?> getPolygonWithPointsById(
+    String polygonId,
+  ) async {
     final polygonData = await getPolygonById(polygonId);
     if (polygonData == null) {
       return null;
     }
-    
+
     final pointsData = await getPolygonPoints(polygonId);
-    
-    return {
-      'polygon': polygonData,
-      'points': pointsData,
-    };
+
+    return {'polygon': polygonData, 'points': pointsData};
   }
 }

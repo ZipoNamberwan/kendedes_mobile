@@ -157,7 +157,8 @@ class TagData {
       return Colors.purple;
     } else if (project.type.key == ProjectType.supplementSwmaps.key) {
       return Colors.indigo;
-    } else if (project.type.key == ProjectType.survey.key) {
+    } else if (project.type.key == ProjectType.survey.key ||
+        project.type.key == ProjectType.sbr.key) {
       return Colors.pink;
     } else if (project.type.key == ProjectType.supplementMobile.key) {
       if (currentProjectId == project.id) {
@@ -175,7 +176,8 @@ class TagData {
   Color getBrowseColorScheme() {
     if (project.type.key == ProjectType.marketSwmaps.key) {
       return Colors.purple;
-    } else if (project.type.key == ProjectType.survey.key) {
+    } else if (project.type.key == ProjectType.sbr.key ||
+        project.type.key == ProjectType.survey.key) {
       return Colors.pink;
     } else if (project.type.key == ProjectType.supplementMobile.key ||
         project.type.key == ProjectType.supplementSwmaps.key) {

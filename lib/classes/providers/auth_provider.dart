@@ -66,6 +66,54 @@ class AuthProvider {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> loginWithGoogle({
+    required String firebaseToken,
+  }) async {
+    final response = await _dioService.dio.post(
+      '/login/google',
+      data: {'firebaseToken': firebaseToken},
+    );
+
+    final data = response.data['data'];
+    final token = data['token'];
+    final user = data['user'];
+
+    if (token != null) {
+      await _sharedPreferenceService.saveToken(token);
+      await _sharedPreferenceService.saveUser(user);
+    }
+
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> registerWithGoogle({
+    required String name,
+    required String email,
+    required String organization,
+    required String role,
+  }) async {
+    final response = await _dioService.dio.post(
+      '/register',
+      data: {
+        'name': name,
+        'email': email,
+        'organization': organization,
+        'role': role,
+      },
+    );
+
+    final data = response.data['data'];
+    final token = data['token'];
+    final user = data['user'];
+
+    if (token != null) {
+      await _sharedPreferenceService.saveToken(token);
+      await _sharedPreferenceService.saveUser(user);
+    }
+
+    return response.data;
+  }
+
   Future<void> logout() async {
     await _dioService.dio.post('/logout');
     await _sharedPreferenceService.clearToken();

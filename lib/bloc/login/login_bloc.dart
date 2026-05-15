@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
@@ -20,6 +21,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
             isLogoutLoading: false,
             isLogoutSuccess: false,
             isLogoutFailure: false,
+            isLoginGoogleLoading: false,
+            isLoginGoogleSuccess: false,
+            isLoginGoogleFailed: false,
           ),
         ),
       ) {
@@ -177,6 +181,93 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           LoginFailed(
             errorMessage: 'Gagal menyimpan data pengguna: ${e.toString()}',
             data: state.data.copyWith(isSubmitting: false, isFailure: true),
+          ),
+        );
+      }
+    });
+
+    on<LoginGoogle>((event, emit) async {
+      emit(LoginState(data: state.data.copyWith(isLoginGoogleLoading: true)));
+
+      try {
+        final googleProvider =
+            fa.GoogleAuthProvider()
+              ..addScope('email')
+              ..addScope('profile');
+
+        final userCredential = await fa.FirebaseAuth.instance
+            .signInWithProvider(googleProvider);
+
+        final String? firebaseIdToken = await userCredential.user?.getIdToken();
+
+        if (firebaseIdToken == null) {
+          emit(
+            LoginFailed(
+              errorMessage: 'Failed to retrieve Firebase ID token.',
+              data: state.data.copyWith(
+                isLoginGoogleLoading: false,
+                isLoginGoogleFailed: true,
+              ),
+            ),
+          );
+          return;
+        }
+
+        // Send to your own backend
+        final response = await AuthRepository().loginWithGoogle(
+          firebaseToken: firebaseIdToken,
+        );
+
+        final isUserExist = response['is_user_exist'] as bool;
+
+        if (!isUserExist) {
+          final email = response['email'] as String? ?? '';
+          final name = response['name'] as String? ?? '';
+          emit(
+            RedirectToRegister(
+              email: email,
+              name: name,
+              data: state.data.copyWith(
+                isLoginGoogleLoading: false,
+                isLoginGoogleFailed: true,
+              ),
+            ),
+          );
+          return;
+        }
+
+        final User user = User.fromJson(
+          response['user'] as Map<String, dynamic>,
+        );
+        await UserDbRepository().insert(user);
+
+        emit(
+          LoginSuccess(
+            data: state.data.copyWith(
+              isLoginGoogleLoading: false,
+              isLoginGoogleSuccess: true,
+              isSuccess: true,
+            ),
+          ),
+        );
+      } on fa.FirebaseAuthException catch (e) {
+        emit(
+          LoginFailed(
+            errorMessage: e.message ?? 'Firebase authentication failed.',
+            data: state.data.copyWith(
+              isLoginGoogleLoading: false,
+              isLoginGoogleFailed: true,
+            ),
+          ),
+        );
+      } catch (e) {
+        emit(
+          LoginFailed(
+            errorMessage: 'Something went wrong. Please try again.',
+            data: state.data.copyWith(
+              isLoginGoogleLoading: false,
+              isLoginGoogleFailed: true,
+            ),
           ),
         );
       }

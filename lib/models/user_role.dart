@@ -11,4 +11,9 @@ class UserRole {
   Map<String, dynamic> toJson() {
     return {'id': id, 'name': name};
   }
+
+  static final List<UserRole> staticUserRoles = [
+    UserRole(id: 'pcl', name: 'PCL'),
+    UserRole(id: 'pml', name: 'PML'),
+  ];
 }

@@ -6,6 +6,7 @@ import 'package:kendedes_mobile/bloc/browse/browse_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
+import 'package:kendedes_mobile/bloc/login/register_bloc.dart';
 import 'package:kendedes_mobile/bloc/polygon/polygon_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
@@ -36,10 +37,12 @@ import 'package:kendedes_mobile/widgets/version_update_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'pages/login_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: ".env");
-  
+
   FlutterError.onError = (FlutterErrorDetails details) {
     try {
       final fullStack = details.stack.toString();
@@ -50,10 +53,8 @@ Future<void> main() async {
 
       final exceptionMessage = details.exception.toString();
 
-      // Define your ignore keywords
       final ignoreKeywords = ['tile.openstreetmap.org', 'www.google.com/maps'];
 
-      // Check if any keyword is present in the exception message
       final shouldIgnore = ignoreKeywords.any(
         (keyword) => exceptionMessage.contains(keyword),
       );
@@ -62,15 +63,12 @@ Future<void> main() async {
 
       TelegramLogger.send('''🚨 *Flutter Error*
 
-      *Exception:* `$exceptionMessage`
-      *Library:* `${details.library}`
-      *Stack Trace:*
-      $truncatedStack
-
-      ''');
-    } catch (_) {
-      // Fail silently so it never blocks real error flow
-    }
+*Exception:* `$exceptionMessage`
+*Library:* `${details.library}`
+*Stack Trace:*
+$truncatedStack
+''');
+    } catch (_) {}
 
     FlutterError.presentError(details);
   };
@@ -78,7 +76,14 @@ Future<void> main() async {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      // ADD THIS
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+
       await _initializeApp();
+
       runApp(MyApp());
     },
     (Object error, StackTrace stack) {
@@ -90,24 +95,23 @@ Future<void> main() async {
                 : fullTrace;
 
         final user = AuthRepository().getUser();
+
         final userInfo =
             user.id != ''
                 ? 'ID: ${user.id}, Name: ${user.firstname}, Email: ${user.email}, Organization: ${user.organization?.name ?? 'N/A'}'
                 : 'User is null';
 
         final logMessage = '''
-      🚨 *Unhandled Dart Error*
+🚨 *Unhandled Dart Error*
 
-      *Error:* `${error.toString()}`
-      *User Info:* $userInfo
-      *Stack Trace:*
-      $truncatedTrace
-      ''';
+*Error:* `${error.toString()}`
+*User Info:* $userInfo
+*Stack Trace:*
+$truncatedTrace
+''';
 
         TelegramLogger.send(logMessage);
-      } catch (_) {
-        // Fail silently so it never blocks real error flow
-      }
+      } catch (_) {}
     },
   );
 }
@@ -145,6 +149,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late PolygonBloc _polygonBloc;
   late BrowseBloc _browseBloc;
   late HomeBloc _homeBloc;
+  late RegisterBloc _registerBloc;
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -159,7 +164,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _polygonBloc = PolygonBloc();
     _browseBloc = BrowseBloc();
     _homeBloc = HomeBloc();
-
+    _registerBloc = RegisterBloc();
+    
     // Check once on cold start
     _checkForUpdate();
   }
@@ -242,6 +248,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         BlocProvider<PolygonBloc>(create: (context) => _polygonBloc),
         BlocProvider<BrowseBloc>(create: (context) => _browseBloc),
         BlocProvider<HomeBloc>(create: (context) => _homeBloc),
+        BlocProvider<RegisterBloc>(create: (context) => _registerBloc),
       ],
       child: BlocListener<VersionBloc, VersionState>(
         listener: (context, versionState) {

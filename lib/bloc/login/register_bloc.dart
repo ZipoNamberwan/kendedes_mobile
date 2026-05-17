@@ -65,14 +65,14 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
 
     on<InitFields>((event, emit) {
       emit(
-        RegisterState(
+        FieldsInitialized(
           data: state.data.copyWith(email: event.email, name: event.name),
         ),
       );
     });
 
     on<UpdateNameField>((event, emit) {
-      emit(FieldsInitialized(data: state.data.copyWith(name: event.name)));
+      emit(RegisterState(data: state.data.copyWith(name: event.name)));
     });
 
     on<ChangeOrganizationField>((event, emit) {

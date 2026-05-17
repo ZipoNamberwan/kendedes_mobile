@@ -315,18 +315,22 @@ class _RegisterPageState extends State<RegisterPage> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: EdgeInsets.zero,
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
           isExpanded: true,
+          padding: const EdgeInsets.only(left: 14, right: 8),
           hint: Row(
             children: [
               Icon(icon, size: 20, color: Colors.orange.shade600),
               const SizedBox(width: 12),
-              Text(
-                hint,
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              Flexible(
+                child: Text(
+                  hint,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                ),
               ),
             ],
           ),
@@ -343,11 +347,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     children: [
                       Icon(icon, size: 20, color: Colors.orange.shade600),
                       const SizedBox(width: 12),
-                      Text(
-                        itemLabel(item),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                      Expanded(
+                        child: Text(
+                          itemLabel(item),
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],

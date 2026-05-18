@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:kendedes_mobile/bloc/photo_util/photo_util_bloc.dart';
+import 'package:kendedes_mobile/bloc/photo_util/photo_util_event.dart';
+import 'package:kendedes_mobile/bloc/photo_util/photo_util_state.dart';
 // import 'package:image_picker/image_picker.dart';
 import 'package:kendedes_mobile/models/photo_util/photo.dart';
+import 'package:kendedes_mobile/pages/photo_util/photo_captured_page.dart';
+import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 
 class PhotoListPage extends StatefulWidget {
   const PhotoListPage({super.key});
@@ -14,17 +20,24 @@ class _PhotoListPageState extends State<PhotoListPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // TODO: replace with real data source
-  final List<Photo> _photos = [];
+  late final PhotoUtilBloc _photoUtilBloc;
 
-  List<Photo> get _filteredPhotos {
-    if (_searchQuery.isEmpty) return _photos;
-    final q = _searchQuery.toLowerCase();
-    return _photos.where((p) {
-      return p.name.toLowerCase().contains(q) ||
-          (p.area?.toLowerCase().contains(q) ?? false) ||
-          (p.note?.toLowerCase().contains(q) ?? false);
-    }).toList();
+  Future<void> _takePhoto() async {
+    final picker = ImagePicker();
+    final XFile? file = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+      preferredCameraDevice: CameraDevice.rear,
+    );
+    if (file == null) return;
+
+    _photoUtilBloc.add(SetPhotoFileField(file));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _photoUtilBloc = context.read<PhotoUtilBloc>()..add(Initialize());
   }
 
   @override
@@ -35,125 +48,136 @@ class _PhotoListPageState extends State<PhotoListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(140),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.deepOrange.shade700,
-                Colors.deepOrange.shade400,
-                Colors.orange.shade700,
-                Colors.orange.shade500,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.orange.withValues(alpha: 0.4),
-                blurRadius: 30,
-                offset: const Offset(0, 12),
-                spreadRadius: 2,
+    return BlocConsumer<PhotoUtilBloc, PhotoUtilState>(
+      listener: (context, state) {
+        if (state is PhotoFileTakenFailed) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => MessageDialog(
+                  title: 'Gagal Mengambil Foto',
+                  message: state.errorMessage,
+                  type: MessageType.error,
+                  buttonText: 'Ok',
+                ),
+          );
+        } else if (state is PhotoFileTakenSuccess) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => PhotoCapturedPage()),
+          );
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(140),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.deepOrange.shade700,
+                    Colors.deepOrange.shade400,
+                    Colors.orange.shade700,
+                    Colors.orange.shade500,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.withValues(alpha: 0.4),
+                    blurRadius: 30,
+                    offset: const Offset(0, 12),
+                    spreadRadius: 2,
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).maybePop(),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_rounded,
-                            size: 20,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            'Daftar Foto',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
+                          GestureDetector(
+                            onTap: () => Navigator.of(context).maybePop(),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back_rounded,
+                                size: 20,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Kelola semua foto Anda',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
+                          const SizedBox(width: 16),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Daftar Foto',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Kelola semua foto Anda',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
+                      _buildSearchBar(),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  _buildSearchBar(),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _takePhoto();
-        },
-        backgroundColor: Colors.deepOrange.shade600,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.camera_alt_rounded),
-        label: const Text(
-          'Ambil Foto',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
-      body: _buildGrid(),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () {
+              _takePhoto();
+            },
+            backgroundColor: Colors.deepOrange.shade600,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.camera_alt_rounded),
+            label: const Text(
+              'Ambil Foto',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          body: _buildGrid(state.data.filteredPhotos),
+        );
+      },
     );
-  }
-
-  Future<void> _takePhoto() async {
-    final picker = ImagePicker();
-    final XFile? file = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
-      preferredCameraDevice: CameraDevice.rear,
-    );
-    if (file == null) return;
-    // TODO: handle the captured photo file
-    // file.path contains the local path to the image
   }
 
   Widget _buildSearchBar() {
@@ -202,9 +226,7 @@ class _PhotoListPageState extends State<PhotoListPage> {
     );
   }
 
-  Widget _buildGrid() {
-    final photos = _filteredPhotos;
-
+  Widget _buildGrid(List<Photo> photos) {
     if (photos.isEmpty) {
       return _buildEmptyState();
     }

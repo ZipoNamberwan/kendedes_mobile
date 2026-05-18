@@ -25,12 +25,25 @@ class InitState extends PhotoUtilState {
   List<Object> get props => [data];
 }
 
+class PhotoFileTakenSuccess extends PhotoUtilState {
+  const PhotoFileTakenSuccess({required super.data});
+  @override
+  List<Object> get props => [data];
+}
+
+class PhotoFileTakenFailed extends PhotoUtilState {
+  final String errorMessage;
+  const PhotoFileTakenFailed(this.errorMessage, {required super.data});
+  @override
+  List<Object> get props => [data, errorMessage];
+}
+
 class PhotoUtilStateData {
   final List<Photo> photos;
   final List<Photo> filteredPhotos;
   final String? searchQuery;
 
-  final Map<String, PhotoUtilFieldState<dynamic>>? formFields;
+  final Map<String, PhotoUtilFieldState<dynamic>> formFields;
 
   PhotoUtilStateData({
     required this.photos,

@@ -6,7 +6,7 @@ import 'package:kendedes_mobile/bloc/home/home_state.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/pages/browse_page.dart';
-import 'package:kendedes_mobile/pages/photo_list_page.dart';
+import 'package:kendedes_mobile/pages/photo_util/photo_list_page.dart';
 import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/about_app_dialog.dart';

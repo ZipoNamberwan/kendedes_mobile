@@ -7,6 +7,7 @@ import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/register_bloc.dart';
+import 'package:kendedes_mobile/bloc/photo_util/photo_util_bloc.dart';
 import 'package:kendedes_mobile/bloc/polygon/polygon_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
 import 'package:kendedes_mobile/bloc/tagging/tagging_bloc.dart';
@@ -150,6 +151,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late BrowseBloc _browseBloc;
   late HomeBloc _homeBloc;
   late RegisterBloc _registerBloc;
+  late PhotoUtilBloc _photoUtilBloc;
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -165,6 +167,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _browseBloc = BrowseBloc();
     _homeBloc = HomeBloc();
     _registerBloc = RegisterBloc();
+    _photoUtilBloc = PhotoUtilBloc();
     
     // Check once on cold start
     _checkForUpdate();
@@ -249,6 +252,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         BlocProvider<BrowseBloc>(create: (context) => _browseBloc),
         BlocProvider<HomeBloc>(create: (context) => _homeBloc),
         BlocProvider<RegisterBloc>(create: (context) => _registerBloc),
+        BlocProvider<PhotoUtilBloc>(create: (context) => _photoUtilBloc),
       ],
       child: BlocListener<VersionBloc, VersionState>(
         listener: (context, versionState) {

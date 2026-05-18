@@ -7,3 +7,10 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
     on<Initialize>((event, emit) async {});
   }
 }
+
+class ValidationResult {
+  final Map<String, PhotoUtilFieldState<dynamic>> updatedFields;
+  final bool hasErrors;
+
+  ValidationResult(this.updatedFields, this.hasErrors);
+}

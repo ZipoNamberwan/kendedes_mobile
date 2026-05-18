@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 // import 'package:image_picker/image_picker.dart';
 import 'package:kendedes_mobile/models/photo_util/photo.dart';
 
@@ -144,15 +145,15 @@ class _PhotoListPageState extends State<PhotoListPage> {
   }
 
   Future<void> _takePhoto() async {
-    // final picker = ImagePicker();
-    // final XFile? file = await picker.pickImage(
-    //   source: ImageSource.camera,
-    //   imageQuality: 85,
-    //   preferredCameraDevice: CameraDevice.rear,
-    // );
-    // if (file == null) return;
-    // // TODO: handle the captured photo file
-    // // file.path contains the local path to the image
+    final picker = ImagePicker();
+    final XFile? file = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+      preferredCameraDevice: CameraDevice.rear,
+    );
+    if (file == null) return;
+    // TODO: handle the captured photo file
+    // file.path contains the local path to the image
   }
 
   Widget _buildSearchBar() {

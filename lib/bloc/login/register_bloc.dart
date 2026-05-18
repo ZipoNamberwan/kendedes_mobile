@@ -13,9 +13,9 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
 
       await ApiServerHandler.run(
         action: () async {
-          if ((state.data.email?.isEmpty ?? true) &&
-              (state.data.name?.isEmpty ?? true) &&
-              (state.data.organization?.id.isEmpty ?? true) &&
+          if ((state.data.email?.isEmpty ?? true) ||
+              (state.data.name?.isEmpty ?? true) ||
+              (state.data.organization?.id.isEmpty ?? true) ||
               (state.data.role?.id.isEmpty ?? true)) {
             emit(
               RegisterFailed(
@@ -64,9 +64,18 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     });
 
     on<InitFields>((event, emit) {
+      final newState = state.data.copyWith(
+        resetAllFields: true,
+        isLoading: false,
+      );
       emit(
         FieldsInitialized(
-          data: state.data.copyWith(email: event.email, name: event.name),
+          data: newState.copyWith(
+            email: event.email,
+            name: event.name,
+            organization: event.organization,
+            role: event.role,
+          ),
         ),
       );
     });
@@ -85,6 +94,63 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
 
     on<ChangeUserRoleField>((event, emit) {
       emit(RegisterState(data: state.data.copyWith(role: event.role)));
+    });
+
+    on<ChangeProfile>((event, emit) async {
+      emit(RegisterState(data: state.data.copyWith(isLoading: true)));
+
+      await ApiServerHandler.run(
+        action: () async {
+          if ((state.data.email?.isEmpty ?? true) ||
+              (state.data.name?.isEmpty ?? true) ||
+              (!event.hideOrganization &&
+                  (state.data.organization?.id.isEmpty ?? true)) ||
+              (!event.hideRole && (state.data.role?.id.isEmpty ?? true))) {
+            emit(
+              RegisterFailed(
+                'Ada field yang masih kosong',
+                data: state.data.copyWith(isLoading: false),
+              ),
+            );
+            return;
+          }
+
+          final User user = await AuthRepository().changeProfile(
+            email: state.data.email!,
+            name: state.data.name!,
+            organization:
+                event.hideOrganization ? null : state.data.organization!.id,
+            role: event.hideRole ? null : state.data.role!.id,
+          );
+          await UserDbRepository().insert(user);
+
+          emit(RegisterSuccess(data: state.data.copyWith(isLoading: false)));
+        },
+        onLoginExpired: (e) {
+          emit(
+            RegisterFailed(
+              'Sesi login telah habis, silakan login kembali',
+              data: state.data.copyWith(isLoading: false),
+            ),
+          );
+        },
+        onDataProviderError: (e) {
+          emit(
+            RegisterFailed(
+              e.message,
+              data: state.data.copyWith(isLoading: false),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          emit(
+            RegisterFailed(
+              'Terjadi kesalahan: ${e.toString()}',
+              data: state.data.copyWith(isLoading: false),
+            ),
+          );
+        },
+      );
     });
   }
 }

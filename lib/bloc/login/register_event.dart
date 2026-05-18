@@ -11,7 +11,9 @@ abstract class RegisterEvent extends Equatable {
 class InitFields extends RegisterEvent {
   final String? email;
   final String? name;
-  const InitFields({this.email, this.name});
+  final Organization? organization;
+  final UserRole? role;
+  const InitFields({this.email, this.name, this.organization, this.role});
 }
 
 class Register extends RegisterEvent {
@@ -40,4 +42,14 @@ class ChangeUserRoleField extends RegisterEvent {
 
   @override
   List<Object?> get props => [role];
+}
+
+class ChangeProfile extends RegisterEvent {
+  final bool hideOrganization;
+  final bool hideRole;
+
+  const ChangeProfile({this.hideOrganization = false, this.hideRole = false});
+
+  @override
+  List<Object?> get props => [hideOrganization, hideRole];
 }

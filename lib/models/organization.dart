@@ -29,6 +29,15 @@ class Organization {
     };
   }
 
+  // write static method to return specific organization by id from staticOrganizations list
+  static Organization? getById(String id) {
+    try {
+      return staticOrganizations.firstWhere((org) => org.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
   static final List<Organization> staticOrganizations = [
     Organization(
       id: '3500',

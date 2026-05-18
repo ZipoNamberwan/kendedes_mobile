@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/home/home_bloc.dart';
+import 'package:kendedes_mobile/bloc/home/home_event.dart';
 import 'package:kendedes_mobile/bloc/home/home_state.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/models/user.dart';
@@ -8,9 +9,8 @@ import 'package:kendedes_mobile/pages/browse_page.dart';
 import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/about_app_dialog.dart';
+import 'package:kendedes_mobile/widgets/profile_form_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../bloc/home/home_event.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,10 +20,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late final HomeBloc _homeBloc;
   @override
   void initState() {
     super.initState();
-    context.read<HomeBloc>().add(const Initialize());
+    _homeBloc = context.read<HomeBloc>()..add(const Initialize());
   }
 
   Widget _appBarIconButton({required IconData icon, VoidCallback? onTap}) {
@@ -52,66 +53,104 @@ class _HomePageState extends State<HomePage> {
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => LogoutConfirmationDialog(),
+      builder: (context) => const LogoutConfirmationDialog(),
     );
   }
 
-  void _showUserInfo(User user) {
+  Future<void> _showChangeProfileDialog(User user) async {
+    await showDialog(
+      context: context,
+      builder: (context) => ProfileFormDialog(user: user),
+    );
+  }
+
+  void _showUserInfo() {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.orange.shade100,
-                  child: Icon(Icons.person, color: Colors.orange.shade600),
+          (context) => BlocBuilder<HomeBloc, HomeState>(
+            builder: (context, state) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(width: 12),
-                const Text('Informasi Pengguna'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoRow('Nama', user.firstname),
-                const SizedBox(height: 12),
-                _buildInfoRow('Email', user.email),
-                const SizedBox(height: 12),
-                _buildInfoRow(
-                  'Role',
-                  user.roles.isNotEmpty
-                      ? user.roles.map((e) => e.name).join(', ')
-                      : '-',
+                title: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Colors.orange.shade100,
+                      child: Icon(Icons.person, color: Colors.orange.shade600),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: const Text('Informasi Pengguna')),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _buildInfoRow('Satker', user.organization?.name ?? '-'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Kembali'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _showLogoutConfirmation();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoRow(
+                      'Email',
+                      state.data.currentUser?.email ?? '-',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoRow(
+                      'Nama',
+                      state.data.currentUser?.firstname ?? '-',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoRow(
+                      'Role',
+                      state.data.currentUser?.roles.isNotEmpty == true
+                          ? state.data.currentUser!.roles
+                              .map((e) => e.name)
+                              .join(', ')
+                          : '-',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoRow(
+                      'Satker',
+                      state.data.currentUser?.organization?.name ?? '-',
+                    ),
+                  ],
+                ),
+                actions: [
+                  // TextButton(
+                  //   onPressed: () => Navigator.of(context).pop(),
+                  //   child: const Text('Kembali'),
+                  // ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (state.data.currentUser != null) {
+                        await _showChangeProfileDialog(state.data.currentUser!);
+                        _homeBloc.add(const RefreshUser());
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade600,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Ubah Profil'),
                   ),
-                ),
-                child: const Text('Logout'),
-              ),
-            ],
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showLogoutConfirmation();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade600,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Logout'),
+                  ),
+                ],
+              );
+            },
           ),
     );
   }
@@ -277,17 +316,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       _appBarIconButton(
                         icon: Icons.account_circle_rounded,
-                        onTap:
-                            () => _showUserInfo(
-                              state.data.currentUser ??
-                                  User(
-                                    email: '',
-                                    firstname: '',
-                                    id: '',
-                                    organization: null,
-                                    roles: [],
-                                  ),
-                            ),
+                        onTap: () => _showUserInfo(),
                       ),
                       const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -348,7 +377,8 @@ class _HomePageState extends State<HomePage> {
                   _buildMenuCard(
                     context: context,
                     title: 'Mode Jelajah',
-                    subtitle: 'Jelajahi usaha yang sudah ditagging, usaha SBR dan usaha lainnya',
+                    subtitle:
+                        'Jelajahi usaha yang sudah ditagging, usaha SBR dan usaha lainnya',
                     icon: Icons.explore_rounded,
                     iconColor: Colors.blue,
                     onTap: () {
@@ -361,7 +391,8 @@ class _HomePageState extends State<HomePage> {
                   _buildMenuCard(
                     context: context,
                     title: 'Mode Tagging',
-                    subtitle: 'Memulai tagging usaha, sinkronisasi data, dan manajemen proyek',
+                    subtitle:
+                        'Memulai tagging usaha, sinkronisasi data, dan manajemen proyek',
                     icon: Icons.location_on,
                     iconColor: Colors.deepOrange,
                     onTap: () {
@@ -372,6 +403,26 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
+                  const SizedBox(height: 14),
+                  _buildMenuCard(
+                    context: context,
+                    title: 'Top KBLI',
+                    subtitle: 'Lihat daftar KBLI terbanyak menurut wilayah.',
+                    icon: Icons.bar_chart,
+                    iconColor: Colors.purple,
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 14),
+                  _buildMenuCard(
+                    context: context,
+                    title: 'Kamera Survei',
+                    subtitle:
+                        'Gunakan fitur ini untuk mengambil foto dinding, atap dan bangunan. Foto otomatis dilengkapi nama rumah tangga, alamat, dan waktu pengambilan',
+                    icon: Icons.camera_alt,
+                    iconColor: Colors.green,
+                    onTap: () {},
+                  ),
+
                   const Spacer(),
                   Text(
                     'Kendedes Mobile',

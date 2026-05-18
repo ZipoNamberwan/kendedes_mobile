@@ -71,6 +71,22 @@ class AuthRepository {
     return User.fromJson(response['data']['user']);
   }
 
+  Future<User> changeProfile({
+    required String email,
+    required String name,
+    String? organization,
+    String? role,
+  }) async {
+    final response = await _authProvider.changeProfile(
+      email: email,
+      name: name,
+      organization: organization,
+      role: role,
+    );
+
+    return User.fromJson(response['data']['user']);
+  }
+
   Future<void> logout() async {
     await _authProvider.logout();
   }

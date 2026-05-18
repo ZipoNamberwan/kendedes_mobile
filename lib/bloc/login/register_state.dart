@@ -49,12 +49,14 @@ class RegisterStateData {
     Organization? organization,
     UserRole? role,
     bool? isLoading,
+    bool? resetAllFields,
   }) {
     return RegisterStateData(
-      email: email ?? this.email,
-      name: name ?? this.name,
-      organization: organization ?? this.organization,
-      role: role ?? this.role,
+      email: resetAllFields == true ? null : email ?? this.email,
+      name: resetAllFields == true ? null : name ?? this.name,
+      organization:
+          resetAllFields == true ? null : organization ?? this.organization,
+      role: resetAllFields == true ? null : role ?? this.role,
       isLoading: isLoading ?? this.isLoading,
     );
   }

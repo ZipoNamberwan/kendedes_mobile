@@ -114,6 +114,32 @@ class AuthProvider {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> changeProfile({
+    required String name,
+    required String email,
+    String? organization,
+    String? role,
+  }) async {
+    final response = await _dioService.dio.post(
+      '/profile',
+      data: {
+        'name': name,
+        'email': email,
+        if (organization != null) 'organization': organization,
+        if (role != null) 'role': role,
+      },
+    );
+
+    final data = response.data['data'];
+    final user = data['user'];
+
+    if (user != null) {
+      await _sharedPreferenceService.saveUser(user);
+    }
+
+    return response.data;
+  }
+
   Future<void> logout() async {
     await _dioService.dio.post('/logout');
     await _sharedPreferenceService.clearToken();

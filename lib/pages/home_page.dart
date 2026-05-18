@@ -6,6 +6,7 @@ import 'package:kendedes_mobile/bloc/home/home_state.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/pages/browse_page.dart';
+import 'package:kendedes_mobile/pages/photo_list_page.dart';
 import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/about_app_dialog.dart';
@@ -410,7 +411,9 @@ class _HomePageState extends State<HomePage> {
                     subtitle: 'Lihat daftar KBLI terbanyak menurut wilayah.',
                     icon: Icons.bar_chart,
                     iconColor: Colors.purple,
-                    onTap: () {},
+                    onTap: () {
+                      
+                    },
                   ),
                   const SizedBox(height: 14),
                   _buildMenuCard(
@@ -420,7 +423,13 @@ class _HomePageState extends State<HomePage> {
                         'Gunakan fitur ini untuk mengambil foto dinding, atap dan bangunan. Foto otomatis dilengkapi nama rumah tangga, alamat, dan waktu pengambilan',
                     icon: Icons.camera_alt,
                     iconColor: Colors.green,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PhotoListPage(),
+                        ),
+                      );
+                    },
                   ),
 
                   const Spacer(),

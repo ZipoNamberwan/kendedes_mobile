@@ -15,9 +15,10 @@ class InitState extends PhotoUtilState {
   InitState()
     : super(
         data: PhotoUtilStateData(
-          photos: [],
-          filteredPhotos: [],
+          families: [],
+          filteredFamilies: [],
           searchQuery: null,
+          isLoading: false,
         ),
       );
 
@@ -25,31 +26,41 @@ class InitState extends PhotoUtilState {
   List<Object> get props => [data];
 }
 
-class PhotoFileTakenSuccess extends PhotoUtilState {
-  const PhotoFileTakenSuccess({required super.data});
+class SaveSuccess extends PhotoUtilState {
+  const SaveSuccess({required super.data});
   @override
   List<Object> get props => [data];
 }
 
-class PhotoFileTakenFailed extends PhotoUtilState {
+class SaveFailed extends PhotoUtilState {
   final String errorMessage;
-  const PhotoFileTakenFailed(this.errorMessage, {required super.data});
+
+  const SaveFailed(this.errorMessage, {required super.data});
+  @override
+  List<Object> get props => [data, errorMessage];
+}
+
+class FormValidationFailed extends PhotoUtilState {
+  final String errorMessage;
+  const FormValidationFailed(this.errorMessage, {required super.data});
   @override
   List<Object> get props => [data, errorMessage];
 }
 
 class PhotoUtilStateData {
-  final List<Photo> photos;
-  final List<Photo> filteredPhotos;
+  final List<Family> families;
+  final List<Family> filteredFamilies;
   final String? searchQuery;
+  final bool isLoading;
 
   final Map<String, PhotoUtilFieldState<dynamic>> formFields;
 
   PhotoUtilStateData({
-    required this.photos,
-    required this.filteredPhotos,
+    required this.families,
+    required this.filteredFamilies,
     this.searchQuery,
     Map<String, PhotoUtilFieldState<dynamic>>? formFields,
+    required this.isLoading,
   }) : formFields = formFields ?? _generateFormFields();
 
   static Map<String, PhotoUtilFieldState<dynamic>> _generateFormFields() {
@@ -57,29 +68,33 @@ class PhotoUtilStateData {
 
     formFields['id'] = PhotoUtilFieldState<String>();
     formFields['name'] = PhotoUtilFieldState<String>();
-    formFields['area'] = PhotoUtilFieldState<String?>();
-    formFields['note'] = PhotoUtilFieldState<String?>();
-    formFields['photoUrl'] = PhotoUtilFieldState<String>();
-    formFields['photoFile'] = PhotoUtilFieldState<XFile?>();
+    formFields['address'] = PhotoUtilFieldState<String?>();
+    // formFields['note'] = PhotoUtilFieldState<String?>();
+
+    for (final type in PhotoType.values) {
+      formFields[type.key] = PhotoUtilFieldState<XFile?>();
+    }
 
     return formFields;
   }
 
   PhotoUtilStateData copyWith({
-    List<Photo>? photos,
-    List<Photo>? filteredPhotos,
+    List<Family>? families,
+    List<Family>? filteredFamilies,
     String? searchQuery,
     Map<String, PhotoUtilFieldState<dynamic>>? formFields,
+    bool? isLoading,
     bool? resetForm,
   }) {
     return PhotoUtilStateData(
-      photos: photos ?? this.photos,
-      filteredPhotos: filteredPhotos ?? this.filteredPhotos,
+      families: families ?? this.families,
+      filteredFamilies: filteredFamilies ?? this.filteredFamilies,
       searchQuery: searchQuery ?? this.searchQuery,
       formFields:
           (resetForm ?? false)
               ? _generateFormFields()
               : formFields ?? this.formFields,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 }

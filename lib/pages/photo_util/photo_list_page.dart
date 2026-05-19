@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:kendedes_mobile/bloc/photo_util/photo_util_bloc.dart';
-import 'package:kendedes_mobile/bloc/photo_util/photo_util_event.dart';
 import 'package:kendedes_mobile/bloc/photo_util/photo_util_state.dart';
 // import 'package:image_picker/image_picker.dart';
 import 'package:kendedes_mobile/models/photo_util/photo.dart';
-import 'package:kendedes_mobile/pages/photo_util/photo_captured_page.dart';
-import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
+import 'package:kendedes_mobile/pages/photo_util/photo_form_page.dart';
 
 class PhotoListPage extends StatefulWidget {
   const PhotoListPage({super.key});
@@ -20,24 +17,9 @@ class _PhotoListPageState extends State<PhotoListPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
-  late final PhotoUtilBloc _photoUtilBloc;
-
-  Future<void> _takePhoto() async {
-    final picker = ImagePicker();
-    final XFile? file = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
-      preferredCameraDevice: CameraDevice.rear,
-    );
-    if (file == null) return;
-
-    _photoUtilBloc.add(SetPhotoFileField(file));
-  }
-
   @override
   void initState() {
     super.initState();
-    _photoUtilBloc = context.read<PhotoUtilBloc>()..add(Initialize());
   }
 
   @override
@@ -49,25 +31,7 @@ class _PhotoListPageState extends State<PhotoListPage> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<PhotoUtilBloc, PhotoUtilState>(
-      listener: (context, state) {
-        if (state is PhotoFileTakenFailed) {
-          showDialog(
-            context: context,
-            builder:
-                (context) => MessageDialog(
-                  title: 'Gagal Mengambil Foto',
-                  message: state.errorMessage,
-                  type: MessageType.error,
-                  buttonText: 'Ok',
-                ),
-          );
-        } else if (state is PhotoFileTakenSuccess) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => PhotoCapturedPage()),
-          );
-        }
-      },
+      listener: (context, state) {},
       builder: (context, state) {
         return Scaffold(
           backgroundColor: Colors.grey[50],
@@ -164,7 +128,10 @@ class _PhotoListPageState extends State<PhotoListPage> {
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () {
-              _takePhoto();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PhotoFormPage()),
+              );
             },
             backgroundColor: Colors.deepOrange.shade600,
             foregroundColor: Colors.white,
@@ -174,7 +141,7 @@ class _PhotoListPageState extends State<PhotoListPage> {
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          body: _buildGrid(state.data.filteredPhotos),
+          body: _buildGrid(state.data.filteredFamilies),
         );
       },
     );
@@ -226,8 +193,8 @@ class _PhotoListPageState extends State<PhotoListPage> {
     );
   }
 
-  Widget _buildGrid(List<Photo> photos) {
-    if (photos.isEmpty) {
+  Widget _buildGrid(List<Family> families) {
+    if (families.isEmpty) {
       return _buildEmptyState();
     }
 
@@ -239,12 +206,12 @@ class _PhotoListPageState extends State<PhotoListPage> {
         mainAxisSpacing: 12,
         childAspectRatio: 0.8,
       ),
-      itemCount: photos.length,
-      itemBuilder: (context, index) => _buildPhotoCard(photos[index]),
+      itemCount: families.length,
+      itemBuilder: (context, index) => _buildPhotoCard(families[index]),
     );
   }
 
-  Widget _buildPhotoCard(Photo photo) {
+  Widget _buildPhotoCard(Family family) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -265,37 +232,37 @@ class _PhotoListPageState extends State<PhotoListPage> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.network(
-                  photo.photoUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder:
-                      (_, __, ___) => Container(
-                        color: Colors.grey.shade200,
-                        child: Icon(
-                          Icons.broken_image_outlined,
-                          color: Colors.grey.shade400,
-                          size: 40,
-                        ),
-                      ),
-                  loadingBuilder: (_, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      color: Colors.grey.shade100,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.orange.shade400,
-                          value:
-                              progress.expectedTotalBytes != null
-                                  ? progress.cumulativeBytesLoaded /
-                                      progress.expectedTotalBytes!
-                                  : null,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                if (photo.area != null)
+                // Image.network(
+                //   photoData.photoDataUrl,
+                //   fit: BoxFit.cover,
+                //   errorBuilder:
+                //       (_, __, ___) => Container(
+                //         color: Colors.grey.shade200,
+                //         child: Icon(
+                //           Icons.broken_image_outlined,
+                //           color: Colors.grey.shade400,
+                //           size: 40,
+                //         ),
+                //       ),
+                //   loadingBuilder: (_, child, progress) {
+                //     if (progress == null) return child;
+                //     return Container(
+                //       color: Colors.grey.shade100,
+                //       child: Center(
+                //         child: CircularProgressIndicator(
+                //           strokeWidth: 2,
+                //           color: Colors.orange.shade400,
+                //           value:
+                //               progress.expectedTotalBytes != null
+                //                   ? progress.cumulativeBytesLoaded /
+                //                       progress.expectedTotalBytes!
+                //                   : null,
+                //         ),
+                //       ),
+                //     );
+                //   },
+                // ),
+                if (family.photos.isNotEmpty)
                   Positioned(
                     top: 8,
                     left: 8,
@@ -309,7 +276,7 @@ class _PhotoListPageState extends State<PhotoListPage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        photo.area!,
+                        family.photos.first.type.label,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
@@ -327,7 +294,7 @@ class _PhotoListPageState extends State<PhotoListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  photo.name,
+                  family.name,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -335,10 +302,10 @@ class _PhotoListPageState extends State<PhotoListPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (photo.note != null && photo.note!.isNotEmpty) ...[
+                if (family.photos.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    photo.note!,
+                    family.photos.first.type.label,
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

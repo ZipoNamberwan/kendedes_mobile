@@ -17,16 +17,21 @@ class Initialize extends PhotoUtilEvent {
 class SetFormField extends PhotoUtilEvent {
   final String key;
   final dynamic value;
-  const SetFormField(this.key, this.value);
-
+  const SetFormField({required this.key, required this.value});
   @override
   List<Object?> get props => [key, value];
 }
 
 class SetPhotoFileField extends PhotoUtilEvent {
+  final String key;
   final XFile xFile;
-  const SetPhotoFileField(this.xFile);
-
+  const SetPhotoFileField({required this.key, required this.xFile});
   @override
-  List<Object?> get props => [xFile];
+  List<Object?> get props => [key, xFile];
+}
+
+class SaveForm extends PhotoUtilEvent {
+  const SaveForm();
+  @override
+  List<Object?> get props => [];
 }

@@ -1,101 +1,90 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:kendedes_mobile/bloc/photo_util/photo_util_event.dart';
 import 'package:kendedes_mobile/models/photo_util/photo.dart';
 import 'package:kendedes_mobile/bloc/photo_util/photo_util_state.dart';
+import 'package:kendedes_mobile/models/photo_util/photo_field_form.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
-// Data class for passing to isolate — structure unchanged
+// ---------------------------------------------------------------------------
+// Data class for isolate - contains compressed bytes (no platform channels)
+// ---------------------------------------------------------------------------
 class _ImageProcessingData {
-  final String imagePath;
+  final Uint8List compressedBytes;
   final String name;
   final String address;
   final String photoLabel;
   final String savePath;
+  final Uint8List fontBytes;
 
   _ImageProcessingData({
-    required this.imagePath,
+    required this.compressedBytes,
     required this.name,
     required this.address,
     required this.photoLabel,
     required this.savePath,
+    required this.fontBytes,
   });
 }
 
-// Top-level function for isolate processing
+// ---------------------------------------------------------------------------
+// Top-level isolate function - ONLY Dart operations (no platform channels)
+// Must be top-level to work with compute()
+// ---------------------------------------------------------------------------
 Future<void> _processImageInIsolate(_ImageProcessingData data) async {
-  final bytes = await File(data.imagePath).readAsBytes();
+  // Load custom font from bytes
+  final font = img.BitmapFont.fromZip(data.fontBytes);
 
-  // decodeJpg skips format sniffing — faster than decodeImage
-  var image = img.decodeJpg(bytes) ?? img.decodeImage(bytes);
+  // Decode the compressed bytes
+  final image = img.decodeJpg(data.compressedBytes);
 
   if (image == null) {
-    throw Exception('Failed to decode image: ${data.photoLabel}');
+    throw Exception('[${data.photoLabel}] Failed to decode compressed bytes');
   }
 
-  // Only resize when needed; use 'average' — faster than default cubic
-  if (image.width > 1920) {
-    image = img.copyResize(
-      image,
-      width: 1920,
-      interpolation: img.Interpolation.average,
-    );
-  }
-
+  // Text overlay with custom font
   final imageWithText = _overlayTextOnImage(
     image,
     data.name,
     data.address,
     data.photoLabel,
+    font,
   );
-
-  await File(
-    data.savePath,
-  ).writeAsBytes(img.encodeJpg(imageWithText, quality: 60));
+  final encodedBytes = img.encodeJpg(imageWithText, quality: 35);
+  await File(data.savePath).writeAsBytes(encodedBytes);
 }
 
+// Helper functions for isolate (must be top-level)
 img.Image _overlayTextOnImage(
   img.Image image,
   String name,
   String address,
   String photoLabel,
+  img.BitmapFont font,
 ) {
-  // Pre-compute all layout values once — avoid repeated casts in hot path
   final w = image.width;
   final h = image.height;
   final padding = (w * 0.03).clamp(20.0, 100.0).toInt();
-  final textScale = (w / 600.0).clamp(6.0, 14.0);
-  final lineHeight = (48 * textScale * 1.4).toInt();
+  final textScale = (w / 600.0).clamp(6.0, 55.0);
+  final lineHeight = (12 * textScale * 1.4).toInt();
   final yStart = h - (lineHeight * 3 + padding * 2) + padding;
   final white = img.ColorRgba8(255, 255, 255, 255);
 
+  _drawScaledText(image, photoLabel, padding, yStart, white, font);
+  _drawScaledText(image, name, padding, yStart + lineHeight, white, font);
   _drawScaledText(
     image,
-    'Foto: $photoLabel',
-    padding,
-    yStart,
-    textScale,
-    white,
-  );
-  _drawScaledText(
-    image,
-    'Nama KK: $name',
-    padding,
-    yStart + lineHeight,
-    textScale,
-    white,
-  );
-  _drawScaledText(
-    image,
-    'Alamat: $address',
+    address,
     padding,
     yStart + lineHeight * 2,
-    textScale,
     white,
+    font,
   );
 
   return image;
@@ -106,45 +95,36 @@ void _drawScaledText(
   String text,
   int x,
   int y,
-  double scale,
   img.Color color,
+  img.BitmapFont font,
 ) {
-  final so = (scale * 2.5).clamp(3.0, 12.0).toInt(); // shadow offset
+  final shadowOffset = 3;
 
-  // Layered shadow — 3 passes at decreasing opacity simulates a soft blur
+  // Single shadow layer for speed
   img.drawString(
     image,
     text,
-    font: img.arial48,
-    x: x + so,
-    y: y + so,
-    color: img.ColorRgba8(0, 0, 0, 180),
-  );
-  img.drawString(
-    image,
-    text,
-    font: img.arial48,
-    x: x + so + 2,
-    y: y + so + 2,
-    color: img.ColorRgba8(0, 0, 0, 100),
-  );
-  img.drawString(
-    image,
-    text,
-    font: img.arial48,
-    x: x + so - 1,
-    y: y + so - 1,
-    color: img.ColorRgba8(0, 0, 0, 60),
+    font: font,
+    x: x + shadowOffset,
+    y: y + shadowOffset,
+    color: img.ColorRgba8(0, 0, 0, 200),
   );
 
-  // White text — single clean pass on top
-  img.drawString(image, text, font: img.arial48, x: x, y: y, color: color);
+  // White text on top
+  img.drawString(image, text, font: font, x: x, y: y, color: color);
 }
 
 class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
   PhotoUtilBloc() : super(InitState()) {
     on<Initialize>((event, emit) async {
-      emit(PhotoUtilState(data: state.data.copyWith(resetForm: true)));
+      emit(
+        PhotoUtilState(
+          data: state.data.copyWith(
+            resetForm: true,
+            resetProcessingMessage: true,
+          ),
+        ),
+      );
     });
 
     on<SetFormField>((event, emit) {
@@ -164,7 +144,7 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
       final updatedFormFields = _updateFieldValue(
         state.data.formFields,
         event.key,
-        event.xFile,
+        PhotoFieldForm(type: event.type, file: event.xFile),
       );
       emit(
         PhotoUtilState(
@@ -174,7 +154,14 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
     });
 
     on<SaveForm>((event, emit) async {
-      emit(PhotoUtilState(data: state.data.copyWith(isLoading: true)));
+      emit(
+        Processing(
+          data: state.data.copyWith(
+            isLoading: true,
+            processingMessage: 'Processing photos...',
+          ),
+        ),
+      );
 
       final formFields = state.data.formFields;
       final validationResult = _validateForm(formFields);
@@ -186,6 +173,7 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
             data: state.data.copyWith(
               formFields: validationResult.updatedFields,
               isLoading: false,
+              resetProcessingMessage: true,
             ),
           ),
         );
@@ -198,13 +186,14 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
 
         // compute() spawns a true Dart isolate per image;
         // Future.wait runs them all concurrently — biggest perf win
-        await _savePhotosWithText(name, address, formFields);
+        await _savePhotosWithText(emit, name, address, formFields);
 
         emit(
           SaveSuccess(
             data: state.data.copyWith(
               formFields: validationResult.updatedFields,
               isLoading: false,
+              resetProcessingMessage: true,
             ),
           ),
         );
@@ -212,7 +201,10 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
         emit(
           SaveFailed(
             'Failed to save photos: $e',
-            data: state.data.copyWith(isLoading: false),
+            data: state.data.copyWith(
+              isLoading: false,
+              resetProcessingMessage: true,
+            ),
           ),
         );
       }
@@ -232,8 +224,8 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
       return {...fields, key: field.copyWith(value: value as String)};
     } else if (field is PhotoUtilFieldState<String?>) {
       return {...fields, key: field.copyWith(value: value as String?)};
-    } else if (field is PhotoUtilFieldState<XFile?>) {
-      return {...fields, key: field.copyWith(value: value as XFile?)};
+    } else if (field is PhotoUtilFieldState<PhotoFieldForm?>) {
+      return {...fields, key: field.copyWith(value: value as PhotoFieldForm?)};
     }
 
     return fields;
@@ -263,19 +255,19 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
       updatedFields['name'] = updatedFields['name']!.clearError();
     }
 
-    final address = formFields['address']?.value as String? ?? '';
-    if (address.trim().isEmpty) {
-      updatedFields['address'] = updatedFields['address']!.copyWith(
-        error: 'Identitas wilayah tidak boleh kosong',
-      );
-      hasErrors = true;
-    } else {
-      updatedFields['address'] = updatedFields['address']!.clearError();
-    }
+    // final address = formFields['address']?.value as String? ?? '';
+    // if (address.trim().isEmpty) {
+    //   updatedFields['address'] = updatedFields['address']!.copyWith(
+    //     error: 'Identitas wilayah tidak boleh kosong',
+    //   );
+    //   hasErrors = true;
+    // } else {
+    //   updatedFields['address'] = updatedFields['address']!.clearError();
+    // }
 
     for (final type in PhotoType.values) {
-      final photo = formFields[type.key]?.value as XFile?;
-      if (photo == null) {
+      final photoData = formFields[type.key]?.value as PhotoFieldForm?;
+      if (photoData == null) {
         updatedFields[type.key] = updatedFields[type.key]!.copyWith(
           error: 'Foto ${type.label} wajib diambil',
         );
@@ -289,10 +281,21 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
   }
 
   Future<void> _savePhotosWithText(
+    Emitter<PhotoUtilState> emit,
     String name,
     String address,
     Map<String, PhotoUtilFieldState<dynamic>> formFields,
   ) async {
+    emit(
+      Processing(
+        data: state.data.copyWith(processingMessage: 'Preparing photos...'),
+      ),
+    );
+
+    // Load custom font from assets
+    final fontData = await rootBundle.load('fonts/sans-serif.zip');
+    final fontBytes = fontData.buffer.asUint8List();
+
     // Get download directory
     Directory? downloadDir;
     if (Platform.isAndroid) {
@@ -319,26 +322,92 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
         .replaceAll(RegExp(r'[^\w\s-]'), '')
         .replaceAll(' ', '_');
 
-    // Process each photo in background isolate
+    // Collect all photos to process
+    final photosToProcess =
+        <
+          ({
+            PhotoType type,
+            XFile xFile,
+            String filename,
+            String savePath,
+            int index,
+          })
+        >[];
+
+    int index = 0;
     for (final type in PhotoType.values) {
-      final xFile = formFields[type.key]?.value as XFile?;
-      if (xFile == null) continue;
-
-      // Prepare data for isolate
-      final filename = '${sanitizedName}_${type.key}_$timestamp.jpg';
-      final savePath = '${kdmDir.path}/$filename';
-
-      final processingData = _ImageProcessingData(
-        imagePath: xFile.path,
-        name: name,
-        address: address,
-        photoLabel: type.label,
-        savePath: savePath,
-      );
-
-      // Process image in background isolate to avoid UI lag
-      await compute(_processImageInIsolate, processingData);
+      final photoData = formFields[type.key]?.value as PhotoFieldForm?;
+      if (photoData != null) {
+        index++;
+        final filename = '${sanitizedName}_${type.key}_$timestamp.jpg';
+        final savePath = '${kdmDir.path}/$filename';
+        photosToProcess.add((
+          type: type,
+          xFile: photoData.file,
+          filename: filename,
+          savePath: savePath,
+          index: index,
+        ));
+      }
     }
+
+    emit(
+      Processing(
+        data: state.data.copyWith(
+          processingMessage: 'Compressing ${photosToProcess.length} photos...',
+        ),
+      ),
+    );
+
+    // PHASE 1: Compress all photos in parallel (native compression)
+    final compressedResults = await Future.wait(
+      photosToProcess.map((photo) async {
+        final compressedBytes = await FlutterImageCompress.compressWithFile(
+          photo.xFile.path,
+          minWidth: 1440, // Reduced from 1920 for faster processing
+          minHeight: 1,
+          quality: 70, // Optimized for speed
+        );
+
+        if (compressedBytes == null || compressedBytes.isEmpty) {
+          throw Exception('Native compress failed for ${photo.type.label}');
+        }
+
+        return (photo: photo, compressedBytes: compressedBytes);
+      }),
+    );
+
+    emit(
+      Processing(
+        data: state.data.copyWith(
+          processingMessage: 'Adding text overlays and saving...',
+        ),
+      ),
+    );
+
+    // PHASE 2: Process all photos in parallel (Dart operations in isolates)
+    await Future.wait(
+      compressedResults.map((result) async {
+        final processingData = _ImageProcessingData(
+          compressedBytes: Uint8List.fromList(result.compressedBytes),
+          name: name,
+          address: address,
+          photoLabel: result.photo.type.label,
+          savePath: result.photo.savePath,
+          fontBytes: fontBytes,
+        );
+
+        await compute(_processImageInIsolate, processingData);
+      }),
+    );
+
+    emit(
+      Processing(
+        data: state.data.copyWith(
+          processingMessage: 'Complete! All photos processed successfully.',
+        ),
+      ),
+    );
   }
 }
 

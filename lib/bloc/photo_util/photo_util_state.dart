@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:kendedes_mobile/models/photo_util/photo.dart';
+import 'package:kendedes_mobile/models/photo_util/photo_field_form.dart';
 
 class PhotoUtilState extends Equatable {
   final PhotoUtilStateData data;
@@ -47,6 +47,12 @@ class FormValidationFailed extends PhotoUtilState {
   List<Object> get props => [data, errorMessage];
 }
 
+class Processing extends PhotoUtilState {
+  const Processing({required super.data});
+  @override
+  List<Object> get props => [data];
+}
+
 class PhotoUtilStateData {
   final List<Family> families;
   final List<Family> filteredFamilies;
@@ -54,6 +60,7 @@ class PhotoUtilStateData {
   final bool isLoading;
 
   final Map<String, PhotoUtilFieldState<dynamic>> formFields;
+  final String? processingMessage;
 
   PhotoUtilStateData({
     required this.families,
@@ -61,6 +68,7 @@ class PhotoUtilStateData {
     this.searchQuery,
     Map<String, PhotoUtilFieldState<dynamic>>? formFields,
     required this.isLoading,
+    this.processingMessage,
   }) : formFields = formFields ?? _generateFormFields();
 
   static Map<String, PhotoUtilFieldState<dynamic>> _generateFormFields() {
@@ -72,7 +80,7 @@ class PhotoUtilStateData {
     // formFields['note'] = PhotoUtilFieldState<String?>();
 
     for (final type in PhotoType.values) {
-      formFields[type.key] = PhotoUtilFieldState<XFile?>();
+      formFields[type.key] = PhotoUtilFieldState<PhotoFieldForm?>();
     }
 
     return formFields;
@@ -85,6 +93,8 @@ class PhotoUtilStateData {
     Map<String, PhotoUtilFieldState<dynamic>>? formFields,
     bool? isLoading,
     bool? resetForm,
+    String? processingMessage,
+    bool? resetProcessingMessage,
   }) {
     return PhotoUtilStateData(
       families: families ?? this.families,
@@ -95,6 +105,10 @@ class PhotoUtilStateData {
               ? _generateFormFields()
               : formFields ?? this.formFields,
       isLoading: isLoading ?? this.isLoading,
+      processingMessage:
+          (resetProcessingMessage ?? false)
+              ? null
+              : processingMessage ?? this.processingMessage,
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:kendedes_mobile/bloc/photo_util/photo_util_bloc.dart';
 import 'package:kendedes_mobile/bloc/photo_util/photo_util_event.dart';
 import 'package:kendedes_mobile/bloc/photo_util/photo_util_state.dart';
 import 'package:kendedes_mobile/models/photo_util/photo.dart';
+import 'package:kendedes_mobile/models/photo_util/photo_field_form.dart';
 import 'package:kendedes_mobile/pages/photo_util/photo_result_preview.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 
@@ -22,17 +23,21 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
   final _addressController = TextEditingController();
 
   late final PhotoUtilBloc _photoUtilBloc;
+  bool _isProcessingDialogShowing = false;
 
   Future<void> _takePhoto(PhotoType type) async {
     final picker = ImagePicker();
     final XFile? file = await picker.pickImage(
       source: ImageSource.camera,
-      imageQuality: 50,
+      // Remove imageQuality to capture at native quality - faster
+      // Let the processing methods handle compression efficiently
       preferredCameraDevice: CameraDevice.rear,
     );
     if (file == null) return;
 
-    _photoUtilBloc.add(SetPhotoFileField(key: type.key, xFile: file));
+    _photoUtilBloc.add(
+      SetPhotoFileField(key: type.key, type: type, xFile: file),
+    );
   }
 
   void _showPhotoDetail(PhotoType type, XFile photo) {
@@ -120,7 +125,13 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<PhotoUtilBloc, PhotoUtilState>(
-      listener: (context, state) {
+      listener: (context, state) async {
+        // Close processing dialog if it's open and state is no longer Processing
+        if (_isProcessingDialogShowing && state is! Processing) {
+          Navigator.of(context).pop();
+          _isProcessingDialogShowing = false;
+        }
+
         if (state is SaveFailed) {
           showDialog(
             context: context,
@@ -137,6 +148,58 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
             context,
             MaterialPageRoute(builder: (context) => const PhotoResultPreview()),
           );
+        } else if (state is Processing) {
+          // Only show dialog on the first Processing state (prevent multiple dialogs)
+          if (!_isProcessingDialogShowing) {
+            _isProcessingDialogShowing = true;
+            await showDialog(
+              context: context,
+              barrierDismissible: false, // Prevent dismiss by tapping outside
+              builder:
+                  (dialogContext) => PopScope(
+                    canPop: false, // Prevent dismiss by back button
+                    child: BlocBuilder<PhotoUtilBloc, PhotoUtilState>(
+                      builder: (context, state) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          backgroundColor: Colors.white,
+                          elevation: 20,
+                          shadowColor: Colors.black.withValues(alpha: 0.2),
+                          contentPadding: const EdgeInsets.all(24),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Loading indicator
+                              const CircularProgressIndicator(
+                                strokeWidth: 3,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.deepOrange,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              // Processing message (updates automatically)
+                              Text(
+                                state.data.processingMessage ?? 'Processing...',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[800],
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+            );
+
+            _isProcessingDialogShowing = false;
+          }
         }
       },
       builder: (context, state) {
@@ -232,8 +295,9 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
                                   child: _buildPhotoTypeCard(
                                     type: type,
                                     photo:
-                                        state.data.formFields[type.key]?.value
-                                            as XFile?,
+                                        (state.data.formFields[type.key]?.value
+                                                as PhotoFieldForm?)
+                                            ?.file,
                                     errorText:
                                         state.data.formFields[type.key]?.error,
                                   ),

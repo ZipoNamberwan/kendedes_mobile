@@ -22,6 +22,7 @@ import 'package:kendedes_mobile/classes/repositories/local_db/area_db_repository
 import 'package:kendedes_mobile/classes/repositories/local_db/browse_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/local_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/organization_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/photo_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/polygon_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/project_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
@@ -133,6 +134,7 @@ Future<void> _initializeApp() async {
   await PolygonRepository().init();
   await BrowseRepository().init();
   await BrowseDbRepository().init();
+  await PhotoDbRepository().init();
 }
 
 class MyApp extends StatefulWidget {
@@ -168,7 +170,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _homeBloc = HomeBloc();
     _registerBloc = RegisterBloc();
     _photoUtilBloc = PhotoUtilBloc();
-    
+
     // Check once on cold start
     _checkForUpdate();
   }

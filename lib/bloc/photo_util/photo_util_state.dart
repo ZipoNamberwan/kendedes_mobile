@@ -90,6 +90,7 @@ class PhotoUtilStateData {
     List<Family>? families,
     List<Family>? filteredFamilies,
     String? searchQuery,
+    bool? resetSearchQuery,
     Map<String, PhotoUtilFieldState<dynamic>>? formFields,
     bool? isLoading,
     bool? resetForm,
@@ -99,7 +100,8 @@ class PhotoUtilStateData {
     return PhotoUtilStateData(
       families: families ?? this.families,
       filteredFamilies: filteredFamilies ?? this.filteredFamilies,
-      searchQuery: searchQuery ?? this.searchQuery,
+      searchQuery:
+          (resetSearchQuery ?? false) ? null : searchQuery ?? this.searchQuery,
       formFields:
           (resetForm ?? false)
               ? _generateFormFields()

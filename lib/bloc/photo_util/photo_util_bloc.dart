@@ -10,6 +10,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:gal/gal.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/photo_db_repository.dart';
+import 'package:uuid/uuid.dart';
 
 // ---------------------------------------------------------------------------
 // Data class for isolate - contains compressed bytes (no platform channels)
@@ -124,8 +126,26 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
   static const bool saveToGallery = true;
   static const String galleryAlbumName = 'kdm';
 
+  final Uuid _uuid = const Uuid();
+
   PhotoUtilBloc() : super(InitState()) {
     on<Initialize>((event, emit) async {
+      List<Family> existingFamilies =
+          await PhotoDbRepository().getAllFamilies();
+      emit(
+        PhotoUtilState(
+          data: state.data.copyWith(
+            families: existingFamilies,
+            filteredFamilies: existingFamilies,
+            resetForm: true,
+            resetProcessingMessage: true,
+          ),
+        ),
+      );
+    });
+
+    on<InitForm>((event, emit) async {
+      // Initialize repository
       emit(
         PhotoUtilState(
           data: state.data.copyWith(
@@ -149,15 +169,46 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
       );
     });
 
+    on<RefreshList>((event, emit) async {
+      List<Family> existingFamilies =
+          await PhotoDbRepository().getAllFamilies();
+      emit(
+        PhotoUtilState(
+          data: state.data.copyWith(
+            families: existingFamilies,
+            filteredFamilies: existingFamilies,
+            resetForm: true,
+            resetProcessingMessage: true,
+            resetSearchQuery: true,
+          ),
+        ),
+      );
+    });
+
+    on<SearchFamily>((event, emit) {
+      final query = event.query.toLowerCase();
+      final filtered =
+          state.data.families.where((family) {
+            return family.name.toLowerCase().contains(query) ||
+                family.address.toLowerCase().contains(query);
+          }).toList();
+
+      // Sort by createdAt descending (newest first)
+      filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      emit(
+        PhotoUtilState(
+          data: state.data.copyWith(
+            filteredFamilies: filtered,
+            searchQuery: event.query,
+          ),
+        ),
+      );
+    });
+
     on<SetPhotoFileField>((event, emit) {
-      // generate a unique ID consisting of 6 random alphabet char
-      final id =
-          List.generate(
-            6,
-            (index) => String.fromCharCode(
-              65 + (DateTime.now().millisecondsSinceEpoch + index) % 26,
-            ),
-          ).join();
+      // Generate a unique ID using UUID
+      final id = _uuid.v4();
       final updatedFormFields = _updateFieldValue(
         state.data.formFields,
         event.key,
@@ -201,6 +252,9 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
         // compute() spawns a true Dart isolate per image;
         // Future.wait runs them all concurrently — biggest perf win
         await _savePhotosWithText(emit, formFields);
+
+        // Save family data to local database
+        await _saveFamilyToDatabase(formFields);
 
         emit(
           SaveSuccess(
@@ -463,6 +517,41 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveFamilyToDatabase(
+    Map<String, PhotoUtilFieldState<dynamic>> formFields,
+  ) async {
+    final name = formFields['name']?.value as String;
+    final address = formFields['address']?.value as String? ?? '';
+    final familyId = _uuid.v4();
+
+    // Collect photos from form fields
+    final familyPhotos = <FamilyPhoto>[];
+    for (final type in PhotoType.values) {
+      final photoData = formFields[type.key]?.value as PhotoFieldForm?;
+      if (photoData != null && photoData.filename != null) {
+        familyPhotos.add(
+          FamilyPhoto(
+            id: photoData.id,
+            type: photoData.type,
+            filename: photoData.filename!,
+          ),
+        );
+      }
+    }
+
+    // Create Family object
+    final family = Family(
+      id: familyId,
+      name: name,
+      address: address,
+      photos: familyPhotos,
+      createdAt: DateTime.now(),
+    );
+
+    // Save to database
+    await PhotoDbRepository().insertFamily(family);
   }
 }
 

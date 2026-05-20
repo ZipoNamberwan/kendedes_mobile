@@ -15,6 +15,13 @@ class Initialize extends PhotoUtilEvent {
   List<Object?> get props => [];
 }
 
+class InitForm extends PhotoUtilEvent {
+  const InitForm();
+
+  @override
+  List<Object?> get props => [];
+}
+
 class SetFormField extends PhotoUtilEvent {
   final String key;
   final dynamic value;
@@ -40,4 +47,17 @@ class SaveForm extends PhotoUtilEvent {
   const SaveForm();
   @override
   List<Object?> get props => [];
+}
+
+class RefreshList extends PhotoUtilEvent {
+  const RefreshList();
+  @override
+  List<Object?> get props => [];
+}
+
+class SearchFamily extends PhotoUtilEvent {
+  final String query;
+  const SearchFamily({required this.query});
+  @override
+  List<Object?> get props => [query];
 }

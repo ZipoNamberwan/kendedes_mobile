@@ -20,6 +20,8 @@ class PhotoFormPage extends StatefulWidget {
 class _PhotoFormPageState extends State<PhotoFormPage> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
+  final _nameFocusNode = FocusNode();
+  final _addressFocusNode = FocusNode();
 
   late final PhotoUtilBloc _photoUtilBloc;
   bool _isProcessingDialogShowing = false;
@@ -118,6 +120,8 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
   void dispose() {
     _nameController.dispose();
     _addressController.dispose();
+    _nameFocusNode.dispose();
+    _addressFocusNode.dispose();
     super.dispose();
   }
 
@@ -125,6 +129,14 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
   Widget build(BuildContext context) {
     return BlocConsumer<PhotoUtilBloc, PhotoUtilState>(
       listener: (context, state) async {
+        // Unfocus text fields when state changes to prevent keyboard glitch
+        if (state is Processing ||
+            state is SaveSuccess ||
+            state is SaveFailed) {
+          _nameFocusNode.unfocus();
+          _addressFocusNode.unfocus();
+        }
+
         // Close processing dialog if it's open and state is no longer Processing
         if (_isProcessingDialogShowing && state is! Processing) {
           Navigator.of(context).pop();
@@ -157,7 +169,9 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
                     buttonText: 'Ok',
                     onPressed: () {
                       Navigator.of(context).pop(); // Close dialog
-                      Navigator.of(context).pop(); // Go back to previous page
+                      Navigator.of(
+                        context,
+                      ).pop(true); // Go back to previous page
                     },
                   ),
                 ),
@@ -256,6 +270,7 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
                   _buildTextField(
                     fieldKey: 'name',
                     controller: _nameController,
+                    focusNode: _nameFocusNode,
                     hint: 'Masukkan nama...',
                     textInputAction: TextInputAction.next,
                     onChanged:
@@ -275,6 +290,7 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
                   _buildTextField(
                     fieldKey: 'address',
                     controller: _addressController,
+                    focusNode: _addressFocusNode,
                     hint:
                         'Masukkan identitas wilayah seperti RT/RW, Desa, Kecamatan...',
                     textInputAction: TextInputAction.done,
@@ -330,6 +346,9 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
                           state.data.isLoading
                               ? null
                               : () {
+                                // Unfocus text fields to hide keyboard
+                                _nameFocusNode.unfocus();
+                                _addressFocusNode.unfocus();
                                 _photoUtilBloc.add(const SaveForm());
                               },
                       icon:
@@ -533,12 +552,14 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
     required Function(String, String) onChanged,
     required TextEditingController controller,
     required String hint,
+    FocusNode? focusNode,
     int maxLines = 1,
     TextInputAction textInputAction = TextInputAction.done,
     String? errorText,
   }) {
     return TextFormField(
       controller: controller,
+      focusNode: focusNode,
       maxLines: maxLines,
       textInputAction: textInputAction,
       style: TextStyle(fontSize: 14, color: Colors.grey.shade800),

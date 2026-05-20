@@ -8,7 +8,6 @@ import 'package:kendedes_mobile/bloc/photo_util/photo_util_event.dart';
 import 'package:kendedes_mobile/bloc/photo_util/photo_util_state.dart';
 import 'package:kendedes_mobile/models/photo_util/photo.dart';
 import 'package:kendedes_mobile/models/photo_util/photo_field_form.dart';
-import 'package:kendedes_mobile/pages/photo_util/photo_result_preview.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 
 class PhotoFormPage extends StatefulWidget {
@@ -144,9 +143,24 @@ class _PhotoFormPageState extends State<PhotoFormPage> {
                 ),
           );
         } else if (state is SaveSuccess) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PhotoResultPreview()),
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder:
+                (context) => PopScope(
+                  canPop: false,
+                  child: MessageDialog(
+                    title: 'Berhasil Menyimpan',
+                    message:
+                        'Foto ada di Galeri (Album KDM) atau di folder Downloads/kdm',
+                    type: MessageType.success,
+                    buttonText: 'Ok',
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close dialog
+                      Navigator.of(context).pop(); // Go back to previous page
+                    },
+                  ),
+                ),
           );
         } else if (state is Processing) {
           // Only show dialog on the first Processing state (prevent multiple dialogs)

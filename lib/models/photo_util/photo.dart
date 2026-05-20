@@ -19,10 +19,11 @@ class Family {
 }
 
 class FamilyPhoto {
+  final String id;
   final PhotoType type;
   final String url;
 
-  const FamilyPhoto({required this.type, required this.url});
+  const FamilyPhoto({required this.id, required this.type, required this.url});
 }
 
 class PhotoType {

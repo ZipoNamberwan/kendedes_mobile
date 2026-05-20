@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,8 +8,8 @@ import 'package:kendedes_mobile/bloc/photo_util/photo_util_state.dart';
 import 'package:kendedes_mobile/models/photo_util/photo_field_form.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
-import 'package:intl/intl.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:gal/gal.dart';
 
 // ---------------------------------------------------------------------------
 // Data class for isolate - contains compressed bytes (no platform channels)
@@ -72,15 +71,20 @@ img.Image _overlayTextOnImage(
   final h = image.height;
   final padding = (w * 0.03).clamp(20.0, 100.0).toInt();
   final textScale = (w / 600.0).clamp(6.0, 55.0);
-  final lineHeight = (12 * textScale * 1.4).toInt();
-  final yStart = h - (lineHeight * 3 + padding * 2) + padding;
+  final lineHeight = (16 * textScale * 1.4).toInt();
+  // Position text in bottom 1/3: center the text block within the bottom third
+  final totalTextHeight = lineHeight * 3;
+  final bottomThirdStart = h * 2 / 3;
+  final bottomThirdHeight = h / 3;
+  final yStart =
+      (bottomThirdStart + (bottomThirdHeight - totalTextHeight) / 2).toInt();
   final white = img.ColorRgba8(255, 255, 255, 255);
 
-  _drawScaledText(image, photoLabel, padding, yStart, white, font);
-  _drawScaledText(image, name, padding, yStart + lineHeight, white, font);
+  _drawScaledText(image, name, padding, yStart, white, font);
+  _drawScaledText(image, address, padding, yStart + lineHeight, white, font);
   _drawScaledText(
     image,
-    address,
+    photoLabel,
     padding,
     yStart + lineHeight * 2,
     white,
@@ -115,6 +119,11 @@ void _drawScaledText(
 }
 
 class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
+  // Configuration: Enable/disable save destinations
+  static const bool saveToDownloadsFolder = true;
+  static const bool saveToGallery = true;
+  static const String galleryAlbumName = 'kdm';
+
   PhotoUtilBloc() : super(InitState()) {
     on<Initialize>((event, emit) async {
       emit(
@@ -141,10 +150,18 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
     });
 
     on<SetPhotoFileField>((event, emit) {
+      // generate a unique ID consisting of 6 random alphabet char
+      final id =
+          List.generate(
+            6,
+            (index) => String.fromCharCode(
+              65 + (DateTime.now().millisecondsSinceEpoch + index) % 26,
+            ),
+          ).join();
       final updatedFormFields = _updateFieldValue(
         state.data.formFields,
         event.key,
-        PhotoFieldForm(type: event.type, file: event.xFile),
+        PhotoFieldForm(id: id, type: event.type, file: event.xFile),
       );
       emit(
         PhotoUtilState(
@@ -181,12 +198,9 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
       }
 
       try {
-        final name = formFields['name']?.value as String;
-        final address = formFields['address']?.value as String? ?? '';
-
         // compute() spawns a true Dart isolate per image;
         // Future.wait runs them all concurrently — biggest perf win
-        await _savePhotosWithText(emit, name, address, formFields);
+        await _savePhotosWithText(emit, formFields);
 
         emit(
           SaveSuccess(
@@ -282,8 +296,6 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
 
   Future<void> _savePhotosWithText(
     Emitter<PhotoUtilState> emit,
-    String name,
-    String address,
     Map<String, PhotoUtilFieldState<dynamic>> formFields,
   ) async {
     emit(
@@ -296,58 +308,57 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
     final fontData = await rootBundle.load('fonts/sans-serif.zip');
     final fontBytes = fontData.buffer.asUint8List();
 
-    // Get download directory
-    Directory? downloadDir;
-    if (Platform.isAndroid) {
-      downloadDir = Directory('/storage/emulated/0/Download');
-    } else if (Platform.isIOS) {
-      downloadDir = await getApplicationDocumentsDirectory();
+    // Get save directory based on configuration
+    Directory saveDir;
+
+    if (saveToDownloadsFolder) {
+      // Save to Downloads/kdm folder
+      Directory? downloadDir;
+      if (Platform.isAndroid) {
+        downloadDir = Directory('/storage/emulated/0/Download');
+      } else if (Platform.isIOS) {
+        downloadDir = await getApplicationDocumentsDirectory();
+      } else {
+        downloadDir = await getDownloadsDirectory();
+      }
+
+      if (downloadDir == null) {
+        throw Exception('Could not access download directory');
+      }
+
+      saveDir = Directory('${downloadDir.path}/kdm');
+      if (!await saveDir.exists()) {
+        await saveDir.create(recursive: true);
+      }
     } else {
-      downloadDir = await getDownloadsDirectory();
+      // Use temporary directory if not saving to Downloads
+      final tempDir = await getTemporaryDirectory();
+      saveDir = Directory('${tempDir.path}/kdm_processing');
+      if (!await saveDir.exists()) {
+        await saveDir.create(recursive: true);
+      }
     }
 
-    if (downloadDir == null) {
-      throw Exception('Could not access download directory');
-    }
-
-    // Create kdm folder
-    final kdmDir = Directory('${downloadDir.path}/kdm');
-    if (!await kdmDir.exists()) {
-      await kdmDir.create(recursive: true);
-    }
-
-    // Generate timestamp for unique filenames
-    final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    final name = formFields['name']?.value as String;
+    final address = formFields['address']?.value as String? ?? '';
     final sanitizedName = name
         .replaceAll(RegExp(r'[^\w\s-]'), '')
         .replaceAll(' ', '_');
 
     // Collect all photos to process
-    final photosToProcess =
-        <
-          ({
-            PhotoType type,
-            XFile xFile,
-            String filename,
-            String savePath,
-            int index,
-          })
-        >[];
+    final photosToProcess = <({PhotoFieldForm photoData, int index})>[];
 
     int index = 0;
     for (final type in PhotoType.values) {
       final photoData = formFields[type.key]?.value as PhotoFieldForm?;
       if (photoData != null) {
         index++;
-        final filename = '${sanitizedName}_${type.key}_$timestamp.jpg';
-        final savePath = '${kdmDir.path}/$filename';
-        photosToProcess.add((
-          type: type,
-          xFile: photoData.file,
-          filename: filename,
-          savePath: savePath,
-          index: index,
-        ));
+        final filename =
+            '${sanitizedName}_${photoData.type.key}_${photoData.id}.jpg';
+        final savePath = '${saveDir.path}/$filename';
+        photoData.setFilename(filename);
+        photoData.setSavePath(savePath);
+        photosToProcess.add((photoData: photoData, index: index));
       }
     }
 
@@ -361,27 +372,30 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
 
     // PHASE 1: Compress all photos in parallel (native compression)
     final compressedResults = await Future.wait(
-      photosToProcess.map((photo) async {
+      photosToProcess.map((photoFieldForm) async {
         final compressedBytes = await FlutterImageCompress.compressWithFile(
-          photo.xFile.path,
+          photoFieldForm.photoData.file.path,
           minWidth: 1440, // Reduced from 1920 for faster processing
           minHeight: 1,
           quality: 70, // Optimized for speed
         );
 
         if (compressedBytes == null || compressedBytes.isEmpty) {
-          throw Exception('Native compress failed for ${photo.type.label}');
+          throw Exception(
+            'Native compress failed for ${photoFieldForm.photoData.type.label}',
+          );
         }
 
-        return (photo: photo, compressedBytes: compressedBytes);
+        return (
+          photo: photoFieldForm.photoData,
+          compressedBytes: compressedBytes,
+        );
       }),
     );
 
     emit(
       Processing(
-        data: state.data.copyWith(
-          processingMessage: 'Adding text overlays and saving...',
-        ),
+        data: state.data.copyWith(processingMessage: 'Adding text overlays...'),
       ),
     );
 
@@ -393,7 +407,7 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
           name: name,
           address: address,
           photoLabel: result.photo.type.label,
-          savePath: result.photo.savePath,
+          savePath: result.photo.savePath ?? '',
           fontBytes: fontBytes,
         );
 
@@ -401,10 +415,51 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
       }),
     );
 
+    // PHASE 3: Save to gallery if enabled
+    if (saveToGallery) {
+      emit(
+        Processing(
+          data: state.data.copyWith(processingMessage: 'Saving to gallery...'),
+        ),
+      );
+
+      await Future.wait(
+        photosToProcess.map((photoFieldForm) async {
+          final savePath = photoFieldForm.photoData.savePath;
+          if (savePath != null && await File(savePath).exists()) {
+            try {
+              await Gal.putImage(savePath, album: galleryAlbumName);
+            } catch (e) {
+              throw Exception(
+                'Failed to save ${photoFieldForm.photoData.type.label} to gallery: $e',
+              );
+            }
+          }
+        }),
+      );
+    }
+
+    // Clean up temporary files if not saving to Downloads folder
+    if (!saveToDownloadsFolder) {
+      try {
+        if (await saveDir.exists()) {
+          await saveDir.delete(recursive: true);
+        }
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    }
+
+    // Build completion message
+    final List<String> savedLocations = [];
+    if (saveToDownloadsFolder) savedLocations.add('Downloads/kdm folder');
+    if (saveToGallery) savedLocations.add('gallery');
+    final locationMessage = savedLocations.join(' and ');
+
     emit(
       Processing(
         data: state.data.copyWith(
-          processingMessage: 'Complete! All photos processed successfully.',
+          processingMessage: 'Complete! All photos saved to $locationMessage.',
         ),
       ),
     );

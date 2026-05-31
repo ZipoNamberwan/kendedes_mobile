@@ -91,6 +91,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _rippleController.dispose();
     _mapController.dispose();
     super.dispose();
   }

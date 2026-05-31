@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/browse/browse_bloc.dart';
+import 'package:kendedes_mobile/bloc/kbli_util/kbli_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
@@ -43,41 +44,40 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
-  await dotenv.load(fileName: ".env");
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await dotenv.load(fileName: ".env");
 
-  FlutterError.onError = (FlutterErrorDetails details) {
-    try {
-      final fullStack = details.stack.toString();
-      final truncatedStack =
-          fullStack.length > AppConfig.stackTraceLimitCharacter
-              ? fullStack.substring(0, AppConfig.stackTraceLimitCharacter)
-              : fullStack;
+      FlutterError.onError = (FlutterErrorDetails details) {
+        try {
+          final fullStack = details.stack.toString();
+          final truncatedStack =
+              fullStack.length > AppConfig.stackTraceLimitCharacter
+                  ? fullStack.substring(0, AppConfig.stackTraceLimitCharacter)
+                  : fullStack;
 
-      final exceptionMessage = details.exception.toString();
+          final exceptionMessage = details.exception.toString();
 
-      final ignoreKeywords = ['tile.openstreetmap.org', 'www.google.com/maps'];
+          final ignoreKeywords = ['tile.openstreetmap.org', 'www.google.com/maps'];
 
-      final shouldIgnore = ignoreKeywords.any(
-        (keyword) => exceptionMessage.contains(keyword),
-      );
+          final shouldIgnore = ignoreKeywords.any(
+            (keyword) => exceptionMessage.contains(keyword),
+          );
 
-      if (shouldIgnore) return;
+          if (shouldIgnore) return;
 
-      TelegramLogger.send('''🚨 *Flutter Error*
+          TelegramLogger.send('''🚨 *Flutter Error*
 
 *Exception:* `$exceptionMessage`
 *Library:* `${details.library}`
 *Stack Trace:*
 $truncatedStack
 ''');
-    } catch (_) {}
+        } catch (_) {}
 
-    FlutterError.presentError(details);
-  };
-
-  runZonedGuarded(
-    () async {
-      WidgetsFlutterBinding.ensureInitialized();
+        FlutterError.presentError(details);
+      };
 
       // ADD THIS
       await Firebase.initializeApp(
@@ -154,6 +154,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late HomeBloc _homeBloc;
   late RegisterBloc _registerBloc;
   late PhotoUtilBloc _photoUtilBloc;
+  late KbliBloc _kbliBloc;
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -170,6 +171,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _homeBloc = HomeBloc();
     _registerBloc = RegisterBloc();
     _photoUtilBloc = PhotoUtilBloc();
+    _kbliBloc = KbliBloc();
 
     // Check once on cold start
     _checkForUpdate();
@@ -255,6 +257,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         BlocProvider<HomeBloc>(create: (context) => _homeBloc),
         BlocProvider<RegisterBloc>(create: (context) => _registerBloc),
         BlocProvider<PhotoUtilBloc>(create: (context) => _photoUtilBloc),
+        BlocProvider<KbliBloc>(create: (context) => _kbliBloc),
       ],
       child: BlocListener<VersionBloc, VersionState>(
         listener: (context, versionState) {

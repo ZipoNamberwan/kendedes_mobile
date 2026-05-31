@@ -8,6 +8,8 @@ import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/pages/browse_page.dart';
 import 'package:kendedes_mobile/pages/photo_util/photo_list_page.dart';
 import 'package:kendedes_mobile/pages/project_list_page.dart';
+import 'package:kendedes_mobile/pages/kbli_util/top_kbli_page.dart';
+import 'package:kendedes_mobile/pages/anomaly_util/anomaly_page.dart';
 import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/about_app_dialog.dart';
 import 'package:kendedes_mobile/widgets/profile_form_dialog.dart';
@@ -356,7 +358,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           body: SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -412,13 +414,17 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.bar_chart,
                     iconColor: Colors.purple,
                     onTap: () {
-                      
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const TopKbliPage(),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 14),
                   _buildMenuCard(
                     context: context,
-                    title: 'Kamera Survei',
+                    title: 'Kamera Sensus',
                     subtitle:
                         'Gunakan fitur ini untuk mengambil foto dinding, atap dan bangunan. Foto otomatis dilengkapi nama rumah tangga, alamat, dan waktu pengambilan',
                     icon: Icons.camera_alt,
@@ -431,8 +437,23 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-
-                  const Spacer(),
+                  const SizedBox(height: 14),
+                  _buildMenuCard(
+                    context: context,
+                    title: 'Deteksi Anomali',
+                    subtitle: 'Daftar anomali dan kejanggalan data.',
+                    icon: Icons.warning_amber_rounded,
+                    iconColor: Colors.red,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AnomalyPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  
+                  const SizedBox(height: 32),
                   Text(
                     'Kendedes Mobile',
                     textAlign: TextAlign.center,

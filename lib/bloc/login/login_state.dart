@@ -26,6 +26,16 @@ class TokenExpired extends LoginState {
   const TokenExpired({required super.data});
 }
 
+class RedirectToRegister extends LoginState {
+  final String email;
+  final String name;
+  const RedirectToRegister({
+    required this.email,
+    required this.name,
+    required super.data,
+  });
+}
+
 class LoginStateData {
   final LoginFormFieldState<String> email;
   final LoginFormFieldState<String> password;
@@ -33,6 +43,10 @@ class LoginStateData {
   final bool isSuccess;
   final bool isFailure;
   final bool obscurePassword;
+
+  final bool isLoginGoogleLoading;
+  final bool isLoginGoogleSuccess;
+  final bool isLoginGoogleFailed;
 
   /// State for logout process
   final bool isLogoutLoading;
@@ -46,6 +60,9 @@ class LoginStateData {
     required this.isSuccess,
     required this.isFailure,
     required this.obscurePassword,
+    required this.isLoginGoogleLoading,
+    required this.isLoginGoogleSuccess,
+    required this.isLoginGoogleFailed,
     required this.isLogoutLoading,
     required this.isLogoutSuccess,
     required this.isLogoutFailure,
@@ -62,6 +79,9 @@ class LoginStateData {
     bool? isLogoutLoading,
     bool? isLogoutSuccess,
     bool? isLogoutFailure,
+    bool? isLoginGoogleLoading,
+    bool? isLoginGoogleSuccess,
+    bool? isLoginGoogleFailed,
   }) {
     return LoginStateData(
       email:
@@ -79,6 +99,9 @@ class LoginStateData {
       isLogoutLoading: isLogoutLoading ?? this.isLogoutLoading,
       isLogoutSuccess: isLogoutSuccess ?? this.isLogoutSuccess,
       isLogoutFailure: isLogoutFailure ?? this.isLogoutFailure,
+      isLoginGoogleLoading: isLoginGoogleLoading ?? this.isLoginGoogleLoading,
+      isLoginGoogleSuccess: isLoginGoogleSuccess ?? this.isLoginGoogleSuccess,
+      isLoginGoogleFailed: isLoginGoogleFailed ?? this.isLoginGoogleFailed,
     );
   }
 }

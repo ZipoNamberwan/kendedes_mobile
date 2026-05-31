@@ -4,6 +4,10 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  file_selector_windows
+  firebase_auth
+  firebase_core
+  gal
   geolocator_windows
   url_launcher_windows
 )

@@ -50,4 +50,26 @@ class User {
       'roles': roles.map((role) => role.toJson()).toList(),
     };
   }
+
+  // write method to check if user has any adminkab or adminprov role by role name
+  bool get isAdmin {
+    return roles.any(
+      (role) => role.name == 'adminkab' || role.name == 'adminprov',
+    );
+  }
+
+  //write method to check if user has any adminprov role by role name
+  bool get isAdminProv {
+    return roles.any((role) => role.name == 'adminprov');
+  }
+
+  // true for adminprov, adminkab, operator — role field should be hidden
+  bool get shouldHideRoleField {
+    return roles.any(
+      (role) =>
+          role.name == 'adminprov' ||
+          role.name == 'adminkab' ||
+          role.name == 'operator',
+    );
+  }
 }

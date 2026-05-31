@@ -23,5 +23,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         return;
       }
     });
+
+    on<RefreshUser>((event, emit) async {
+      final user = AuthRepository().getUser();
+      emit(
+        InitializingSuccess(
+          data: state.data.copyWith(currentUser: user, isLoading: false),
+        ),
+      );
+    });
   }
 }

@@ -20,7 +20,7 @@ class LocalDbProvider {
     final String path = '${documentsDirectory.path}/tagging_app.db';
     _database = await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -248,7 +248,7 @@ class LocalDbProvider {
         )
       ''');
 
-    // 9. Create user_polygons many-to-many table
+    // 15. Create user_polygons many-to-many table
     await db.execute('''
         CREATE TABLE user_polygons (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -256,6 +256,27 @@ class LocalDbProvider {
           polygon_id TEXT,
           FOREIGN KEY(user_id) REFERENCES users(id),
           FOREIGN KEY(polygon_id) REFERENCES polygons(id)
+        )
+      ''');
+
+    // 16. Create families table
+    await db.execute('''
+        CREATE TABLE families (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          address TEXT,
+          created_at TEXT
+        )
+      ''');
+
+    // 17. Create family_photos table
+    await db.execute('''
+        CREATE TABLE family_photos (
+          id TEXT PRIMARY KEY,
+          family_id TEXT,
+          type TEXT,
+          filename TEXT,
+          FOREIGN KEY(family_id) REFERENCES families(id)
         )
       ''');
   }
@@ -480,6 +501,29 @@ class LocalDbProvider {
           FOREIGN KEY(polygon_id) REFERENCES polygons(id)
         )
       ''');
+    }
+
+    if (oldVersion < 5) {
+      // 16. Create families table
+      await db.execute('''
+        CREATE TABLE families (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          address TEXT,
+          created_at TEXT
+        )
+      ''');
+
+      // 17. Create family_photos table
+      await db.execute('''
+        CREATE TABLE family_photos (
+          id TEXT PRIMARY KEY,
+          family_id TEXT,
+          type TEXT,
+          filename TEXT,
+          FOREIGN KEY(family_id) REFERENCES families(id)
+        )
+       ''');
     }
   }
 }

@@ -45,6 +45,10 @@ class LoginMajapahit extends LoginEvent {
   const LoginMajapahit({required this.token, required this.user});
 }
 
+class LoginGoogle extends LoginEvent {
+  const LoginGoogle();
+}
+
 // class MockupLogin extends LoginEvent {
 //   const MockupLogin();
 // }

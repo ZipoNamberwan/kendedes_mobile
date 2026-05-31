@@ -12,3 +12,10 @@ class Initialize extends HomeEvent {
   @override
   List<Object?> get props => [];
 }
+
+class RefreshUser extends HomeEvent {
+  const RefreshUser();
+
+  @override
+  List<Object?> get props => [];
+}

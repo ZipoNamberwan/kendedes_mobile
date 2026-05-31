@@ -50,6 +50,12 @@ dependencies:
   sqflite: ^2.4.2
   searchfield: ^2.0.0
   flutter_dotenv: ^6.0.0
+  firebase_core: ^4.8.0
+  firebase_auth: ^6.5.0
+  image_picker: ^1.2.2
+  image: ^4.3.0
+  flutter_image_compress: ^2.4.0
+  gal: ^2.3.2
 
   # flutter_map_marker_popup: ^8.0.1
   # flutter_map_marker_cluster: ^1.4.0
@@ -85,7 +91,9 @@ flutter:
     - images/icon.png
     - images/long_icon.png
     - images/logo-majapahit.png
+    - images/google.ico
     - .env
+    - fonts/sans-serif.zip
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

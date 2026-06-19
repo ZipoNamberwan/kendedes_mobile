@@ -61,3 +61,29 @@ class SearchFamily extends PhotoUtilEvent {
   @override
   List<Object?> get props => [query];
 }
+
+class SelectFamily extends PhotoUtilEvent {
+  final Family family;
+  const SelectFamily({required this.family});
+  @override
+  List<Object?> get props => [family];
+}
+
+class ToggleSelectAllFamilies extends PhotoUtilEvent {
+  const ToggleSelectAllFamilies();
+  @override
+  List<Object?> get props => [];
+}
+
+class DeleteFamilies extends PhotoUtilEvent {
+  const DeleteFamilies();
+  @override
+  List<Object?> get props => [];
+}
+
+class SetSelectMode extends PhotoUtilEvent {
+  final bool isSelectMode;
+  const SetSelectMode({required this.isSelectMode});
+  @override
+  List<Object?> get props => [isSelectMode];
+}

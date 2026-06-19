@@ -19,6 +19,9 @@ class InitState extends PhotoUtilState {
           filteredFamilies: [],
           searchQuery: null,
           isLoading: false,
+          selectedFamilies: [],
+          isSelectMode: false,
+          isDeleteLoading: false,
         ),
       );
 
@@ -53,6 +56,19 @@ class Processing extends PhotoUtilState {
   List<Object> get props => [data];
 }
 
+class DeleteSuccess extends PhotoUtilState {
+  const DeleteSuccess({required super.data});
+  @override
+  List<Object> get props => [data];
+}
+
+class DeleteFailed extends PhotoUtilState {
+  final String errorMessage;
+  const DeleteFailed(this.errorMessage, {required super.data});
+  @override
+  List<Object> get props => [data, errorMessage];
+}
+
 class PhotoUtilStateData {
   final List<Family> families;
   final List<Family> filteredFamilies;
@@ -62,6 +78,10 @@ class PhotoUtilStateData {
   final Map<String, PhotoUtilFieldState<dynamic>> formFields;
   final String? processingMessage;
 
+  final List<Family> selectedFamilies;
+  final bool isSelectMode;
+  final bool isDeleteLoading;
+
   PhotoUtilStateData({
     required this.families,
     required this.filteredFamilies,
@@ -69,6 +89,9 @@ class PhotoUtilStateData {
     Map<String, PhotoUtilFieldState<dynamic>>? formFields,
     required this.isLoading,
     this.processingMessage,
+    required this.selectedFamilies,
+    required this.isSelectMode,
+    required this.isDeleteLoading,
   }) : formFields = formFields ?? _generateFormFields();
 
   static Map<String, PhotoUtilFieldState<dynamic>> _generateFormFields() {
@@ -96,10 +119,16 @@ class PhotoUtilStateData {
     bool? resetForm,
     String? processingMessage,
     bool? resetProcessingMessage,
+    List<Family>? selectedFamilies,
+    bool? isSelectMode,
+    bool? isDeleteLoading,
   }) {
     return PhotoUtilStateData(
       families: families ?? this.families,
       filteredFamilies: filteredFamilies ?? this.filteredFamilies,
+      selectedFamilies: selectedFamilies ?? this.selectedFamilies,
+      isSelectMode: isSelectMode ?? this.isSelectMode,
+      isDeleteLoading: isDeleteLoading ?? this.isDeleteLoading,
       searchQuery:
           (resetSearchQuery ?? false) ? null : searchQuery ?? this.searchQuery,
       formFields:

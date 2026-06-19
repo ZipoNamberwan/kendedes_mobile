@@ -277,6 +277,92 @@ class PhotoUtilBloc extends Bloc<PhotoUtilEvent, PhotoUtilState> {
         );
       }
     });
+
+    on<SelectFamily>((event, emit) {
+      List<Family> updatedSelectedFamilies = List.from(
+        state.data.selectedFamilies,
+      );
+
+      final exists = updatedSelectedFamilies.any(
+        (f) => f.id == event.family.id,
+      );
+
+      if (exists) {
+        updatedSelectedFamilies.removeWhere((f) => f.id == event.family.id);
+      } else {
+        updatedSelectedFamilies.add(event.family);
+      }
+
+      emit(
+        PhotoUtilState(
+          data: state.data.copyWith(selectedFamilies: updatedSelectedFamilies),
+        ),
+      );
+    });
+
+    on<SetSelectMode>((event, emit) {
+      emit(
+        PhotoUtilState(
+          data: state.data.copyWith(
+            isSelectMode: event.isSelectMode,
+            selectedFamilies:
+                event.isSelectMode ? state.data.selectedFamilies : [],
+          ),
+        ),
+      );
+    });
+
+    on<ToggleSelectAllFamilies>((event, emit) {
+      final allFamilies = state.data.families;
+      final selectedFamilies = state.data.selectedFamilies;
+      final isAllSelected = allFamilies.every(
+        (f) => selectedFamilies.contains(f),
+      );
+
+      if (isAllSelected) {
+        emit(PhotoUtilState(data: state.data.copyWith(selectedFamilies: [])));
+      } else {
+        emit(
+          PhotoUtilState(
+            data: state.data.copyWith(selectedFamilies: allFamilies),
+          ),
+        );
+      }
+    });
+
+    on<DeleteFamilies>((event, emit) async {
+      emit(PhotoUtilState(data: state.data.copyWith(isDeleteLoading: true)));
+
+      try {
+        for (var family in state.data.selectedFamilies) {
+          await PhotoDbRepository().deleteFamily(family.id);
+        }
+
+        // Reload the list from DB so the grid reflects the deletion
+        final updatedFamilies = await PhotoDbRepository().getAllFamilies();
+
+        emit(
+          DeleteSuccess(
+            data: state.data.copyWith(
+              families: updatedFamilies,
+              filteredFamilies: updatedFamilies,
+              selectedFamilies: [],
+              isSelectMode: false,
+              isDeleteLoading: false,
+            ),
+          ),
+        );
+      } catch (e) {
+        emit(
+          DeleteFailed(
+            'Gagal menghapus data: $e',
+            data: state.data.copyWith(
+              isDeleteLoading: false,
+            ),
+          ),
+        );
+      }
+    });
   }
 
   Map<String, PhotoUtilFieldState<dynamic>> _updateFieldValue(

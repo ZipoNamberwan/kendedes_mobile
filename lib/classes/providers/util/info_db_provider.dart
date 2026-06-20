@@ -80,6 +80,7 @@ class InfoDbProvider {
       'infos',
       where: 'is_published = ?',
       whereArgs: [1],
+      orderBy: 'updated_at DESC',
     );
   }
 

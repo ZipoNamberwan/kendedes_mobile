@@ -12,6 +12,7 @@ class SharedPreferenceService {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
   static const String _lastCheckVersionKey = 'last_check_version';
+  static const String _lastCheckInfosKey = 'last_check_infos';
 
   late SharedPreferences prefs;
   bool _initialized = false;
@@ -61,5 +62,13 @@ class SharedPreferenceService {
 
   bool? hasCheckLockedTags(String projectId) {
     return prefs.getBool('locked_tags_$projectId');
+  }
+
+  Future<void> saveLastCheckInfos(int millisecondsSinceEpoch) async {
+    await prefs.setInt(_lastCheckInfosKey, millisecondsSinceEpoch);
+  }
+
+  int? getLastCheckInfos() {
+    return prefs.getInt(_lastCheckInfosKey);
   }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/bloc/browse/browse_bloc.dart';
+import 'package:kendedes_mobile/bloc/info/info_bloc.dart';
 import 'package:kendedes_mobile/bloc/kbli_util/kbli_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
@@ -32,6 +33,8 @@ import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/user_role_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/util/info_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/util/info_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/version_checking_repository.dart';
 import 'package:kendedes_mobile/classes/telegram_logger.dart';
 import 'package:kendedes_mobile/models/version.dart';
@@ -59,7 +62,10 @@ Future<void> main() async {
 
           final exceptionMessage = details.exception.toString();
 
-          final ignoreKeywords = ['tile.openstreetmap.org', 'www.google.com/maps'];
+          final ignoreKeywords = [
+            'tile.openstreetmap.org',
+            'www.google.com/maps',
+          ];
 
           final shouldIgnore = ignoreKeywords.any(
             (keyword) => exceptionMessage.contains(keyword),
@@ -135,6 +141,8 @@ Future<void> _initializeApp() async {
   await BrowseRepository().init();
   await BrowseDbRepository().init();
   await PhotoDbRepository().init();
+  await InfoDbRepository().init();
+  await InfoRepository().init();
 }
 
 class MyApp extends StatefulWidget {
@@ -155,6 +163,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late RegisterBloc _registerBloc;
   late PhotoUtilBloc _photoUtilBloc;
   late KbliBloc _kbliBloc;
+  late InfoBloc _infoBloc;
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -172,6 +181,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _registerBloc = RegisterBloc();
     _photoUtilBloc = PhotoUtilBloc();
     _kbliBloc = KbliBloc();
+    _infoBloc = InfoBloc();
 
     // Check once on cold start
     _checkForUpdate();
@@ -258,6 +268,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         BlocProvider<RegisterBloc>(create: (context) => _registerBloc),
         BlocProvider<PhotoUtilBloc>(create: (context) => _photoUtilBloc),
         BlocProvider<KbliBloc>(create: (context) => _kbliBloc),
+        BlocProvider<InfoBloc>(create: (context) => _infoBloc),
       ],
       child: BlocListener<VersionBloc, VersionState>(
         listener: (context, versionState) {

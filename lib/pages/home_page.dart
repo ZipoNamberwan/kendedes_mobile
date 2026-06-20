@@ -6,8 +6,9 @@ import 'package:kendedes_mobile/bloc/home/home_state.dart';
 import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/pages/browse_page.dart';
+import 'package:kendedes_mobile/pages/info_util/info_list_page.dart';
 import 'package:kendedes_mobile/pages/photo_util/photo_list_page.dart';
-import 'package:kendedes_mobile/pages/project_list_page.dart';
+// import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/pages/kbli_util/top_kbli_page.dart';
 import 'package:kendedes_mobile/pages/anomaly_util/anomaly_page.dart';
 import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
@@ -393,19 +394,46 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 14),
                   _buildMenuCard(
                     context: context,
-                    title: 'Mode Tagging',
+                    title: 'Pusat Informasi',
                     subtitle:
-                        'Memulai tagging usaha, sinkronisasi data, dan manajemen proyek',
-                    icon: Icons.location_on,
-                    iconColor: Colors.deepOrange,
+                        'Temukan informasi terbaru, solusi permasalahan, dan pengumuman',
+                    icon: Icons.info_outline_rounded,
+                    iconColor: Colors.indigo,
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const ProjectListPage(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const InfoListPage()),
                       );
                     },
                   ),
+                  const SizedBox(height: 14),
+                  _buildMenuCard(
+                    context: context,
+                    title: 'Deteksi Anomali',
+                    subtitle: 'Daftar anomali dan kejanggalan data.',
+                    icon: Icons.warning_amber_rounded,
+                    iconColor: Colors.red,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const AnomalyPage()),
+                      );
+                    },
+                  ),
+                  // const SizedBox(height: 14),
+                  // _buildMenuCard(
+                  //   context: context,
+                  //   title: 'Mode Tagging',
+                  //   subtitle:
+                  //       'Memulai tagging usaha, sinkronisasi data, dan manajemen proyek',
+                  //   icon: Icons.location_on,
+                  //   iconColor: Colors.deepOrange,
+                  //   onTap: () {
+                  //     Navigator.of(context).push(
+                  //       MaterialPageRoute(
+                  //         builder: (_) => const ProjectListPage(),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
                   const SizedBox(height: 14),
                   _buildMenuCard(
                     context: context,
@@ -415,9 +443,7 @@ class _HomePageState extends State<HomePage> {
                     iconColor: Colors.purple,
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const TopKbliPage(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const TopKbliPage()),
                       );
                     },
                   ),
@@ -437,22 +463,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-                  const SizedBox(height: 14),
-                  _buildMenuCard(
-                    context: context,
-                    title: 'Deteksi Anomali',
-                    subtitle: 'Daftar anomali dan kejanggalan data.',
-                    icon: Icons.warning_amber_rounded,
-                    iconColor: Colors.red,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const AnomalyPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  
+
                   const SizedBox(height: 32),
                   Text(
                     'Kendedes Mobile',

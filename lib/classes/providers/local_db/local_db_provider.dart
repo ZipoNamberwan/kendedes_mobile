@@ -279,6 +279,25 @@ class LocalDbProvider {
           FOREIGN KEY(family_id) REFERENCES families(id)
         )
       ''');
+
+    // 18. Create infos table
+    await db.execute('''
+        CREATE TABLE infos (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          subtitle TEXT,
+          tags TEXT,
+          type TEXT,
+          content TEXT,
+          is_published INTEGER NOT NULL DEFAULT 0,
+          published_at TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          need_update INTEGER NOT NULL DEFAULT 1,
+          is_read INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
   }
 
   static Future<void> _onUpgrade(
@@ -524,6 +543,25 @@ class LocalDbProvider {
           FOREIGN KEY(family_id) REFERENCES families(id)
         )
        ''');
+
+      // 18. Create infos table
+      await db.execute('''
+        CREATE TABLE infos (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          subtitle TEXT,
+          tags TEXT,
+          type TEXT,
+          content TEXT,
+          is_published INTEGER NOT NULL DEFAULT 0,
+          published_at TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          need_update INTEGER NOT NULL DEFAULT 1,
+          is_read INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
     }
   }
 }

@@ -63,7 +63,7 @@ class InfoBloc extends Bloc<InfoEvent, InfoState> {
               data: state.data.copyWith(
                 infos: updatedInfos,
                 filteredInfos: updatedInfos,
-                // isLoadingFromServer: false,
+                isLoadingFromServer: false,
               ),
             ),
           );

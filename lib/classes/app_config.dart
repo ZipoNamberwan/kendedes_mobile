@@ -5,7 +5,7 @@ class AppConfig {
   static const String apiUrl = '$baseurl/api';
   static const String updateUrl = 'https://s.bps.go.id/kendedes';
   static const String majapahitLoginUrl =
-      'https://www.majapah.it/dashboard?callback_uri=$baseurl/majapahit-mobile-login';
+      '$baseurl/login/majapahit?source=android';
 
   static const String helpUrl = 'http://s.bps.go.id/kendedes_panduan';
   static const String feedbackUrl = 'http://s.bps.go.id/kendedes_feedback';

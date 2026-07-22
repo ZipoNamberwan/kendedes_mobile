@@ -46,4 +46,9 @@ class BrowseRepository {
   Future<List<Sls>> getSlsByVillageId(String villageId) async {
     return await _browseProvider.getSlsByVillageId(villageId);
   }
+
+  Future<Sls> findSlsByLatLng(double lat, double lng) async {
+    final response = await _browseProvider.findSlsByLatLng(lat, lng);
+    return Sls.fromJson(response);
+  }
 }

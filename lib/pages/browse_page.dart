@@ -29,6 +29,7 @@ import 'package:kendedes_mobile/widgets/browse_widgets/delete_sls_with_business_
 import 'package:kendedes_mobile/widgets/browse_widgets/map_options_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/simple_marker_browse_widget.dart';
+import 'package:kendedes_mobile/widgets/browse_widgets/sls_finder_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/sls_with_business_sidebar.dart';
 import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
@@ -727,6 +728,48 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     );
   }
 
+  Future<void> _showLongPressMenu(
+    TapPosition tapPosition,
+    LatLng latlng,
+  ) async {
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final globalTap = tapPosition.global;
+    final position = RelativeRect.fromLTRB(
+      globalTap.dx,
+      globalTap.dy,
+      overlay.size.width - globalTap.dx,
+      overlay.size.height - globalTap.dy,
+    );
+
+    final value = await showMenu<String>(
+      context: context,
+      position: position,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      items: const [
+        PopupMenuItem<String>(
+          value: 'find_sls',
+          child: Row(
+            children: [
+              Icon(Icons.gps_fixed_rounded, size: 18, color: Colors.deepOrange),
+              SizedBox(width: 8),
+              Text(
+                'SLS mana di sini?',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    switch (value) {
+      case 'find_sls':
+        _browseBloc.add(FindSls(latLng: latlng));
+        break;
+    }
+  }
+
   void _showMarkerDialog(TagData tagData) {
     showDialog(
       context: context,
@@ -1000,6 +1043,9 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                       options: MapOptions(
                         initialCenter: LatLng(-7.9666, 112.6326),
                         initialZoom: state.data.currentZoom,
+                        onLongPress: (tapPosition, latlng) {
+                          _showLongPressMenu(tapPosition, latlng);
+                        },
                       ),
                       children: [
                         TileLayer(
@@ -1526,58 +1572,82 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   // Filter warning
-                                  if (state.data.isBusinessFilterActive()) ...[
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange.shade50
-                                              .withValues(alpha: 0.95),
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.orange.shade200,
-                                            width: 1,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(
-                                                alpha: 0.1,
-                                              ),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.warning_amber_rounded,
-                                              size: 14,
-                                              color: Colors.orange.shade700,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Flexible(
-                                              child: Text(
-                                                'Filter usaha aktif, Anda mungkin tidak melihat semua usaha',
-                                                style: TextStyle(
-                                                  color: Colors.orange.shade800,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w500,
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        if (state.data.showFinder)
+                                          SlsFinderWidget(
+                                            isFindingSls:
+                                                state.data.isFindingSls,
+                                            isFindingSlsError:
+                                                state.data.isFindingSlsError,
+                                            slsFinderErrorMessage:
+                                                state
+                                                    .data
+                                                    .slsFinderErrorMessage,
+                                            slsFinder: state.data.slsFinder,
+                                            onClose:
+                                                () => _browseBloc.add(
+                                                  const CloseSlsFinder(),
                                                 ),
-                                              ),
+                                          ),
+                                        if (state.data.isBusinessFilterActive())
+                                          Container(
+                                            margin: const EdgeInsets.only(
+                                              top: 8,
                                             ),
-                                          ],
-                                        ),
-                                      ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.orange.shade50
+                                                  .withValues(alpha: 0.95),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: Colors.orange.shade200,
+                                                width: 1,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.1),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.warning_amber_rounded,
+                                                  size: 14,
+                                                  color: Colors.orange.shade700,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Flexible(
+                                                  child: Text(
+                                                    'Filter usaha aktif, Anda mungkin tidak melihat semua usaha',
+                                                    style: TextStyle(
+                                                      color:
+                                                          Colors
+                                                              .orange
+                                                              .shade800,
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 24),
-                                  ],
+                                  ),
+                                  const SizedBox(width: 24),
                                   // My location button
                                   _buildActionButton(
                                     icon: Icons.my_location_rounded,

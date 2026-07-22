@@ -208,3 +208,12 @@ class SearchSlsWithBusiness extends BrowseEvent {
   final bool? reset;
   const SearchSlsWithBusiness({this.query, this.reset});
 }
+
+class FindSls extends BrowseEvent {
+  final LatLng latLng;
+  const FindSls({required this.latLng});
+}
+
+class CloseSlsFinder extends BrowseEvent {
+  const CloseSlsFinder();
+}

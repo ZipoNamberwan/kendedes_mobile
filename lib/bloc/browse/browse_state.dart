@@ -68,6 +68,9 @@ class InitializingStarted extends BrowseState {
           isBrowseSideBarOpen: false,
           projectTypesFilterOptions: [],
           slsFilterOptions: [],
+          isFindingSls: false,
+          isFindingSlsError: false,
+          showFinder: false,
         ),
       );
 
@@ -333,6 +336,13 @@ class BrowseStateData {
   final List<Sls> slsFilterOptions;
   final Sls? selectedSlsFilter;
 
+  // SLS pointer state data
+  final Sls? slsFinder;
+  final bool isFindingSls;
+  final bool isFindingSlsError;
+  final String? slsFinderErrorMessage;
+  final bool showFinder;
+
   BrowseStateData({
     required this.loadMode,
     required this.isLoadBusinessContainerExpanded,
@@ -393,6 +403,12 @@ class BrowseStateData {
     this.selectedSlsFilter,
     required this.projectTypesFilterOptions,
     required this.slsFilterOptions,
+
+    this.slsFinder,
+    required this.isFindingSls,
+    required this.isFindingSlsError,
+    this.slsFinderErrorMessage,
+    required this.showFinder,
   });
   BrowseStateData copyWith({
     BusinessLoadMode? loadMode,
@@ -463,6 +479,14 @@ class BrowseStateData {
     bool? resetSearchQuery,
     bool? resetProjectTypeFilter,
     bool? resetSlsFilter,
+
+    Sls? slsFinder,
+    bool? isFindingSls,
+    bool? isFindingSlsError,
+    String? slsFinderErrorMessage,
+    bool? resetSlsFinder,
+    bool? resetSlsFinderErrorMessage,
+    bool? showFinder,
   }) {
     return BrowseStateData(
       loadMode: loadMode ?? this.loadMode,
@@ -565,6 +589,14 @@ class BrowseStateData {
       projectTypesFilterOptions:
           projectTypesFilterOptions ?? this.projectTypesFilterOptions,
       slsFilterOptions: slsFilterOptions ?? this.slsFilterOptions,
+      slsFinder: resetSlsFinder == true ? null : slsFinder ?? this.slsFinder,
+      isFindingSls: isFindingSls ?? this.isFindingSls,
+      isFindingSlsError: isFindingSlsError ?? this.isFindingSlsError,
+      slsFinderErrorMessage:
+          resetSlsFinderErrorMessage == true
+              ? null
+              : slsFinderErrorMessage ?? this.slsFinderErrorMessage,
+      showFinder: showFinder ?? this.showFinder,
     );
   }
 

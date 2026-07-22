@@ -61,4 +61,12 @@ class BrowseProvider {
     final List<dynamic> slsData = response.data['data'];
     return slsData.map((sls) => Sls.fromJson(sls)).toList();
   }
+
+  Future<Map<String, dynamic>> findSlsByLatLng(double lat, double lng) async {
+    final response = await _dioService.dio.post(
+      '/v2/sls-finder',
+      data: {'lat': lat, 'lng': lng},
+    );
+    return Map<String, dynamic>.from(response.data['data']['sls']);
+  }
 }

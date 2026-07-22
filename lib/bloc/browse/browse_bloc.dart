@@ -955,6 +955,86 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         emit(BrowseState(data: newDataState));
       }
     });
+
+    on<FindSls>((event, emit) async {
+      await ApiServerHandler.run(
+        action: () async {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(
+                isFindingSls: true,
+                isFindingSlsError: false,
+                resetSlsFinderErrorMessage: true,
+                showFinder: true,
+                resetSlsFinder: true,
+              ),
+            ),
+          );
+
+          final sls = await BrowseRepository().findSlsByLatLng(
+            event.latLng.latitude,
+            event.latLng.longitude,
+          );
+
+          emit(
+            BrowseState(
+              data: state.data.copyWith(
+                isFindingSls: false,
+                slsFinder: sls,
+                showFinder: true,
+              ),
+            ),
+          );
+        },
+        onLoginExpired: (e) {
+          emit(
+            TokenExpired(
+              data: state.data.copyWith(
+                isFindingSls: false,
+                isFindingSlsError: true,
+                showFinder: true,
+              ),
+            ),
+          );
+        },
+        onDataProviderError: (e) {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(
+                isFindingSls: false,
+                isFindingSlsError: true,
+                slsFinderErrorMessage: e.message,
+                showFinder: true,
+              ),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          emit(
+            BrowseState(
+              data: state.data.copyWith(
+                isFindingSls: false,
+                isFindingSlsError: true,
+                slsFinderErrorMessage: e.toString(),
+                showFinder: true,
+              ),
+            ),
+          );
+        },
+      );
+    });
+
+    on<CloseSlsFinder>((event, emit) {
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            showFinder: false,
+            resetSlsFinder: true,
+            resetSlsFinderErrorMessage: true,
+          ),
+        ),
+      );
+    });
   }
 
   List<Sls> _getSlsFilterOptions(List<TagData> businesses) {

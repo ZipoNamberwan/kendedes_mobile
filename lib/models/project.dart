@@ -154,6 +154,7 @@ class ProjectType {
   static const sbr = ProjectType._('sbr', 'SBR');
   static const agriculture = ProjectType._('agriculture', 'ST2023');
   static const eform = ProjectType._('eform', 'E-Form Jatim 2025');
+  static const enumeration = ProjectType._('enumeration', 'Hasil SE2026');
   static const other = ProjectType._('other', 'Lainnya');
   // static const browse = ProjectType._('browse', 'Browse Mode');
 
@@ -167,6 +168,7 @@ class ProjectType {
     sbr,
     agriculture,
     eform,
+    enumeration,
     // other,
   ];
 

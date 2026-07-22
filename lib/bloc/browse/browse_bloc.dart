@@ -77,6 +77,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           ProjectType.sbr,
           ProjectType.agriculture,
           ProjectType.eform,
+          ProjectType.enumeration,
           ProjectType.other,
         ];
 

@@ -38,6 +38,8 @@ class TagData {
 
   // ID in server
   final String remoteId;
+  final String? idSbr;
+  final String? originalArea;
 
   // Attribute Area
   final Sls? sls;
@@ -72,6 +74,8 @@ class TagData {
 
     // ID in server
     required this.remoteId,
+    this.idSbr,
+    this.originalArea,
 
     // Area
     this.sls,
@@ -103,6 +107,8 @@ class TagData {
     Survey? survey,
     bool? isLocked,
     String? remoteId,
+    String? idSbr,
+    String? originalArea,
     Sls? sls,
   }) {
     return TagData(
@@ -131,6 +137,8 @@ class TagData {
       survey: survey ?? this.survey,
       isLocked: isLocked ?? this.isLocked,
       remoteId: remoteId ?? this.remoteId,
+      idSbr: idSbr ?? this.idSbr,
+      originalArea: originalArea ?? this.originalArea,
       sls: sls ?? this.sls,
     );
   }
@@ -186,6 +194,8 @@ class TagData {
       return Colors.green;
     } else if (project.type.key == ProjectType.eform.key) {
       return Colors.yellow;
+    } else if (project.type.key == ProjectType.enumeration.key) {
+      return Colors.deepOrange;
     } else {
       return Colors.grey;
     }
@@ -301,6 +311,8 @@ class TagData {
       'regency_short_code': sls?.village?.subdistrict?.regency?.shortCode,
       'regency_long_code': sls?.village?.subdistrict?.regency?.longCode,
       'regency_name': sls?.village?.subdistrict?.regency?.name,
+      'id_sbr': idSbr,
+      'original_area': originalArea,
     };
   }
 
@@ -369,6 +381,8 @@ class TagData {
                 json['regency'] as Map<String, dynamic>,
               )
               : null,
+      idSbr: json['idsbr'] as String?,
+      originalArea: json['original_area'] as String?,
     );
   }
 
@@ -417,6 +431,8 @@ class TagData {
 
       // area from from local db
       sls: Sls.fromLocalDbJson(map),
+      idSbr: map['id_sbr'] as String?,
+      originalArea: map['original_area'] as String?,
     );
   }
 

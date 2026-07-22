@@ -29,7 +29,7 @@ class BrowseProvider {
     double maxLng,
   ) async {
     final response = await _dioService.dio.get(
-      '/business-in-box-spatial',
+      '/v2/business-in-box-spatial',
       queryParameters: {
         'min_lat': minLat,
         'min_lng': minLng,
@@ -42,7 +42,7 @@ class BrowseProvider {
 
   Future<Map<String, dynamic>> getBusinessesBySls(String slsId) async {
     final response = await _dioService.dio.get(
-      '/business-by-sls',
+      '/v2/business-by-sls',
       queryParameters: {'sls': slsId},
     );
     return Map<String, dynamic>.from(response.data['data']);

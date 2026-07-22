@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 
 class MarkerBrowseDialog extends StatelessWidget {
@@ -82,11 +84,26 @@ class MarkerBrowseDialog extends StatelessWidget {
                       '${tagData.positionLat.toStringAsFixed(6)}, ${tagData.positionLng.toStringAsFixed(6)}',
                     ),
                     if (tagData.sls?.hasAreaInfo ?? false)
-                      _buildInfoRow('Wilayah', tagData.sls!.areaInfo()),
+                      _buildInfoRow(
+                        'Wilayah Berdasarkan Koordinat',
+                        tagData.sls!.areaInfo(),
+                      ),
+                    if (tagData.project.type.key == ProjectType.enumeration.key)
+                      _buildInfoRow(
+                        'Wilayah Berdasarkan Hasil Pencacahan',
+                        tagData.originalArea ?? 'Tidak tersedia',
+                      ),
                     if (tagData.user != null)
                       _buildInfoRow('Ditagging oleh', tagData.user!.firstname),
                     if (tagData.survey != null)
                       _buildInfoRow('Survei', tagData.survey!.name),
+                    if (tagData.idSbr != null)
+                      _buildInfoRow(
+                        'ID SBR',
+                        tagData.idSbr!,
+                        canCopy: true,
+                        context: context,
+                      ),
                   ],
                 ),
               ),
@@ -97,7 +114,16 @@ class MarkerBrowseDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(
+    String label,
+    String value, {
+    bool canCopy = false,
+    BuildContext? context,
+  }) {
+    assert(
+      !canCopy || context != null,
+      'context is required when canCopy is true',
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -116,9 +142,37 @@ class MarkerBrowseDialog extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 13, color: Colors.black87),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  ),
+                ),
+                if (canCopy) ...[
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: value));
+                      if (context != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('ID SBR copied'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: const Padding(
+                      padding: EdgeInsets.all(2),
+                      child: Icon(Icons.copy, size: 16, color: Colors.grey),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],

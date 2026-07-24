@@ -482,6 +482,8 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       );
     });
 
+    on<GetBusinessByPoint>((event, emit) async {});
+
     on<SetBusinessLoadMode>((event, emit) {
       emit(BrowseState(data: state.data.copyWith(loadMode: event.loadMode)));
     });

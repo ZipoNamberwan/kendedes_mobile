@@ -751,7 +751,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
           value: 'find_sls',
           child: Row(
             children: [
-              Icon(Icons.gps_fixed_rounded, size: 18, color: Colors.deepOrange),
+              Icon(Icons.ads_click_rounded, size: 18, color: Colors.deepOrange),
               SizedBox(width: 8),
               Text(
                 'SLS mana di sini?',
@@ -760,12 +760,32 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             ],
           ),
         ),
+        // PopupMenuItem<String>(
+        //   value: 'get_business_by_point',
+        //   child: Row(
+        //     children: [
+        //       Icon(
+        //         Icons.file_download_outlined,
+        //         size: 18,
+        //         color: Colors.deepOrange,
+        //       ),
+        //       SizedBox(width: 8),
+        //       Text(
+        //         'Dapatkan data di SLS ini',
+        //         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
 
     switch (value) {
       case 'find_sls':
         _browseBloc.add(FindSls(latLng: latlng));
+        break;
+      case 'get_business_by_point':
+        _browseBloc.add(GetBusinessByPoint(point: latlng));
         break;
     }
   }

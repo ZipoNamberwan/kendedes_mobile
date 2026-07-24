@@ -127,6 +127,11 @@ class _LoginPageState extends State<LoginPage> {
             title: 'Menyiapkan aplikasi...',
             subtitle: 'Mohon tunggu sebentar',
           );
+        } else if (state is LoginSuccess) {
+          return LoadingScaffold(
+            title: 'Login Berhasil',
+            subtitle: 'Mengalihkan ke halaman utama...',
+          );
         }
         return Scaffold(
           backgroundColor: Colors.grey.shade50,

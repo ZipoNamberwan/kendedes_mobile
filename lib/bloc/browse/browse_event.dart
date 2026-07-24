@@ -56,6 +56,11 @@ class GetBusinessByArea extends BrowseEvent {
   const GetBusinessByArea({required this.sls});
 }
 
+class GetBusinessByPoint extends BrowseEvent {
+  final LatLng point;
+  const GetBusinessByPoint({required this.point});
+}
+
 class SetBusinessLoadMode extends BrowseEvent {
   final BusinessLoadMode loadMode;
   const SetBusinessLoadMode({required this.loadMode});

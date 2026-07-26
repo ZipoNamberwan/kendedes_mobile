@@ -69,4 +69,14 @@ class BrowseProvider {
     );
     return Map<String, dynamic>.from(response.data['data']['sls']);
   }
+
+  Future<List<Map<String, dynamic>>> checkBusinessDataUpdate(
+    List<Map<String, dynamic>> slsWithBusinessData,
+  ) async {
+    final response = await _dioService.dio.post(
+      '/v2/business-update-checker',
+      data: slsWithBusinessData,
+    );
+    return List<Map<String, dynamic>>.from(response.data['data']);
+  }
 }

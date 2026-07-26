@@ -71,6 +71,9 @@ class InitializingStarted extends BrowseState {
           isFindingSls: false,
           isFindingSlsError: false,
           showFinder: false,
+          slsWithBusinessListForUpdate: [],
+          updatedSlsWithBusinessId: [],
+          isUpdatingSlsError: false,
         ),
       );
 
@@ -268,6 +271,20 @@ class SearchSlsWithBusinessQueryCleared extends BrowseState {
   List<Object> get props => [data];
 }
 
+class SlsWithBusinessNeedUpdate extends BrowseState {
+  const SlsWithBusinessNeedUpdate({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
+class ErrorUpdateSlsBusiness extends BrowseState {
+  const ErrorUpdateSlsBusiness({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class BrowseStateData {
   // UI data state
   final BusinessLoadMode loadMode;
@@ -343,6 +360,15 @@ class BrowseStateData {
   final String? slsFinderErrorMessage;
   final bool showFinder;
 
+  // Business data update state
+  final List<SlsWithBusiness> slsWithBusinessListForUpdate;
+  final SlsWithBusiness? updatingSlsWithBusinessId;
+  final List<String> updatedSlsWithBusinessId;
+  final bool isUpdatingSlsError;
+  final String? updatingSlsErrorMessage;
+  final bool? resetUpdatingSls;
+  final bool? resetUpdatingSlsErrorMessage;
+
   BrowseStateData({
     required this.loadMode,
     required this.isLoadBusinessContainerExpanded,
@@ -409,6 +435,14 @@ class BrowseStateData {
     required this.isFindingSlsError,
     this.slsFinderErrorMessage,
     required this.showFinder,
+
+    required this.slsWithBusinessListForUpdate,
+    this.updatingSlsWithBusinessId,
+    required this.updatedSlsWithBusinessId,
+    required this.isUpdatingSlsError,
+    this.updatingSlsErrorMessage,
+    this.resetUpdatingSls,
+    this.resetUpdatingSlsErrorMessage,
   });
   BrowseStateData copyWith({
     BusinessLoadMode? loadMode,
@@ -487,6 +521,14 @@ class BrowseStateData {
     bool? resetSlsFinder,
     bool? resetSlsFinderErrorMessage,
     bool? showFinder,
+
+    List<SlsWithBusiness>? slsWithBusinessListForUpdate,
+    SlsWithBusiness? updatingSlsWithBusinessId,
+    List<String>? updatedSlsWithBusinessId,
+    bool? isUpdatingSlsError,
+    String? updatingSlsErrorMessage,
+    bool? resetUpdatingSls,
+    bool? resetUpdatingSlsErrorMessage,
   }) {
     return BrowseStateData(
       loadMode: loadMode ?? this.loadMode,
@@ -597,6 +639,17 @@ class BrowseStateData {
               ? null
               : slsFinderErrorMessage ?? this.slsFinderErrorMessage,
       showFinder: showFinder ?? this.showFinder,
+
+      slsWithBusinessListForUpdate:
+          slsWithBusinessListForUpdate ?? this.slsWithBusinessListForUpdate,
+      updatingSlsWithBusinessId:
+          resetUpdatingSls == true ? null : updatingSlsWithBusinessId ?? this.updatingSlsWithBusinessId,
+      updatedSlsWithBusinessId: updatedSlsWithBusinessId ?? this.updatedSlsWithBusinessId,
+      isUpdatingSlsError: isUpdatingSlsError ?? this.isUpdatingSlsError,
+      updatingSlsErrorMessage:
+          resetUpdatingSlsErrorMessage == true
+              ? null
+              : updatingSlsErrorMessage ?? this.updatingSlsErrorMessage,
     );
   }
 

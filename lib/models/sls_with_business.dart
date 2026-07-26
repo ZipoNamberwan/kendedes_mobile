@@ -82,4 +82,8 @@ class SlsWithBusiness {
       user: User.fromJson(json['user'] as Map<String, dynamic>),
     );
   }
+
+  Map<String, dynamic> toServerJson() {
+    return {'sls_id': sls.id, 'business_count': businessCount};
+  }
 }

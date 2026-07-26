@@ -30,6 +30,7 @@ import 'package:kendedes_mobile/widgets/browse_widgets/map_options_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/simple_marker_browse_widget.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/sls_finder_widget.dart';
+import 'package:kendedes_mobile/widgets/browse_widgets/sls_update_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/sls_with_business_sidebar.dart';
 import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
@@ -52,6 +53,8 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
   late BrowseBloc _browseBloc;
   late AnimationController _rippleController;
   late Animation<double> _rippleAnimation;
+  late AnimationController _warningPulseController;
+  late Animation<double> _warningPulseAnimation;
 
   bool _confirmToZoom = false;
   bool _forceGetTaggingInsideBounds = false;
@@ -71,6 +74,15 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
       CurvedAnimation(parent: _rippleController, curve: Curves.easeOut),
     );
     _rippleController.repeat();
+
+    _warningPulseController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _warningPulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _warningPulseController, curve: Curves.easeInOut),
+    );
+    _warningPulseController.repeat(reverse: true);
 
     try {
       Geolocator.getPositionStream(
@@ -93,6 +105,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
   @override
   void dispose() {
     _rippleController.dispose();
+    _warningPulseController.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -948,6 +961,21 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     );
   }
 
+  void _showSlsNeedUpdateDialog(
+    List<SlsWithBusiness> slsNeedUpdate,
+    bool isUpdating,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => SlsUpdateDialog(
+            onDownloadPressed: (sls) {
+              _browseBloc.add(UpdateSlsBusiness(slsWithBusiness: sls));
+            },
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -1027,6 +1055,11 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             context,
             message: 'Prelist SLS berhasil dihapus',
             type: SnackBarType.success,
+          );
+        } else if (state is SlsWithBusinessNeedUpdate) {
+          _showSlsNeedUpdateDialog(
+            state.data.slsWithBusinessListForUpdate,
+            false,
           );
         }
       },
@@ -1570,6 +1603,57 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                               ),
                             ),
                           ),
+
+                          // Sls with business needs update warning button
+                          if (state
+                              .data
+                              .slsWithBusinessListForUpdate
+                              .isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            ScaleTransition(
+                              scale: _warningPulseAnimation,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.red.shade300,
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.red.withValues(alpha: 0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: () {
+                                      _showSlsNeedUpdateDialog(
+                                        state.data.slsWithBusinessListForUpdate,
+                                        false,
+                                      );
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      child: Icon(
+                                        Icons.warning_amber_rounded,
+                                        size: 14,
+                                        color: Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

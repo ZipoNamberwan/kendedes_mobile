@@ -1,6 +1,7 @@
 import 'package:kendedes_mobile/classes/providers/browse_provider.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 
 class BrowseRepository {
@@ -50,5 +51,12 @@ class BrowseRepository {
   Future<Sls> findSlsByLatLng(double lat, double lng) async {
     final response = await _browseProvider.findSlsByLatLng(lat, lng);
     return Sls.fromJson(response);
+  }
+
+  Future<List<Map<String, dynamic>>> checkBusinessDataUpdate(
+    List<SlsWithBusiness> slsWithBusinessData,
+  ) async {
+    final data = slsWithBusinessData.map((e) => e.toServerJson()).toList();
+    return await _browseProvider.checkBusinessDataUpdate(data);
   }
 }

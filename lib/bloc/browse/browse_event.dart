@@ -222,3 +222,12 @@ class FindSls extends BrowseEvent {
 class CloseSlsFinder extends BrowseEvent {
   const CloseSlsFinder();
 }
+
+class CheckBusinessDataUpdate extends BrowseEvent {
+  const CheckBusinessDataUpdate();
+}
+
+class UpdateSlsBusiness extends BrowseEvent {
+  final SlsWithBusiness slsWithBusiness;
+  const UpdateSlsBusiness({required this.slsWithBusiness});
+}

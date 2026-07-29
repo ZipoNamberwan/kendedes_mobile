@@ -213,7 +213,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           return;
         }
 
-        // Send to your own backend
+        await ApiServerHandler.run(action: () async {
+          // Send to your own backend
         final response = await AuthRepository().loginWithGoogle(
           firebaseToken: firebaseIdToken,
         );
@@ -250,6 +251,29 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
             ),
           ),
         );
+        }, onLoginExpired: (e) {
+
+        }, onDataProviderError: (e) {
+          emit(
+            LoginFailed(
+              errorMessage: e.message,
+              data: state.data.copyWith(
+                isLoginGoogleLoading: false,
+                isLoginGoogleFailed: true,
+              ),
+            ),
+          );
+        }, onOtherError: (e) {
+          emit(
+            LoginFailed(
+              errorMessage: e.toString(),
+              data: state.data.copyWith(
+                isLoginGoogleLoading: false,
+                isLoginGoogleFailed: true,
+              ),
+            ),
+          );
+        });
       } on fa.FirebaseAuthException catch (e) {
         emit(
           LoginFailed(

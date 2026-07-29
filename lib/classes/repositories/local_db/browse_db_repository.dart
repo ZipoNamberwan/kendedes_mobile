@@ -314,8 +314,21 @@ class BrowseDbRepository {
   Future<bool> deleteBusinessesBySlsId(String slsId, String userId) async {
     final existingProjects = await getProjectsByUser(userId);
     final projectIds = existingProjects.map((p) => p.id).toList();
-    
+
     return await _browseDbProvider.deleteBusinessesBySlsId(slsId, projectIds);
+  }
+
+  Future<bool> deleteBusinessesByIds(
+    List<String> businessIds,
+    String userId,
+  ) async {
+    final existingProjects = await getProjectsByUser(userId);
+    final projectIds = existingProjects.map((p) => p.id).toList();
+
+    return await _browseDbProvider.deleteBusinessesByIds(
+      businessIds,
+      projectIds,
+    );
   }
 
   Future<int?> getSlsWithBusinessCountBySlsId(

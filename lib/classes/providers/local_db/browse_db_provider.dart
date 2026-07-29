@@ -150,6 +150,37 @@ class BrowseDbProvider {
     return count > 0;
   }
 
+  Future<bool> deleteBusinessesByIds(
+    List<String> businessIds,
+    List<String> projectIds,
+  ) async {
+    final uniqueIds = businessIds.toSet().toList();
+    if (uniqueIds.isEmpty) return false;
+
+    final projectPlaceholders = List.filled(projectIds.length, '?').join(', ');
+    const chunkSize = 500;
+
+    final totalDeleted = await _dbProvider.db.transaction((txn) async {
+      var deleted = 0;
+      for (var i = 0; i < uniqueIds.length; i += chunkSize) {
+        final chunk = uniqueIds.sublist(
+          i,
+          i + chunkSize > uniqueIds.length ? uniqueIds.length : i + chunkSize,
+        );
+        final idPlaceholders = List.filled(chunk.length, '?').join(', ');
+        deleted += await txn.delete(
+          'tag_data',
+          where:
+              'id IN ($idPlaceholders) AND project_id IN ($projectPlaceholders)',
+          whereArgs: [...chunk, ...projectIds],
+        );
+      }
+      return deleted;
+    });
+
+    return totalDeleted > 0;
+  }
+
   Future<List<Map<String, dynamic>>> getAllUsers() async {
     return await _dbProvider.db.query('users');
   }

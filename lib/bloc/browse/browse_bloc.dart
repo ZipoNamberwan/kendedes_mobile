@@ -97,6 +97,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               projectTypesFilterOptions: projectTypesFilterOptions,
               slsFilterOptions: _getSlsFilterOptions(businesses),
               slsWithBusinessListForUpdate: [],
+              updatedSlsWithBusinessId: [],
             ),
           ),
         );
@@ -1046,7 +1047,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     on<CheckBusinessDataUpdate>((event, emit) async {
       emit(
         BrowseState(
-          data: state.data.copyWith(slsWithBusinessListForUpdate: []),
+          data: state.data.copyWith(
+            slsWithBusinessListForUpdate: [],
+            updatedSlsWithBusinessId: [],
+          ),
         ),
       );
       if (state.data.slsWithBusinessList.isNotEmpty) {
@@ -1056,19 +1060,29 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               state.data.slsWithBusinessList,
             );
 
-            final needUpdateIds =
-                result
-                    .where((item) => item['need_update'] == true)
-                    .map((item) => item['sls_id'].toString())
-                    .toSet();
+            final needUpdateMap = {
+              for (final item in result.where(
+                (item) => item['need_update'] == true,
+              ))
+                item['sls_id'].toString(): item['actual_count'] as int,
+            };
 
             final slsNeedUpdate =
                 state.data.slsWithBusinessList
                     .where(
                       (slsWithBusiness) =>
-                          needUpdateIds.contains(slsWithBusiness.sls.id),
+                          needUpdateMap.containsKey(slsWithBusiness.sls.id),
+                    )
+                    .map(
+                      (slsWithBusiness) => SlsWithBusiness(
+                        id: slsWithBusiness.id,
+                        sls: slsWithBusiness.sls,
+                        businessCount: needUpdateMap[slsWithBusiness.sls.id]!,
+                        user: slsWithBusiness.user,
+                      ),
                     )
                     .toList();
+
             if (slsNeedUpdate.isNotEmpty) {
               emit(
                 SlsWithBusinessNeedUpdate(
@@ -1082,21 +1096,30 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           onLoginExpired: (e) {
             emit(
               TokenExpired(
-                data: state.data.copyWith(slsWithBusinessListForUpdate: []),
+                data: state.data.copyWith(
+                  slsWithBusinessListForUpdate: [],
+                  updatedSlsWithBusinessId: [],
+                ),
               ),
             );
           },
           onDataProviderError: (e) {
             emit(
               BrowseState(
-                data: state.data.copyWith(slsWithBusinessListForUpdate: []),
+                data: state.data.copyWith(
+                  slsWithBusinessListForUpdate: [],
+                  updatedSlsWithBusinessId: [],
+                ),
               ),
             );
           },
           onOtherError: (e) {
             emit(
               BrowseState(
-                data: state.data.copyWith(slsWithBusinessListForUpdate: []),
+                data: state.data.copyWith(
+                  slsWithBusinessListForUpdate: [],
+                  updatedSlsWithBusinessId: [],
+                ),
               ),
             );
           },
@@ -1147,20 +1170,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             return;
           }
 
-          // 2. delete SlsWithBusiness
-          await BrowseDbRepository().deleteSlsWithBusiness(
-            event.slsWithBusiness.id,
-          );
-
-          existingSlsWithBusinessState =
-              existingSlsWithBusinessState
-                  .where(
-                    (slsWithBusiness) =>
-                        slsWithBusiness.id != event.slsWithBusiness.id,
-                  )
-                  .toList();
-
-          // 3. Update the polygon
+          // 2. Update the polygon
           final Sls slsWithPolygon = Sls.fromJson(response['sls']);
           final Polygon? updatedPolygon = slsWithPolygon.polygon;
           bool pairAdded = false;
@@ -1181,24 +1191,21 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             }
           }
 
-          // 4. Save SlsWithBusiness to local DB
+          // 3. Update SlsWithBusiness in local DB (keep same id)
           final slsWithBusiness = SlsWithBusiness(
-            id: _uuid.v4(),
+            id: event.slsWithBusiness.id,
             sls: slsWithPolygon,
             businessCount: businesses.length,
-            user: state.data.currentUser!,
+            user: event.slsWithBusiness.user,
           );
-          final slsWithBusinessCreated = await browseDbRepository
-              .createSlsWithBusiness(slsWithBusiness);
+          await browseDbRepository.updateSlsWithBusiness(slsWithBusiness);
 
-          if (slsWithBusinessCreated) {
-            existingSlsWithBusinessState = [
-              ...existingSlsWithBusinessState,
-              slsWithBusiness,
-            ];
-          }
+          existingSlsWithBusinessState =
+              existingSlsWithBusinessState
+                  .map((s) => s.id == slsWithBusiness.id ? slsWithBusiness : s)
+                  .toList();
 
-          // 5. Delete business inside the SLS new polygon
+          // 4. Delete business inside the SLS new polygon
           if (updatedPolygon != null && updatedPolygon.points.isNotEmpty) {
             final lats = updatedPolygon.points.map((p) => p.latitude);
             final lngs = updatedPolygon.points.map((p) => p.longitude);
@@ -1252,14 +1259,14 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             }
           }
 
-          // 6. Insert new businesses to local DB
+          // 5. Insert new businesses to local DB
           businesses =
               businesses.map((b) => b.copyWith(id: _uuid.v4())).toList();
 
-          // 6a. Save users to local DB if not already exist
+          // 5a. Save users to local DB if not already exist
           await browseDbRepository.insertUniqueUsersFromBusinesses(businesses);
 
-          // 6b. Get unique business.project values from the fetched businesses and save to local DB if not already exist
+          // 5b. Get unique business.project values from the fetched businesses and save to local DB if not already exist
           // Modify the user_id field of the project to be the current user's id before saving to local DB
           // Modify the unique projects id to new uuid
           await browseDbRepository.insertUniqueProjectsFromBusinesses(
@@ -1267,26 +1274,24 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             state.data.currentUser,
           );
 
-          // 6c. Save the business data to local DB
+          // 5c. Save the business data to local DB
           await browseDbRepository.insertBusinessesDataBatch(
             businesses,
             currentUserId,
           );
 
-          // 6d. Update businesses list in state, ensuring no duplicates
+          // 5d. Update businesses list in state, ensuring no duplicates
           final mergedBusinesses = [...existingBusinessesState];
           final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
           mergedBusinesses.addAll(
             businesses.where((b) => existingIds.add(b.remoteId)),
           );
 
-          // 7. Mark this SLS as updated, now that all steps have completed successfully
-          if (slsWithBusinessCreated) {
-            existingUpdatedSlsWithBusinessIdState = [
-              ...existingUpdatedSlsWithBusinessIdState,
-              slsWithBusiness.id,
-            ];
-          }
+          // 6. Mark this SLS as updated
+          existingUpdatedSlsWithBusinessIdState = [
+            ...existingUpdatedSlsWithBusinessIdState,
+            slsWithBusiness.id,
+          ];
 
           emit(
             BusinessBySlsSuccess(

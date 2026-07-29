@@ -158,6 +158,13 @@ class ProjectType {
   static const other = ProjectType._('other', 'Lainnya');
   // static const browse = ProjectType._('browse', 'Browse Mode');
 
+  static const kendedesGroup = ProjectType._('swmaps_group', 'Kendedes Mobile');
+  static const swmapsGroupMembers = [
+    marketSwmaps,
+    supplementSwmaps,
+    supplementMobile,
+  ];
+
   static const values = [
     marketSwmaps,
     supplementSwmaps,
@@ -188,5 +195,12 @@ class ProjectType {
   /// Parse from JSON (returns null if key not found)
   static ProjectType? fromJson(Map<String, dynamic> json) {
     return fromKey(json['key']);
+  }
+
+  bool matches(ProjectType businessType) {
+    if (this == ProjectType.kendedesGroup) {
+      return ProjectType.swmapsGroupMembers.contains(businessType);
+    }
+    return this == businessType;
   }
 }

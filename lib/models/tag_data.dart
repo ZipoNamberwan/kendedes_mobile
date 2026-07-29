@@ -183,7 +183,7 @@ class TagData {
 
   Color getBrowseColorScheme() {
     if (project.type.key == ProjectType.marketSwmaps.key) {
-      return Colors.purple;
+      return Colors.cyan;
     } else if (project.type.key == ProjectType.sbr.key ||
         project.type.key == ProjectType.survey.key) {
       return Colors.pink;

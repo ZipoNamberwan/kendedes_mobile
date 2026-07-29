@@ -118,6 +118,19 @@ class SlsUpdateDialog extends StatelessWidget {
                   ),
                 ),
 
+                // Description
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Text(
+                    'Ada perubahan data di server sehingga anda perlu mengunduh ulang SLS berikut',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                
                 // Error banner
                 if (state.data.updatingSlsErrorMessage != null) ...[
                   Container(

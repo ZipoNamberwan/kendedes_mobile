@@ -103,14 +103,7 @@ class BrowseColorLegendDialog extends StatelessWidget {
                     _buildLegendItem(
                       color: Colors.deepOrange,
                       title: 'Hasil SE2026',
-                      description:
-                          'Usaha hasil pencacahan SE2026',
-                    ),
-                    _buildLegendItem(
-                      color: Colors.purple,
-                      title: 'Sentra Ekonomi',
-                      description:
-                          'Usaha yang ditagging sebagai Sentra Ekonomi melalui SW Maps',
+                      description: 'Usaha hasil pencacahan SE2026',
                     ),
                     _buildLegendItem(
                       color: Colors.cyan,

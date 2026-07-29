@@ -73,9 +73,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
         // 6. Init filter options for project type and sls filter based on the initialized businesses list
         final projectTypesFilterOptions = <ProjectType>[
-          ProjectType.marketSwmaps,
-          ProjectType.supplementSwmaps,
-          ProjectType.supplementMobile,
+          ProjectType.kendedesGroup,
           ProjectType.sbr,
           ProjectType.agriculture,
           ProjectType.eform,
@@ -1380,8 +1378,8 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           (tag.description?.toLowerCase().contains(normalizedQuery) ?? false);
 
       final matchesProjectType =
-          projectType == null || tag.project.type.key == projectType.key;
-
+          projectType == null || projectType.matches(tag.project.type);
+          
       final matchesSls = sls == null || tag.sls?.id == sls.id;
 
       return matchesQuery && matchesProjectType && matchesSls;

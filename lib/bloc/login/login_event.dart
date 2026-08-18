@@ -39,6 +39,10 @@ class ThrowLoginError extends LoginEvent {
   const ThrowLoginError(this.message);
 }
 
+class Logout extends LoginEvent {
+  const Logout();
+}
+
 class LoginMajapahit extends LoginEvent {
   final String token;
   final Map<String, dynamic> user;

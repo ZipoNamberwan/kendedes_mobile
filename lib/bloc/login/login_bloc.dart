@@ -1,8 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fa;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/user_db_repository.dart';
+import 'package:kendedes_mobile/classes/services/dio_service.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'login_event.dart';
 import 'login_state.dart';
@@ -213,67 +215,70 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           return;
         }
 
-        await ApiServerHandler.run(action: () async {
-          // Send to your own backend
-        final response = await AuthRepository().loginWithGoogle(
-          firebaseToken: firebaseIdToken,
-        );
+        await ApiServerHandler.run(
+          action: () async {
+            // Send to your own backend
+            final response = await AuthRepository().loginWithGoogle(
+              firebaseToken: firebaseIdToken,
+            );
 
-        final isUserExist = response['is_user_exist'] as bool;
+            final isUserExist = response['is_user_exist'] as bool;
 
-        if (!isUserExist) {
-          final email = response['email'] as String? ?? '';
-          final name = response['name'] as String? ?? '';
-          emit(
-            RedirectToRegister(
-              email: email,
-              name: name,
-              data: state.data.copyWith(
-                isLoginGoogleLoading: false,
-                isLoginGoogleFailed: true,
+            if (!isUserExist) {
+              final email = response['email'] as String? ?? '';
+              final name = response['name'] as String? ?? '';
+              emit(
+                RedirectToRegister(
+                  email: email,
+                  name: name,
+                  data: state.data.copyWith(
+                    isLoginGoogleLoading: false,
+                    isLoginGoogleFailed: true,
+                  ),
+                ),
+              );
+              return;
+            }
+
+            final User user = User.fromJson(
+              response['user'] as Map<String, dynamic>,
+            );
+            await UserDbRepository().insert(user);
+
+            emit(
+              LoginSuccess(
+                data: state.data.copyWith(
+                  isLoginGoogleLoading: false,
+                  isLoginGoogleSuccess: true,
+                  isSuccess: true,
+                ),
               ),
-            ),
-          );
-          return;
-        }
-
-        final User user = User.fromJson(
-          response['user'] as Map<String, dynamic>,
-        );
-        await UserDbRepository().insert(user);
-
-        emit(
-          LoginSuccess(
-            data: state.data.copyWith(
-              isLoginGoogleLoading: false,
-              isLoginGoogleSuccess: true,
-              isSuccess: true,
-            ),
-          ),
-        );
-        }, onLoginExpired: (e) {
-
-        }, onDataProviderError: (e) {
-          emit(
-            LoginFailed(
-              errorMessage: e.message,
-              data: state.data.copyWith(
-                isLoginGoogleLoading: false,
-                isLoginGoogleFailed: true,
+            );
+          },
+          onLoginExpired: (e) {},
+          onDataProviderError: (e) {
+            emit(
+              LoginFailed(
+                errorMessage: e.message,
+                data: state.data.copyWith(
+                  isLoginGoogleLoading: false,
+                  isLoginGoogleFailed: true,
+                ),
               ),
-            ),
-          );
-        }, onOtherError: (e) {
-          emit(
-            LoginFailed(
-              errorMessage: e.toString(),
-              data: state.data.copyWith(
-                isLoginGoogleLoading: false,
-                isLoginGoogleFailed: true,
+            );
+          },
+          onOtherError: (e) {
+            emit(
+              LoginFailed(
+                errorMessage: e.toString(),
+                data: state.data.copyWith(
+                  isLoginGoogleLoading: false,
+                  isLoginGoogleFailed: true,
+                ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       } on fa.FirebaseAuthException catch (e) {
         emit(
           LoginFailed(
@@ -291,6 +296,67 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
             data: state.data.copyWith(
               isLoginGoogleLoading: false,
               isLoginGoogleFailed: true,
+            ),
+          ),
+        );
+      }
+    });
+    
+    on<Logout>((event, emit) async {
+      emit(LogoutLoading(data: state.data.copyWith(isLogoutLoading: true)));
+
+      try {
+        await AuthRepository().logout();
+
+        emit(
+          LogoutSuccess(
+            data: state.data.copyWith(
+              isLogoutSuccess: true,
+              isLogoutLoading: false,
+            ),
+          ),
+        );
+      } on DioException catch (dioError) {
+        final err = dioError.error;
+
+        if (err is LoginExpiredException) {
+          await AuthRepository().clearToken();
+          emit(
+            TokenExpired(
+              data: state.data.copyWith(
+                isLogoutFailure: true,
+                isLogoutLoading: false,
+              ),
+            ),
+          );
+        } else if (err is DataProviderException) {
+          emit(
+            LogoutFailed(
+              errorMessage: err.message,
+              data: state.data.copyWith(
+                isLogoutFailure: true,
+                isLogoutLoading: false,
+              ),
+            ),
+          );
+        } else {
+          emit(
+            LogoutFailed(
+              errorMessage: 'Something went wrong: ${dioError.message}',
+              data: state.data.copyWith(
+                isLogoutFailure: true,
+                isLogoutLoading: false,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        emit(
+          LogoutFailed(
+            errorMessage: e.toString(),
+            data: state.data.copyWith(
+              isLogoutFailure: true,
+              isLogoutLoading: false,
             ),
           ),
         );

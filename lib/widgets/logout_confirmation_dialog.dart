@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
-import 'package:kendedes_mobile/bloc/login/logout_event.dart';
-import 'package:kendedes_mobile/bloc/login/logout_state.dart';
+import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
+import 'package:kendedes_mobile/bloc/login/login_event.dart';
+import 'package:kendedes_mobile/bloc/login/login_state.dart';
 import 'package:kendedes_mobile/pages/login_page.dart';
 
 class LogoutConfirmationDialog extends StatelessWidget {
@@ -10,7 +10,7 @@ class LogoutConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<LogoutBloc, LogoutState>(
+    return BlocConsumer<LoginBloc, LoginState>(
       listener: (context, state) {
         if (state is LogoutSuccess || state is TokenExpired) {
           Navigator.pushAndRemoveUntil(
@@ -111,7 +111,7 @@ class LogoutConfirmationDialog extends StatelessWidget {
                           state.data.isLogoutLoading
                               ? null
                               : () {
-                                context.read<LogoutBloc>().add(Logout());
+                                context.read<LoginBloc>().add(Logout());
                               },
                       style: ElevatedButton.styleFrom(
                         backgroundColor:

@@ -26,6 +26,19 @@ class TokenExpired extends LoginState {
   const TokenExpired({required super.data});
 }
 
+class LogoutLoading extends LoginState {
+  const LogoutLoading({required super.data});
+}
+
+class LogoutSuccess extends LoginState {
+  const LogoutSuccess({required super.data});
+}
+
+class LogoutFailed extends LoginState {
+  final String errorMessage;
+  const LogoutFailed({required this.errorMessage, required super.data});
+}
+
 class RedirectToRegister extends LoginState {
   final String email;
   final String name;

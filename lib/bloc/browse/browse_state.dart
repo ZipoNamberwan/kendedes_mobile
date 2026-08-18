@@ -74,6 +74,7 @@ class InitializingStarted extends BrowseState {
           slsWithBusinessListForUpdate: [],
           updatedSlsWithBusinessId: [],
           isUpdatingSlsError: false,
+          selectedProjectTypeFilters: [],
         ),
       );
 
@@ -349,7 +350,7 @@ class BrowseStateData {
   // Filter attribute
   final String? searchQuery;
   final List<ProjectType> projectTypesFilterOptions;
-  final ProjectType? selectedProjectTypeFilter;
+  final List<ProjectType> selectedProjectTypeFilters;
   final List<Sls> slsFilterOptions;
   final Sls? selectedSlsFilter;
 
@@ -425,7 +426,7 @@ class BrowseStateData {
     required this.isDeletingPolygon,
 
     this.searchQuery,
-    this.selectedProjectTypeFilter,
+    required this.selectedProjectTypeFilters,
     this.selectedSlsFilter,
     required this.projectTypesFilterOptions,
     required this.slsFilterOptions,
@@ -506,7 +507,7 @@ class BrowseStateData {
 
     String? searchQuery,
     List<ProjectType>? projectTypesFilterOptions,
-    ProjectType? selectedProjectTypeFilter,
+    List<ProjectType>? selectedProjectTypeFilters,
     List<Sls>? slsFilterOptions,
     Sls? selectedSlsFilter,
     bool? resetAllFilter,
@@ -616,12 +617,12 @@ class BrowseStateData {
               : resetSearchQuery ?? false
               ? null
               : searchQuery ?? this.searchQuery,
-      selectedProjectTypeFilter:
+      selectedProjectTypeFilters:
           resetAllFilter ?? false
-              ? null
+              ? []
               : resetProjectTypeFilter ?? false
-              ? null
-              : selectedProjectTypeFilter ?? this.selectedProjectTypeFilter,
+              ? []
+              : selectedProjectTypeFilters ?? this.selectedProjectTypeFilters,
       selectedSlsFilter:
           resetAllFilter ?? false
               ? null
@@ -643,8 +644,11 @@ class BrowseStateData {
       slsWithBusinessListForUpdate:
           slsWithBusinessListForUpdate ?? this.slsWithBusinessListForUpdate,
       updatingSlsWithBusinessId:
-          resetUpdatingSls == true ? null : updatingSlsWithBusinessId ?? this.updatingSlsWithBusinessId,
-      updatedSlsWithBusinessId: updatedSlsWithBusinessId ?? this.updatedSlsWithBusinessId,
+          resetUpdatingSls == true
+              ? null
+              : updatingSlsWithBusinessId ?? this.updatingSlsWithBusinessId,
+      updatedSlsWithBusinessId:
+          updatedSlsWithBusinessId ?? this.updatedSlsWithBusinessId,
       isUpdatingSlsError: isUpdatingSlsError ?? this.isUpdatingSlsError,
       updatingSlsErrorMessage:
           resetUpdatingSlsErrorMessage == true
@@ -685,7 +689,7 @@ class BrowseStateData {
 
   bool isBusinessFilterActive() {
     return (searchQuery?.isNotEmpty ?? false) ||
-        selectedProjectTypeFilter != null ||
+        selectedProjectTypeFilters.isNotEmpty ||
         selectedSlsFilter != null;
   }
 }

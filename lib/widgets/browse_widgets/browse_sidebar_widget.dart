@@ -6,6 +6,7 @@ import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/business_list_item_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:multi_dropdown/multi_dropdown.dart';
 import 'package:searchfield/searchfield.dart';
 
 class BrowseSidebarWidget extends StatefulWidget {
@@ -23,15 +24,19 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
   bool _showCloseButton = true;
   double _lastScrollOffset = 0;
 
+  late final MultiSelectController<ProjectType> _projectTypeController;
+
   @override
   void initState() {
     super.initState();
     _browseBloc = context.read<BrowseBloc>();
     _scrollController.addListener(_onScroll);
+    _projectTypeController = MultiSelectController<ProjectType>();
   }
 
   @override
   void dispose() {
+    _projectTypeController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -84,9 +89,9 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
   Widget build(BuildContext context) {
     return BlocConsumer<BrowseBloc, BrowseState>(
       listener: (context, state) {
-        if ( /* state is BrowseSideBarOpened || */ state
-                is SearchQueryCleared ||
-            state is AllFilterCleared) {
+        if (state is AllFilterCleared) {
+          _projectTypeController.clearAll();
+        } else if (state is SearchQueryCleared) {
           _searchController.text = '';
         } else if (state is BrowseSideBarClosed) {
           _searchFocusNode.unfocus();
@@ -218,105 +223,98 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
 
                           const SizedBox(height: 8),
 
-                          // Filter Dropdown
-                          SizedBox(
+                          // Filter Dropdown with Toggle Options
+                          Container(
                             height: 36,
-                            child: DropdownButtonFormField<ProjectType?>(
-                              initialValue:
-                                  state.data.selectedProjectTypeFilter,
-                              hint: Text(
-                                'Filter Tipe Usaha',
-                                style: TextStyle(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Colors.grey[200]!,
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.grey[50],
+                            ),
+                            child: MultiDropdown<ProjectType>(
+                              controller: _projectTypeController,
+                              items:
+                                  state.data.projectTypesFilterOptions
+                                      .map(
+                                        (projectType) =>
+                                            DropdownItem<ProjectType>(
+                                              label: projectType.text,
+                                              value: projectType,
+                                              selected: state
+                                                  .data
+                                                  .selectedProjectTypeFilters
+                                                  .contains(projectType),
+                                            ),
+                                      )
+                                      .toList(),
+                              onSelectionChange: (selectedItems) {
+                                _browseBloc.add(
+                                  FilterBusinessByProjectType(
+                                    projectTypes: selectedItems,
+                                  ),
+                                );
+                              },
+                              fieldDecoration: FieldDecoration(
+                                hintText: 'Filter Tipe Usaha',
+                                hintStyle: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[400],
-                                  fontWeight: FontWeight.w400,
                                 ),
-                              ),
-                              isExpanded: true,
-                              icon:
-                                  state.data.selectedProjectTypeFilter != null
-                                      ? GestureDetector(
-                                        onTap:
-                                            () => _browseBloc.add(
-                                              FilterBusinessByProjectType(
-                                                reset: true,
-                                              ),
-                                            ),
-                                        child: Icon(
-                                          Icons.cancel_rounded,
-                                          size: 16,
-                                          color: Colors.grey[400],
+                                prefixIcon: Icon(
+                                  Icons.filter_list_rounded,
+                                  color: Colors.orange[400],
+                                  size: 16,
+                                ),
+                                showClearIcon:
+                                    false, // Turn off default clear icon
+                                suffixIcon:
+                                    state
+                                            .data
+                                            .selectedProjectTypeFilters
+                                            .isNotEmpty
+                                        ? IconButton(
+                                          icon: const Icon(
+                                            Icons.close,
+                                            size: 16,
+                                            color: Colors.grey,
+                                          ),
+                                          onPressed: () {
+                                            _projectTypeController
+                                                .clearAll(); // Clears using the controller
+                                          },
+                                        )
+                                        : const Icon(
+                                          Icons.arrow_drop_down,
+                                          size: 18,
                                         ),
-                                      )
-                                      : Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        size: 18,
-                                        color: Colors.grey[500],
-                                      ),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.black87,
-                              ),
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.grey[50],
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 0,
-                                ),
-                                prefixIcon: Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 10,
-                                    right: 6,
-                                  ),
-                                  child: Icon(
-                                    Icons.filter_list_rounded,
-                                    color: Colors.orange[400],
-                                    size: 16,
-                                  ),
-                                ),
-                                prefixIconConstraints: const BoxConstraints(
-                                  minHeight: 36,
-                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[200]!,
-                                    width: 1,
-                                  ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
                                 ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(
-                                    color: Colors.orange[300]!,
-                                    width: 1.5,
-                                  ),
+                                backgroundColor: Colors.transparent,
+                              ),
+                              dropdownDecoration: DropdownDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                elevation: 2,
+                              ),
+                              dropdownItemDecoration: DropdownItemDecoration(
+                                selectedIcon: Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: Colors.orange[400],
                                 ),
                               ),
-                              items:
-                                  state.data.projectTypesFilterOptions.map((
-                                    ProjectType projectType,
-                                  ) {
-                                    return DropdownMenuItem<ProjectType?>(
-                                      value: projectType,
-                                      child: Text(
-                                        projectType.text,
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    );
-                                  }).toList(),
-                              onChanged:
-                                  (projectType) => _browseBloc.add(
-                                    FilterBusinessByProjectType(
-                                      projectType: projectType,
-                                    ),
-                                  ),
+                              chipDecoration: ChipDecoration(
+                                backgroundColor: Colors.orange[50]!,
+                                labelStyle: const TextStyle(fontSize: 12),
+                              ),
                             ),
                           ),
 
@@ -357,8 +355,12 @@ class _BrowseSidebarWidgetState extends State<BrowseSidebarWidget> {
                                 return state.data.slsFilterOptions
                                     .where(
                                       (sls) =>
-                                          sls.areaName().toLowerCase().contains(q) ||
-                                          sls.areaCode.toLowerCase().contains(q),
+                                          sls.areaName().toLowerCase().contains(
+                                            q,
+                                          ) ||
+                                          sls.areaCode.toLowerCase().contains(
+                                            q,
+                                          ),
                                     )
                                     .map(_buildSlsItem)
                                     .toList();

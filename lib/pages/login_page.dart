@@ -90,44 +90,46 @@ class _LoginPageState extends State<LoginPage> {
     final theme = Theme.of(context);
 
     return BlocConsumer<LoginBloc, LoginState>(
-      listener: (context, state) async {
-        if (state is LoginSuccess) {
+      listener: (context, loginState) async {
+        if (loginState is LoginSuccess) {
           // Navigate to the home page or dashboard
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const HomePage()),
             (route) => false,
           );
-        } else if (state is LoginFailed) {
+        } else if (loginState is LoginFailed) {
           showDialog(
             context: context,
             builder:
                 (context) => MessageDialog(
                   title: 'Login Gagal',
-                  message: state.errorMessage,
+                  message: loginState.errorMessage,
                   type: MessageType.error,
                   buttonText: 'Ok',
                 ),
           );
-        } else if (state is RedirectToRegister) {
+        } else if (loginState is RedirectToRegister) {
           // go to register page
           Navigator.push(
             context,
             MaterialPageRoute(
               builder:
-                  (context) =>
-                      RegisterPage(email: state.email, name: state.name),
+                  (context) => RegisterPage(
+                    email: loginState.email,
+                    name: loginState.name,
+                  ),
             ),
           );
         }
       },
-      builder: (context, state) {
-        if (state is Initializing) {
+      builder: (context, loginState) {
+        if (loginState is Initializing) {
           return LoadingScaffold(
             title: 'Menyiapkan aplikasi...',
             subtitle: 'Mohon tunggu sebentar',
           );
-        } else if (state is LoginSuccess) {
+        } else if (loginState is LoginSuccess) {
           return LoadingScaffold(
             title: 'Login Berhasil',
             subtitle: 'Mengalihkan ke halaman utama...',
@@ -422,7 +424,8 @@ class _LoginPageState extends State<LoginPage> {
                                               ),
                                               filled: true,
                                               fillColor: Colors.grey.shade50,
-                                              errorText: state.data.email.error,
+                                              errorText:
+                                                  loginState.data.email.error,
                                               contentPadding:
                                                   const EdgeInsets.symmetric(
                                                     horizontal: 12,
@@ -488,7 +491,10 @@ class _LoginPageState extends State<LoginPage> {
                                               filled: true,
                                               fillColor: Colors.grey.shade50,
                                               errorText:
-                                                  state.data.password.error,
+                                                  loginState
+                                                      .data
+                                                      .password
+                                                      .error,
                                               contentPadding:
                                                   const EdgeInsets.symmetric(
                                                     horizontal: 12,
@@ -496,7 +502,9 @@ class _LoginPageState extends State<LoginPage> {
                                                   ),
                                               suffixIcon: IconButton(
                                                 icon: Icon(
-                                                  state.data.obscurePassword
+                                                  loginState
+                                                          .data
+                                                          .obscurePassword
                                                       ? Icons
                                                           .visibility_off_outlined
                                                       : Icons
@@ -512,7 +520,7 @@ class _LoginPageState extends State<LoginPage> {
                                               ),
                                             ),
                                             obscureText:
-                                                state.data.obscurePassword,
+                                                loginState.data.obscurePassword,
                                             style: const TextStyle(
                                               fontSize: 14,
                                             ),
@@ -544,7 +552,7 @@ class _LoginPageState extends State<LoginPage> {
                                               ),
                                             ),
                                             onPressed:
-                                                state.data.isSubmitting
+                                                loginState.data.isSubmitting
                                                     ? null
                                                     : () {
                                                       _loginBloc.add(
@@ -552,7 +560,7 @@ class _LoginPageState extends State<LoginPage> {
                                                       );
                                                     },
                                             child:
-                                                state.data.isSubmitting
+                                                loginState.data.isSubmitting
                                                     ? const SizedBox(
                                                       width: 18,
                                                       height: 18,
@@ -609,7 +617,7 @@ class _LoginPageState extends State<LoginPage> {
                               Expanded(
                                 child: GestureDetector(
                                   onTap:
-                                      state.data.isLoginGoogleLoading
+                                      loginState.data.isLoginGoogleLoading
                                           ? null
                                           : () => _loginBloc.add(
                                             const LoginGoogle(),
@@ -680,7 +688,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              if (state.data.isLoginGoogleLoading)
+              if (loginState.data.isLoginGoogleLoading)
                 Positioned.fill(
                   child: Container(
                     color: Colors.black.withValues(alpha: 0.4),

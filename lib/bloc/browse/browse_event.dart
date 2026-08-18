@@ -185,9 +185,9 @@ class SearchBusiness extends BrowseEvent {
 }
 
 class FilterBusinessByProjectType extends BrowseEvent {
-  final ProjectType? projectType;
+  final List<ProjectType> projectTypes;
   final bool? reset;
-  const FilterBusinessByProjectType({this.projectType, this.reset});
+  const FilterBusinessByProjectType({this.projectTypes = const [], this.reset});
 }
 
 class FilterBusinessBySls extends BrowseEvent {

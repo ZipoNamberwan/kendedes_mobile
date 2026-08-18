@@ -7,7 +7,6 @@ import 'package:kendedes_mobile/bloc/info/info_bloc.dart';
 import 'package:kendedes_mobile/bloc/kbli_util/kbli_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
-import 'package:kendedes_mobile/bloc/login/logout_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/register_bloc.dart';
 import 'package:kendedes_mobile/bloc/photo_util/photo_util_bloc.dart';
 import 'package:kendedes_mobile/bloc/polygon/polygon_bloc.dart';
@@ -155,7 +154,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late ProjectBloc _projectBloc;
   late TaggingBloc _taggingBloc;
-  late LogoutBloc _logoutBloc;
   late VersionBloc _versionBloc;
   late PolygonBloc _polygonBloc;
   late BrowseBloc _browseBloc;
@@ -173,7 +171,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _projectBloc = ProjectBloc();
     _taggingBloc = TaggingBloc();
-    _logoutBloc = LogoutBloc();
     _versionBloc = VersionBloc();
     _polygonBloc = PolygonBloc();
     _browseBloc = BrowseBloc();
@@ -260,7 +257,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ),
         BlocProvider<ProjectBloc>(create: (context) => _projectBloc),
         BlocProvider<TaggingBloc>(create: (context) => _taggingBloc),
-        BlocProvider<LogoutBloc>(create: (context) => _logoutBloc),
         BlocProvider<VersionBloc>(create: (context) => _versionBloc),
         BlocProvider<PolygonBloc>(create: (context) => _polygonBloc),
         BlocProvider<BrowseBloc>(create: (context) => _browseBloc),

@@ -859,7 +859,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       final filtered = _applyFilters(
         allTags: state.data.businesses,
         query: newQuery,
-        projectType: state.data.selectedProjectTypeFilter,
+        projectType: state.data.selectedProjectTypeFilters,
         sls: state.data.selectedSlsFilter,
       );
 
@@ -876,11 +876,20 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     });
 
     on<FilterBusinessByProjectType>((event, emit) {
-      final selectedProjectType = event.projectType;
+      late List<ProjectType> updatedFilters;
+
+      if (event.reset ?? false) {
+        // Reset: clear all filters
+        updatedFilters = [];
+      } else {
+        // Use the list directly from the event
+        updatedFilters = event.projectTypes;
+      }
+
       final filtered = _applyFilters(
         allTags: state.data.businesses,
         query: state.data.searchQuery,
-        projectType: selectedProjectType,
+        projectType: updatedFilters,
         sls: state.data.selectedSlsFilter,
       );
 
@@ -888,7 +897,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         BrowseState(
           data: state.data.copyWith(
             filteredBusinesses: filtered,
-            selectedProjectTypeFilter: selectedProjectType,
+            selectedProjectTypeFilters: updatedFilters,
             resetProjectTypeFilter: event.reset ?? false,
           ),
         ),
@@ -900,7 +909,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       final filtered = _applyFilters(
         allTags: state.data.businesses,
         query: state.data.searchQuery,
-        projectType: state.data.selectedProjectTypeFilter,
+        projectType: state.data.selectedProjectTypeFilters,
         sls: selectedSls,
       );
 
@@ -1354,14 +1363,14 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
   List<TagData> _applyFilters({
     required List<TagData> allTags,
     required String? query,
-    required ProjectType? projectType,
+    required List<ProjectType> projectType,
     required Sls? sls,
   }) {
     final normalizedQuery = query?.trim().toLowerCase();
 
     // No filters applied → return all
     if ((normalizedQuery == null || normalizedQuery.isEmpty) &&
-        projectType == null &&
+        projectType.isEmpty &&
         sls == null) {
       return allTags;
     }
@@ -1378,8 +1387,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           (tag.description?.toLowerCase().contains(normalizedQuery) ?? false);
 
       final matchesProjectType =
-          projectType == null || projectType.matches(tag.project.type);
-          
+          projectType.isEmpty ||
+          projectType.any((type) => type.matches(tag.project.type));
+
       final matchesSls = sls == null || tag.sls?.id == sls.id;
 
       return matchesQuery && matchesProjectType && matchesSls;

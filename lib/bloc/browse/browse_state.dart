@@ -75,6 +75,7 @@ class InitializingStarted extends BrowseState {
           updatedSlsWithBusinessId: [],
           isUpdatingSlsError: false,
           selectedProjectTypeFilters: [],
+          refreshingSlsIds: [],
         ),
       );
 
@@ -369,6 +370,7 @@ class BrowseStateData {
   final String? updatingSlsErrorMessage;
   final bool? resetUpdatingSls;
   final bool? resetUpdatingSlsErrorMessage;
+  final List<String> refreshingSlsIds;
 
   BrowseStateData({
     required this.loadMode,
@@ -444,6 +446,7 @@ class BrowseStateData {
     this.updatingSlsErrorMessage,
     this.resetUpdatingSls,
     this.resetUpdatingSlsErrorMessage,
+    required this.refreshingSlsIds,
   });
   BrowseStateData copyWith({
     BusinessLoadMode? loadMode,
@@ -530,6 +533,7 @@ class BrowseStateData {
     String? updatingSlsErrorMessage,
     bool? resetUpdatingSls,
     bool? resetUpdatingSlsErrorMessage,
+    List<String>? refreshingSlsIds,
   }) {
     return BrowseStateData(
       loadMode: loadMode ?? this.loadMode,
@@ -654,6 +658,7 @@ class BrowseStateData {
           resetUpdatingSlsErrorMessage == true
               ? null
               : updatingSlsErrorMessage ?? this.updatingSlsErrorMessage,
+      refreshingSlsIds: refreshingSlsIds ?? this.refreshingSlsIds,
     );
   }
 

@@ -2054,6 +2054,12 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                           state.data.isDeletingSlsWithBusiness,
                         );
                       },
+                      onRefreshTap: (item) {
+                        _browseBloc.add(
+                          RefreshSlsWithBusiness(slsWithBusiness: item),
+                        );
+                      },
+                      refreshingSlsIds: state.data.refreshingSlsIds,
                     ),
 
                     // Business Sidebar

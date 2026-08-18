@@ -214,6 +214,11 @@ class SearchSlsWithBusiness extends BrowseEvent {
   const SearchSlsWithBusiness({this.query, this.reset});
 }
 
+class RefreshSlsWithBusiness extends BrowseEvent {
+  final SlsWithBusiness slsWithBusiness;
+  const RefreshSlsWithBusiness({required this.slsWithBusiness});
+}
+
 class FindSls extends BrowseEvent {
   final LatLng latLng;
   const FindSls({required this.latLng});

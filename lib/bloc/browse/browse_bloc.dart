@@ -486,6 +486,224 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       );
     });
 
+    on<RefreshSlsWithBusiness>((event, emit) async {
+      final browseDbRepository = BrowseDbRepository();
+      final polygonDbRepository = PolygonDbRepository();
+      final currentUserId = state.data.currentUser?.id ?? '';
+
+      emit(
+        BrowseState(
+          data: state.data.copyWith(
+            isBusinessBySlsLoading: true,
+            refreshingSlsIds: [
+              ...state.data.refreshingSlsIds,
+              event.slsWithBusiness.id,
+            ],
+          ),
+        ),
+      );
+
+      await ApiServerHandler.run(
+        action: () async {
+          // 1. Fetch businesses from server
+          final response = await BrowseRepository().getBusinessesBySls(
+            event.slsWithBusiness.sls.id,
+          );
+          List<TagData> businesses =
+              response['businesses'] != null
+                  ? List<Map<String, dynamic>>.from(
+                    response['businesses'],
+                  ).map((data) => TagData.fromServerJson(data)).toList()
+                  : [];
+
+          if (businesses.isEmpty) {
+            final remainingRefreshingIds = state.data.refreshingSlsIds
+                .where((id) => id != event.slsWithBusiness.id)
+                .toList();
+            emit(
+              NoBusinessInsideBounds(
+                message:
+                    'Tidak ada prelist usaha di SLS ${event.slsWithBusiness.sls.name}',
+                data: state.data.copyWith(
+                  isBusinessBySlsLoading: false,
+                  refreshingSlsIds: remainingRefreshingIds,
+                ),
+              ),
+            );
+            return;
+          }
+
+          // 2. Delete all business related to event.slsWithBusiness.sls.id and its polygon from local DB & state
+          await polygonDbRepository.removeUserPolygonPair(
+            currentUserId,
+            event.slsWithBusiness.sls.polygon?.id ??
+                event.slsWithBusiness.sls.id,
+          );
+
+          await browseDbRepository.deleteBusinessesBySlsId(
+            event.slsWithBusiness.sls.id,
+            currentUserId,
+          );
+
+          List<Polygon> updatedPolygons =
+              state.data.polygons
+                  .where(
+                    (polygon) =>
+                        polygon.id !=
+                        (event.slsWithBusiness.sls.polygon?.id ??
+                            event.slsWithBusiness.sls.id),
+                  )
+                  .toList();
+
+          List<TagData> updatedBusinesses =
+              state.data.businesses
+                  .where(
+                    (business) =>
+                        business.sls?.id != event.slsWithBusiness.sls.id,
+                  )
+                  .toList();
+
+          // 3. Process new fetched businesses
+          businesses =
+              businesses.map((b) => b.copyWith(id: _uuid.v4())).toList();
+
+          await browseDbRepository.insertUniqueUsersFromBusinesses(businesses);
+
+          await browseDbRepository.insertUniqueProjectsFromBusinesses(
+            businesses,
+            state.data.currentUser,
+          );
+
+          await browseDbRepository.insertBusinessesDataBatch(
+            businesses,
+            currentUserId,
+          );
+
+          final Sls slsWithPolygon = Sls.fromJson(response['sls']);
+          final Polygon? updatedPolygon = slsWithPolygon.polygon;
+
+          if (updatedPolygon != null) {
+            await polygonDbRepository.savePolygonWithPoints(updatedPolygon);
+            await polygonDbRepository.addUniqueUserPolygonPair(
+              currentUserId,
+              updatedPolygon.id,
+            );
+          }
+
+          // 4. Update the same instance of SlsWithBusiness in local DB
+          final updatedSlsWithBusiness = SlsWithBusiness(
+            id: event.slsWithBusiness.id,
+            sls: slsWithPolygon,
+            businessCount: businesses.length,
+            user: state.data.currentUser!,
+          );
+          await browseDbRepository.updateSlsWithBusiness(updatedSlsWithBusiness);
+
+          // 5. Merge businesses, polygons, and slsWithBusinessList for state
+          final mergedBusinesses = List.of(updatedBusinesses);
+          final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
+          mergedBusinesses.addAll(
+            businesses.where((b) => existingIds.add(b.remoteId)),
+          );
+
+          final finalPolygons =
+              (updatedPolygon != null &&
+                      !updatedPolygons.any((p) => p.id == updatedPolygon.id))
+                  ? [...updatedPolygons, updatedPolygon]
+                  : updatedPolygons;
+
+          final updatedSlsWithBusinessList = state.data.slsWithBusinessList
+              .map(
+                (item) =>
+                    item.id == updatedSlsWithBusiness.id
+                        ? updatedSlsWithBusiness
+                        : item,
+              )
+              .toList();
+
+          final updatedFilteredSlsWithBusinessList = state
+              .data
+              .filteredSlsWithBusinessList
+              .map(
+                (item) =>
+                    item.id == updatedSlsWithBusiness.id
+                        ? updatedSlsWithBusiness
+                        : item,
+              )
+              .toList();
+
+          final remainingRefreshingIds = state.data.refreshingSlsIds
+              .where((id) => id != event.slsWithBusiness.id)
+              .toList();
+
+          emit(
+            BusinessBySlsSuccess(
+              centerLocation: LatLng(
+                businesses.first.positionLat,
+                businesses.first.positionLng,
+              ),
+              data: state.data.copyWith(
+                isBusinessBySlsLoading: false,
+                refreshingSlsIds: remainingRefreshingIds,
+                businesses: mergedBusinesses,
+                slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
+                polygons: finalPolygons,
+                slsWithBusinessList: updatedSlsWithBusinessList,
+                filteredSlsWithBusinessList:
+                    updatedFilteredSlsWithBusinessList,
+              ),
+            ),
+          );
+
+          add(const ResetAllFilter());
+        },
+        onLoginExpired: (e) {
+          final remainingRefreshingIds = state.data.refreshingSlsIds
+              .where((id) => id != event.slsWithBusiness.id)
+              .toList();
+          emit(
+            TokenExpired(
+              data: state.data.copyWith(
+                isBusinessBySlsLoading: false,
+                isBusinessBySlsError: true,
+                refreshingSlsIds: remainingRefreshingIds,
+              ),
+            ),
+          );
+        },
+        onDataProviderError: (e) {
+          final remainingRefreshingIds = state.data.refreshingSlsIds
+              .where((id) => id != event.slsWithBusiness.id)
+              .toList();
+          emit(
+            BusinessBySlsFailed(
+              errorMessage: e.message,
+              data: state.data.copyWith(
+                isBusinessBySlsLoading: false,
+                isBusinessBySlsError: true,
+                refreshingSlsIds: remainingRefreshingIds,
+              ),
+            ),
+          );
+        },
+        onOtherError: (e) {
+          final remainingRefreshingIds = state.data.refreshingSlsIds
+              .where((id) => id != event.slsWithBusiness.id)
+              .toList();
+          emit(
+            BusinessBySlsFailed(
+              errorMessage: e.toString(),
+              data: state.data.copyWith(
+                isBusinessBySlsLoading: false,
+                isBusinessBySlsError: true,
+                refreshingSlsIds: remainingRefreshingIds,
+              ),
+            ),
+          );
+        },
+      );
+    });
+
     on<GetBusinessByPoint>((event, emit) async {});
 
     on<SetBusinessLoadMode>((event, emit) {

@@ -10,6 +10,8 @@ class SlsWithBusinessSidebar extends StatefulWidget {
   final bool isOpen;
   final VoidCallback onClose;
   final String title;
+  final void Function(SlsWithBusiness item) onRefreshTap;
+  final List<String> refreshingSlsIds;
 
   const SlsWithBusinessSidebar({
     super.key,
@@ -20,7 +22,9 @@ class SlsWithBusinessSidebar extends StatefulWidget {
     required this.onClear,
     required this.isOpen,
     required this.onClose,
+    required this.onRefreshTap,
     this.title = 'Prelist SLS yang Sudah Diunduh',
+    required this.refreshingSlsIds,
   });
 
   @override
@@ -63,6 +67,7 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
   Widget _buildRowItem(BuildContext context, SlsWithBusiness item) {
     final sls = item.sls;
     final hasPolygon = sls.polygon != null;
+    // final isRefreshing = widget.refreshingSlsIds.contains(item.id);
 
     return Material(
       color: Colors.transparent,
@@ -76,79 +81,122 @@ class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: Colors.grey.shade200, width: 1),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _valueOrDash(sls.name),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.grey.shade900,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _valueOrDash(sls.areaCode),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      sls.areaName(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    _buildCountBadge(context, item.businessCount),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 4),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              // Top row: text details + top-right chevron button
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (hasPolygon) ...[
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: Colors.grey.shade400,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _valueOrDash(sls.name),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey.shade900,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _valueOrDash(sls.areaCode),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          sls.areaName(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                  ],
-                  SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: () => widget.onDeleteTap(item),
-                        child: Center(
-                          child: Icon(
-                            Icons.delete_outline_rounded,
-                            size: 18,
-                            color: Colors.red.shade600,
+                  ),
+                  if (hasPolygon)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              // Bottom row: business count badge on left, refresh & delete buttons on right
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _buildCountBadge(context, item.businessCount),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // SizedBox(
+                      //   width: 28,
+                      //   height: 28,
+                      //   child: isRefreshing
+                      //       ? Center(
+                      //           child: SizedBox(
+                      //             width: 14,
+                      //             height: 14,
+                      //             child: CircularProgressIndicator(
+                      //               strokeWidth: 2,
+                      //               color: Colors.blue.shade700,
+                      //             ),
+                      //           ),
+                      //         )
+                      //       : Material(
+                      //           color: Colors.transparent,
+                      //           child: InkWell(
+                      //             borderRadius: BorderRadius.circular(8),
+                      //             onTap: () => widget.onRefreshTap(item),
+                      //             child: Center(
+                      //               child: Icon(
+                      //                 Icons.refresh_rounded,
+                      //                 size: 18,
+                      //                 color: Colors.blue.shade700,
+                      //               ),
+                      //             ),
+                      //           ),
+                      //         ),
+                      // ),
+                      // const SizedBox(width: 2),
+                      SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () => widget.onDeleteTap(item),
+                            child: Center(
+                              child: Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18,
+                                color: Colors.red.shade600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),

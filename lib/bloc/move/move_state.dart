@@ -7,7 +7,6 @@ import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
-import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -65,7 +64,6 @@ class InitializingStarted extends MoveState {
           isSlsWithBusinessSidebarOpen: false,
           isDeletingSlsWithBusiness: false,
           isMoveSideBarOpen: false,
-          projectTypesFilterOptions: [],
           slsFilterOptions: [],
           isFindingSls: false,
           isFindingSlsError: false,
@@ -73,7 +71,6 @@ class InitializingStarted extends MoveState {
           slsWithBusinessListForUpdate: [],
           updatedSlsWithBusinessId: [],
           isUpdatingSlsError: false,
-          selectedProjectTypeFilters: [],
           refreshingSlsIds: [],
         ),
       );
@@ -348,8 +345,6 @@ class MoveStateData {
 
   // Filter attribute
   final String? searchQuery;
-  final List<ProjectType> projectTypesFilterOptions;
-  final List<ProjectType> selectedProjectTypeFilters;
   final List<Sls> slsFilterOptions;
   final Sls? selectedSlsFilter;
 
@@ -425,9 +420,7 @@ class MoveStateData {
     required this.isDeletingPolygon,
 
     this.searchQuery,
-    required this.selectedProjectTypeFilters,
     this.selectedSlsFilter,
-    required this.projectTypesFilterOptions,
     required this.slsFilterOptions,
 
     this.slsFinder,
@@ -505,13 +498,10 @@ class MoveStateData {
     bool? isDeletingPolygon,
 
     String? searchQuery,
-    List<ProjectType>? projectTypesFilterOptions,
-    List<ProjectType>? selectedProjectTypeFilters,
     List<Sls>? slsFilterOptions,
     Sls? selectedSlsFilter,
     bool? resetAllFilter,
     bool? resetSearchQuery,
-    bool? resetProjectTypeFilter,
     bool? resetSlsFilter,
 
     Sls? slsFinder,
@@ -616,20 +606,12 @@ class MoveStateData {
               : resetSearchQuery ?? false
               ? null
               : searchQuery ?? this.searchQuery,
-      selectedProjectTypeFilters:
-          resetAllFilter ?? false
-              ? []
-              : resetProjectTypeFilter ?? false
-              ? []
-              : selectedProjectTypeFilters ?? this.selectedProjectTypeFilters,
       selectedSlsFilter:
           resetAllFilter ?? false
               ? null
               : resetSlsFilter ?? false
               ? null
               : selectedSlsFilter ?? this.selectedSlsFilter,
-      projectTypesFilterOptions:
-          projectTypesFilterOptions ?? this.projectTypesFilterOptions,
       slsFilterOptions: slsFilterOptions ?? this.slsFilterOptions,
       slsFinder: resetSlsFinder == true ? null : slsFinder ?? this.slsFinder,
       isFindingSls: isFindingSls ?? this.isFindingSls,
@@ -688,8 +670,6 @@ class MoveStateData {
   }
 
   bool isBusinessFilterActive() {
-    return (searchQuery?.isNotEmpty ?? false) ||
-        selectedProjectTypeFilters.isNotEmpty ||
-        selectedSlsFilter != null;
+    return (searchQuery?.isNotEmpty ?? false) || selectedSlsFilter != null;
   }
 }

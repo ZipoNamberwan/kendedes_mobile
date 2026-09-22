@@ -6,7 +6,6 @@ import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
-import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:latlong2/latlong.dart';
@@ -161,12 +160,6 @@ class SearchBusiness extends MoveEvent {
   final String? query;
   final bool? reset;
   const SearchBusiness({this.query, this.reset});
-}
-
-class FilterBusinessByProjectType extends MoveEvent {
-  final List<ProjectType> projectTypes;
-  final bool? reset;
-  const FilterBusinessByProjectType({this.projectTypes = const [], this.reset});
 }
 
 class FilterBusinessBySls extends MoveEvent {

@@ -20,7 +20,7 @@ class LocalDbProvider {
     final String path = '${documentsDirectory.path}/tagging_app.db';
     _database = await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -138,7 +138,8 @@ class LocalDbProvider {
       id_sbr TEXT,
       original_area TEXT,
       FOREIGN KEY(project_id) REFERENCES projects(id),
-      FOREIGN KEY(user_id) REFERENCES users(id)
+      FOREIGN KEY(user_id) REFERENCES users(id),
+      can_move INTEGER
     )
   ''');
 
@@ -575,6 +576,13 @@ class LocalDbProvider {
       await db.execute('''
       ALTER TABLE tag_data
       ADD COLUMN original_area TEXT
+    ''');
+    }
+
+    if (oldVersion < 7) {
+      await db.execute('''
+      ALTER TABLE tag_data
+      ADD COLUMN can_move INTEGER DEFAULT 0
     ''');
     }
   }

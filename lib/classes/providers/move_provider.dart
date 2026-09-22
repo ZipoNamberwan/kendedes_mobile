@@ -24,7 +24,7 @@ class MoveProvider {
 
   Future<Map<String, dynamic>> getBusinessesBySls(String slsId) async {
     final response = await _dioService.dio.get(
-      '/v2/business-by-sls',
+      '/business-by-sls/move-mode',
       queryParameters: {'sls': slsId},
     );
     return Map<String, dynamic>.from(response.data['data']);

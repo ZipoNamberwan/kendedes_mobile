@@ -3,10 +3,8 @@ import 'package:kendedes_mobile/bloc/move/move_bloc.dart';
 import 'package:kendedes_mobile/bloc/move/move_event.dart';
 import 'package:kendedes_mobile/bloc/move/move_state.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
-import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/business_list_item_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:multi_dropdown/multi_dropdown.dart';
 import 'package:searchfield/searchfield.dart';
 
 class MoveSidebarWidget extends StatefulWidget {
@@ -24,19 +22,15 @@ class _MoveSidebarWidgetState extends State<MoveSidebarWidget> {
   bool _showCloseButton = true;
   double _lastScrollOffset = 0;
 
-  late final MultiSelectController<ProjectType> _projectTypeController;
-
   @override
   void initState() {
     super.initState();
     _moveBloc = context.read<MoveBloc>();
     _scrollController.addListener(_onScroll);
-    _projectTypeController = MultiSelectController<ProjectType>();
   }
 
   @override
   void dispose() {
-    _projectTypeController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -89,9 +83,7 @@ class _MoveSidebarWidgetState extends State<MoveSidebarWidget> {
   Widget build(BuildContext context) {
     return BlocConsumer<MoveBloc, MoveState>(
       listener: (context, state) {
-        if (state is AllFilterCleared) {
-          _projectTypeController.clearAll();
-        } else if (state is SearchQueryCleared) {
+        if (state is SearchQueryCleared) {
           _searchController.text = '';
         } else if (state is MoveSideBarClosed) {
           _searchFocusNode.unfocus();
@@ -219,103 +211,6 @@ class _MoveSidebarWidgetState extends State<MoveSidebarWidget> {
                               ),
                               // close button removed, moved to bottom
                             ],
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // Filter Dropdown with Toggle Options
-                          Container(
-                            height: 36,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Colors.grey[200]!,
-                                width: 1,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.grey[50],
-                            ),
-                            child: MultiDropdown<ProjectType>(
-                              controller: _projectTypeController,
-                              items:
-                                  state.data.projectTypesFilterOptions
-                                      .map(
-                                        (projectType) =>
-                                            DropdownItem<ProjectType>(
-                                              label: projectType.text,
-                                              value: projectType,
-                                              selected: state
-                                                  .data
-                                                  .selectedProjectTypeFilters
-                                                  .contains(projectType),
-                                            ),
-                                      )
-                                      .toList(),
-                              onSelectionChange: (selectedItems) {
-                                _moveBloc.add(
-                                  FilterBusinessByProjectType(
-                                    projectTypes: selectedItems,
-                                  ),
-                                );
-                              },
-                              fieldDecoration: FieldDecoration(
-                                hintText: 'Filter Tipe Usaha',
-                                hintStyle: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[400],
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.filter_list_rounded,
-                                  color: Colors.orange[400],
-                                  size: 16,
-                                ),
-                                showClearIcon:
-                                    false, // Turn off default clear icon
-                                suffixIcon:
-                                    state
-                                            .data
-                                            .selectedProjectTypeFilters
-                                            .isNotEmpty
-                                        ? IconButton(
-                                          icon: const Icon(
-                                            Icons.close,
-                                            size: 16,
-                                            color: Colors.grey,
-                                          ),
-                                          onPressed: () {
-                                            _projectTypeController
-                                                .clearAll(); // Clears using the controller
-                                          },
-                                        )
-                                        : const Icon(
-                                          Icons.arrow_drop_down,
-                                          size: 18,
-                                        ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                backgroundColor: Colors.transparent,
-                              ),
-                              dropdownDecoration: DropdownDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                elevation: 2,
-                              ),
-                              dropdownItemDecoration: DropdownItemDecoration(
-                                selectedIcon: Icon(
-                                  Icons.check,
-                                  size: 16,
-                                  color: Colors.orange[400],
-                                ),
-                              ),
-                              chipDecoration: ChipDecoration(
-                                backgroundColor: Colors.orange[50]!,
-                                labelStyle: const TextStyle(fontSize: 12),
-                              ),
-                            ),
                           ),
 
                           const SizedBox(height: 8),

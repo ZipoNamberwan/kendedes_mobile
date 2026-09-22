@@ -15,7 +15,6 @@ import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
-import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
@@ -27,6 +26,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
 
   MoveBloc() : super(InitializingStarted(message: 'Memuat data...')) {
     on<Initialize>((event, emit) async {
+      emit(InitializingStarted(message: 'Memuat data...'));
+      
       try {
         final User currentUser = AuthRepository().getUser();
 
@@ -45,39 +46,14 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
         }
         final regencies = await AreaDbRepository().getRegencies();
 
-        // 2. Init move project list
-        List<Project> moveProjectList = [];
-        moveProjectList = await MoveDbRepository().getProjectsByUser(
-          currentUser.id,
-        );
-
-        // 3. Init existing polygons
+        // 2. Init existing polygons
         final polygons = await PolygonDbRepository().getPolygonsByUser(
           currentUser.id,
         );
 
-        // 4. Init SLS with business list
+        // 3. Init SLS with business list
         List<SlsWithBusiness> slsWithBusinessList = await MoveDbRepository()
             .getSlsWithBusinessList(currentUserId: currentUser.id);
-
-        // 5. Init businesses list from the local DB based on the move project id
-        List<TagData> businesses = [];
-        if (moveProjectList.isNotEmpty) {
-          businesses = await MoveDbRepository().getBusinessesByMoveProjects(
-            moveProjectList.map((project) => project.id).toList(),
-            currentUser.id,
-          );
-        }
-
-        // 6. Init filter options for project type and sls filter based on the initialized businesses list
-        final projectTypesFilterOptions = <ProjectType>[
-          ProjectType.kendedesGroup,
-          ProjectType.sbr,
-          ProjectType.agriculture,
-          ProjectType.eform,
-          ProjectType.enumeration,
-          ProjectType.other,
-        ];
 
         emit(
           InitializingSuccess(
@@ -87,11 +63,6 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               polygons: polygons,
               slsWithBusinessList: slsWithBusinessList,
               filteredSlsWithBusinessList: slsWithBusinessList,
-              businesses: businesses,
-              filteredBusinesses:
-                  businesses, // Initialize filteredBusinesses with the full list of businesses
-              projectTypesFilterOptions: projectTypesFilterOptions,
-              slsFilterOptions: _getSlsFilterOptions(businesses),
               slsWithBusinessListForUpdate: [],
               updatedSlsWithBusinessId: [],
             ),
@@ -187,12 +158,6 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               currentUserId,
             );
 
-            final mergedBusinesses = List.of(state.data.businesses);
-            final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
-            mergedBusinesses.addAll(
-              localBusinesses.where((b) => existingIds.add(b.remoteId)),
-            );
-
             emit(
               BusinessBySlsSuccess(
                 centerLocation: LatLng(
@@ -201,8 +166,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
                 ),
                 data: state.data.copyWith(
                   isBusinessBySlsLoading: false,
-                  businesses: mergedBusinesses,
-                  slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
+                  businesses: localBusinesses,
+                  slsFilterOptions: _getSlsFilterOptions(localBusinesses),
                 ),
               ),
             );
@@ -278,13 +243,6 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
           final slsWithBusinessCreated = await moveDbRepository
               .createSlsWithBusiness(slsWithBusiness);
 
-          // 10. Update businesses list in state, ensuring no duplicates
-          final mergedBusinesses = List.of(state.data.businesses);
-          final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
-          mergedBusinesses.addAll(
-            businesses.where((b) => existingIds.add(b.remoteId)),
-          );
-
           emit(
             BusinessBySlsSuccess(
               centerLocation: LatLng(
@@ -293,8 +251,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               ),
               data: state.data.copyWith(
                 isBusinessBySlsLoading: false,
-                businesses: mergedBusinesses,
-                slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
+                businesses: businesses,
+                slsFilterOptions: _getSlsFilterOptions(businesses),
                 polygons:
                     pairAdded
                         ? [...state.data.polygons, updatedPolygon!]
@@ -417,14 +375,6 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
                   )
                   .toList();
 
-          List<TagData> updatedBusinesses =
-              state.data.businesses
-                  .where(
-                    (business) =>
-                        business.sls?.id != event.slsWithBusiness.sls.id,
-                  )
-                  .toList();
-
           // 3. Process new fetched businesses
           businesses =
               businesses.map((b) => b.copyWith(id: _uuid.v4())).toList();
@@ -460,13 +410,6 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
             user: state.data.currentUser!,
           );
           await moveDbRepository.updateSlsWithBusiness(updatedSlsWithBusiness);
-
-          // 5. Merge businesses, polygons, and slsWithBusinessList for state
-          final mergedBusinesses = List.of(updatedBusinesses);
-          final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
-          mergedBusinesses.addAll(
-            businesses.where((b) => existingIds.add(b.remoteId)),
-          );
 
           final finalPolygons =
               (updatedPolygon != null &&
@@ -507,8 +450,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               data: state.data.copyWith(
                 isBusinessBySlsLoading: false,
                 refreshingSlsIds: remainingRefreshingIds,
-                businesses: mergedBusinesses,
-                slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
+                businesses: businesses,
+                slsFilterOptions: _getSlsFilterOptions(businesses),
                 polygons: finalPolygons,
                 slsWithBusinessList: updatedSlsWithBusinessList,
                 filteredSlsWithBusinessList:
@@ -899,6 +842,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
           ),
         ),
       );
+      // Reset filter so filteredBusinesses (used for map/sidebar) drops the deleted SLS's businesses too
+      add(ResetAllFilter());
     });
 
     on<SetMoveSideBarOpen>((event, emit) {
@@ -933,7 +878,6 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
       final filtered = _applyFilters(
         allTags: state.data.businesses,
         query: newQuery,
-        projectType: state.data.selectedProjectTypeFilters,
         sls: state.data.selectedSlsFilter,
       );
 
@@ -949,41 +893,11 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
       }
     });
 
-    on<FilterBusinessByProjectType>((event, emit) {
-      late List<ProjectType> updatedFilters;
-
-      if (event.reset ?? false) {
-        // Reset: clear all filters
-        updatedFilters = [];
-      } else {
-        // Use the list directly from the event
-        updatedFilters = event.projectTypes;
-      }
-
-      final filtered = _applyFilters(
-        allTags: state.data.businesses,
-        query: state.data.searchQuery,
-        projectType: updatedFilters,
-        sls: state.data.selectedSlsFilter,
-      );
-
-      emit(
-        MoveState(
-          data: state.data.copyWith(
-            filteredBusinesses: filtered,
-            selectedProjectTypeFilters: updatedFilters,
-            resetProjectTypeFilter: event.reset ?? false,
-          ),
-        ),
-      );
-    });
-
     on<FilterBusinessBySls>((event, emit) {
       final selectedSls = event.sls;
       final filtered = _applyFilters(
         allTags: state.data.businesses,
         query: state.data.searchQuery,
-        projectType: state.data.selectedProjectTypeFilters,
         sls: selectedSls,
       );
 
@@ -1361,13 +1275,6 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
             currentUserId,
           );
 
-          // 5d. Update businesses list in state, ensuring no duplicates
-          final mergedBusinesses = [...existingBusinessesState];
-          final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
-          mergedBusinesses.addAll(
-            businesses.where((b) => existingIds.add(b.remoteId)),
-          );
-
           // 6. Mark this SLS as updated
           existingUpdatedSlsWithBusinessIdState = [
             ...existingUpdatedSlsWithBusinessIdState,
@@ -1385,8 +1292,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
                 updatedSlsWithBusinessId: existingUpdatedSlsWithBusinessIdState,
 
                 isBusinessBySlsLoading: false,
-                businesses: mergedBusinesses,
-                slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
+                businesses: businesses,
+                slsFilterOptions: _getSlsFilterOptions(businesses),
                 polygons: existingPolygonsState,
                 slsWithBusinessList: existingSlsWithBusinessState,
                 filteredSlsWithBusinessList: existingSlsWithBusinessState,
@@ -1437,15 +1344,12 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
   List<TagData> _applyFilters({
     required List<TagData> allTags,
     required String? query,
-    required List<ProjectType> projectType,
     required Sls? sls,
   }) {
     final normalizedQuery = query?.trim().toLowerCase();
 
     // No filters applied → return all
-    if ((normalizedQuery == null || normalizedQuery.isEmpty) &&
-        projectType.isEmpty &&
-        sls == null) {
+    if ((normalizedQuery == null || normalizedQuery.isEmpty) && sls == null) {
       return allTags;
     }
 
@@ -1460,13 +1364,9 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               false) ||
           (tag.description?.toLowerCase().contains(normalizedQuery) ?? false);
 
-      final matchesProjectType =
-          projectType.isEmpty ||
-          projectType.any((type) => type.matches(tag.project.type));
-
       final matchesSls = sls == null || tag.sls?.id == sls.id;
 
-      return matchesQuery && matchesProjectType && matchesSls;
+      return matchesQuery && matchesSls;
     }).toList();
   }
 

@@ -72,6 +72,7 @@ class InitializingStarted extends MoveState {
           updatedSlsWithBusinessId: [],
           isUpdatingSlsError: false,
           refreshingSlsIds: [],
+          isMoveMode: false,
         ),
       );
 
@@ -283,6 +284,21 @@ class ErrorUpdateSlsBusiness extends MoveState {
   List<Object> get props => [data];
 }
 
+class MoveTagError extends MoveState {
+  final String errorMessage;
+  const MoveTagError({required this.errorMessage, required super.data});
+
+  @override
+  List<Object> get props => [data, errorMessage];
+}
+
+class MoveTagSuccess extends MoveState {
+  const MoveTagSuccess({required super.data});
+
+  @override
+  List<Object> get props => [data];
+}
+
 class MoveStateData {
   // UI data state
   final bool isLoadBusinessContainerExpanded;
@@ -314,6 +330,11 @@ class MoveStateData {
   final List<SlsWithBusiness> slsWithBusinessList;
   final List<SlsWithBusiness> filteredSlsWithBusinessList;
   final String? slsWithBusinessSearchQuery;
+
+  // Move tag to new location attribute
+  final bool isMoveMode;
+  final TagData? originalMovedTag;
+  final TagData? newMovedTag;
 
   // Load Business data state
   final List<Regency> regencies;
@@ -395,6 +416,9 @@ class MoveStateData {
     required this.slsWithBusinessList,
     required this.filteredSlsWithBusinessList,
     this.slsWithBusinessSearchQuery,
+    required this.isMoveMode,
+    this.originalMovedTag,
+    this.newMovedTag,
 
     required this.regencies,
     required this.subdistricts,
@@ -470,6 +494,11 @@ class MoveStateData {
     List<SlsWithBusiness>? filteredSlsWithBusinessList,
     String? slsWithBusinessSearchQuery,
     bool? resetSlsWithBusinessSearchQuery,
+    bool? isMoveMode,
+    TagData? originalMovedTag,
+    TagData? newMovedTag,
+    bool? clearOriginalMovedTag,
+    bool? clearNewMovedTag,
 
     List<Regency>? regencies,
     List<Subdistrict>? subdistricts,
@@ -564,6 +593,13 @@ class MoveStateData {
           resetSlsWithBusinessSearchQuery == true
               ? null
               : slsWithBusinessSearchQuery ?? this.slsWithBusinessSearchQuery,
+      isMoveMode: isMoveMode ?? this.isMoveMode,
+      originalMovedTag:
+          clearOriginalMovedTag ?? false
+              ? null
+              : originalMovedTag ?? this.originalMovedTag,
+      newMovedTag:
+          clearNewMovedTag ?? false ? null : newMovedTag ?? this.newMovedTag,
       regencies: regencies ?? this.regencies,
       subdistricts:
           (clearSelectedRegency ?? false)

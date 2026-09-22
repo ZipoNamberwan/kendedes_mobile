@@ -61,4 +61,15 @@ class MoveProvider {
     );
     return List<Map<String, dynamic>>.from(response.data['data']);
   }
+
+  Future<Map<String, dynamic>> updateBusinessPosition(
+    String businessId,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _dioService.dio.put(
+      '/business/move-mode/$businessId',
+      data: data,
+    );
+    return response.data['data'];
+  }
 }

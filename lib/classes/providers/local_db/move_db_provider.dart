@@ -97,6 +97,14 @@ class MoveDbProvider {
     });
   }
 
+  Future<void> insertOrUpdate(Map<String, dynamic> data) async {
+    await _dbProvider.db.insert(
+      'tag_data',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   Future<void> insertProjectsBatch(List<Map<String, dynamic>> dataList) async {
     final db = _dbProvider.db;
     final batch = db.batch();

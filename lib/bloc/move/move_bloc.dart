@@ -1352,6 +1352,121 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
         },
       );
     });
+
+    // Move tag to new location logic
+    on<StartMoveMode>((event, emit) {
+      emit(
+        MoveState(
+          data: state.data.copyWith(
+            isMoveMode: true,
+            originalMovedTag: event.tagData,
+          ),
+        ),
+      );
+    });
+
+    on<MoveTag>((event, emit) {
+      final originalTag = state.data.originalMovedTag;
+      if (originalTag == null) return;
+
+      final newMovedTag = originalTag.copyWith(
+        positionLat: event.newPosition.latitude,
+        positionLng: event.newPosition.longitude,
+      );
+
+      emit(MoveState(data: state.data.copyWith(newMovedTag: newMovedTag)));
+    });
+
+    on<CancelMoveMode>((event, emit) {
+      emit(
+        MoveState(
+          data: state.data.copyWith(
+            isMoveMode: false,
+            clearOriginalMovedTag: true,
+            clearNewMovedTag: true,
+          ),
+        ),
+      );
+    });
+
+    on<SaveMoveTag>((event, emit) async {
+      try {
+        emit(MoveState(data: state.data));
+
+        final updatedTag = state.data.newMovedTag?.copyWith(
+          hasChanged: true,
+          hasSentToServer: false,
+          updatedAt: DateTime.now(),
+        );
+
+        if (updatedTag == null) {
+          throw Exception('Anda belum memilih lokasi baru');
+        }
+
+        // save new moved position to local DB
+        await MoveDbRepository().insertOrUpdate(updatedTag);
+
+        final updatedBusinesses =
+            state.data.businesses
+                .map((b) => b.id == updatedTag.id ? updatedTag : b)
+                .toList();
+        final updatedFilteredBusinesses =
+            state.data.filteredBusinesses
+                .map((b) => b.id == updatedTag.id ? updatedTag : b)
+                .toList();
+        final updatedSelectedBusinesses =
+            state.data.selectedBusinesses
+                .map((b) => b.id == updatedTag.id ? updatedTag : b)
+                .toList();
+
+        emit(
+          MoveTagSuccess(
+            data: state.data.copyWith(
+              businesses: updatedBusinesses,
+              filteredBusinesses: updatedFilteredBusinesses,
+              selectedBusinesses: updatedSelectedBusinesses,
+              isMoveMode: false,
+              clearOriginalMovedTag: true,
+              clearNewMovedTag: true,
+            ),
+          ),
+        );
+
+        await ApiServerHandler.run(
+          action: () async {
+            await MoveRepository().updateBusinessPosition(updatedTag);
+            final savedTag = updatedTag.copyWith(
+              hasChanged: false,
+              hasSentToServer: true,
+            );
+            await MoveDbRepository().insertOrUpdate(savedTag);
+
+            final syncedBusinesses =
+                state.data.businesses
+                    .map((b) => b.id == savedTag.id ? savedTag : b)
+                    .toList();
+            final syncedFilteredBusinesses =
+                state.data.filteredBusinesses
+                    .map((b) => b.id == savedTag.id ? savedTag : b)
+                    .toList();
+
+            emit(
+              MoveState(
+                data: state.data.copyWith(
+                  businesses: syncedBusinesses,
+                  filteredBusinesses: syncedFilteredBusinesses,
+                ),
+              ),
+            );
+          },
+          onLoginExpired: (e) {},
+          onDataProviderError: (e) {},
+          onOtherError: (e) {},
+        );
+      } catch (e) {
+        emit(MoveTagError(errorMessage: e.toString(), data: state.data));
+      }
+    });
   }
 
   List<Sls> _getSlsFilterOptions(List<TagData> businesses) {

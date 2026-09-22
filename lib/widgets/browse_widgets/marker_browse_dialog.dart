@@ -5,8 +5,9 @@ import 'package:kendedes_mobile/models/tag_data.dart';
 
 class MarkerBrowseDialog extends StatelessWidget {
   final TagData tagData;
+  final void Function(TagData tagData)? onMove;
 
-  const MarkerBrowseDialog({super.key, required this.tagData});
+  const MarkerBrowseDialog({super.key, required this.tagData, this.onMove});
 
   @override
   Widget build(BuildContext context) {
@@ -110,8 +111,66 @@ class MarkerBrowseDialog extends StatelessWidget {
                 ),
               ),
             ),
+            if (onMove != null && tagData.canMove)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildActionButton(
+                      icon: Icons.open_with,
+                      label: 'Pindah',
+                      color: Colors.blue,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        onMove!(tagData);
+                      },
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

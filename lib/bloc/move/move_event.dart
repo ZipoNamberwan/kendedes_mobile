@@ -208,3 +208,28 @@ class UpdateSlsBusiness extends MoveEvent {
   final SlsWithBusiness slsWithBusiness;
   const UpdateSlsBusiness({required this.slsWithBusiness});
 }
+
+// Move tag to new location Event
+class StartMoveMode extends MoveEvent {
+  final TagData tagData;
+  const StartMoveMode({required this.tagData});
+
+  @override
+  List<Object?> get props => [tagData];
+}
+
+class MoveTag extends MoveEvent {
+  final LatLng newPosition;
+  const MoveTag({required this.newPosition});
+
+  @override
+  List<Object?> get props => [newPosition];
+}
+
+class CancelMoveMode extends MoveEvent {
+  const CancelMoveMode();
+}
+
+class SaveMoveTag extends MoveEvent {
+  const SaveMoveTag();
+}

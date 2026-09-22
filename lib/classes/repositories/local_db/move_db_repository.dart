@@ -107,6 +107,10 @@ class MoveDbRepository {
     return items;
   }
 
+  Future<void> insertOrUpdate(TagData business) async {
+    await _moveDbProvider.insertOrUpdate(business.toLocalDbJson());
+  }
+
   Future<void> insertBusinessesDataBatch(
     List<TagData> businesses,
     String userId, {

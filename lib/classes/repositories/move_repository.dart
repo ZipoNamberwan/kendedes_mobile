@@ -2,6 +2,7 @@ import 'package:kendedes_mobile/classes/providers/move_provider.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
+import 'package:kendedes_mobile/models/tag_data.dart';
 
 class MoveRepository {
   static final MoveRepository _instance = MoveRepository._internal();
@@ -42,5 +43,12 @@ class MoveRepository {
   ) async {
     final data = slsWithBusinessData.map((e) => e.toServerJson()).toList();
     return await _moveProvider.checkBusinessDataUpdate(data);
+  }
+
+  Future<void> updateBusinessPosition(TagData tagData) async {
+    await _moveProvider.updateBusinessPosition(tagData.remoteId, {
+      'latitude': tagData.positionLat,
+      'longitude': tagData.positionLng,
+    });
   }
 }

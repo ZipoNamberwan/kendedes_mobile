@@ -482,32 +482,6 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
     );
   }
 
-  // Widget _buildSaveCheckbox({
-  //   required bool value,
-  //   required ValueChanged<bool?> onChanged,
-  //   required List<Color> gradientColors,
-  // }) {
-  //   return CheckboxListTile(
-  //     value: value,
-  //     onChanged: onChanged,
-  //     title: Text(
-  //       'Simpan ke database lokal',
-  //       style: TextStyle(
-  //         fontSize: 11,
-  //         fontWeight: FontWeight.w400,
-  //         color: Colors.grey.shade500,
-  //       ),
-  //     ),
-  //     activeColor: gradientColors.first.withValues(alpha: 0.7),
-  //     checkboxScaleFactor: 0.85,
-  //     side: BorderSide(color: Colors.grey.shade300, width: 1.2),
-  //     controlAffinity: ListTileControlAffinity.leading,
-  //     contentPadding: EdgeInsets.zero,
-  //     dense: true,
-  //     visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-  //   );
-  // }
-
   Widget _buildAreaContent(MoveStateData data) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -521,7 +495,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
         // ),
         const SizedBox(height: 6),
         _buildPrimaryActionButton(
-          label: 'Load Prelist By SLS',
+          label: 'Load Hasil SE2026',
           icon: Icons.map_rounded,
           gradientColors: const [Colors.blue, Colors.indigo],
           isLoading: data.isBusinessBySlsLoading,
@@ -1250,7 +1224,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Mode Jelajah',
+                                        'Pengecekan Hasil SE2026',
                                         style: TextStyle(
                                           color: Colors.white.withValues(
                                             alpha: 0.85,
@@ -1765,7 +1739,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                                                   const SizedBox(width: 10),
                                                   Expanded(
                                                     child: Text(
-                                                      'Load Prelist Usaha',
+                                                      'Load Hasil SE2026',
                                                       style: TextStyle(
                                                         color:
                                                             Colors

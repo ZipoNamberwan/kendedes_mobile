@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 
-class DeleteSlsWithBusinessDialog extends StatelessWidget {
+class ReusableDeleteSlsWithBusinessDialog extends StatelessWidget {
   final SlsWithBusiness slsWithBusiness;
   final VoidCallback onConfirm;
   final VoidCallback onCancel;
   final bool isDeleting;
 
-  const DeleteSlsWithBusinessDialog({
+  const ReusableDeleteSlsWithBusinessDialog({
     super.key,
     required this.slsWithBusiness,
     required this.onConfirm,

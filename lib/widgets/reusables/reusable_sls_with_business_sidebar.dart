@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 
-class SlsWithBusinessSidebar extends StatefulWidget {
+class ReusableSlsWithBusinessSidebar extends StatefulWidget {
   final List<SlsWithBusiness> items;
   final void Function(SlsWithBusiness item) onDeleteTap;
   final void Function(SlsWithBusiness item) onItemTap;
@@ -13,7 +13,7 @@ class SlsWithBusinessSidebar extends StatefulWidget {
   final void Function(SlsWithBusiness item) onRefreshTap;
   final List<String> refreshingSlsIds;
 
-  const SlsWithBusinessSidebar({
+  const ReusableSlsWithBusinessSidebar({
     super.key,
     required this.items,
     required this.onDeleteTap,
@@ -28,10 +28,10 @@ class SlsWithBusinessSidebar extends StatefulWidget {
   });
 
   @override
-  State<SlsWithBusinessSidebar> createState() => _SlsWithBusinessSidebarState();
+  State<ReusableSlsWithBusinessSidebar> createState() => _ReusableSlsWithBusinessSidebarState();
 }
 
-class _SlsWithBusinessSidebarState extends State<SlsWithBusinessSidebar> {
+class _ReusableSlsWithBusinessSidebarState extends State<ReusableSlsWithBusinessSidebar> {
   final TextEditingController _searchController = TextEditingController();
 
   @override

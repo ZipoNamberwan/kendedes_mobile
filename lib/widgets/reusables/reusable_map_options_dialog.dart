@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 
-class MapOptionsDialog extends StatefulWidget {
+class ReusableMapOptionsDialog extends StatefulWidget {
   final MapType? selectedMapType;
   final LabelType? selectedLabelType;
   final void Function(MapType mapType, LabelType labelType) onApply;
   final List<MapType> mapTypes;
   final List<LabelType> labelTypes;
 
-  const MapOptionsDialog({
+  const ReusableMapOptionsDialog({
     super.key,
     this.selectedMapType,
     this.selectedLabelType,
@@ -19,10 +19,10 @@ class MapOptionsDialog extends StatefulWidget {
   });
 
   @override
-  State<MapOptionsDialog> createState() => _MapOptionsDialogState();
+  State<ReusableMapOptionsDialog> createState() => _ReusableMapOptionsDialogState();
 }
 
-class _MapOptionsDialogState extends State<MapOptionsDialog> {
+class _ReusableMapOptionsDialogState extends State<ReusableMapOptionsDialog> {
   MapType? _selectedMapType;
   LabelType? _selectedLabelType;
 

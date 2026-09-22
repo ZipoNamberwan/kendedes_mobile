@@ -24,14 +24,14 @@ import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/browse_clustered_markers_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/browse_color_legend_dialog.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/browse_sidebar_widget.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/complex_marker_browse_widget.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/delete_sls_with_business_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/map_options_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/simple_marker_browse_widget.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/sls_finder_widget.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/sls_update_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/sls_with_business_sidebar.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_complex_marker_widget.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_delete_sls_with_business_dialog.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_map_options_dialog.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_marker_dialog.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_simple_marker_widget.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_sls_finder_widget.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_sls_update_dialog.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_sls_with_business_sidebar.dart';
 import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
@@ -685,7 +685,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (context) {
-        return DeleteSlsWithBusinessDialog(
+        return ReusableDeleteSlsWithBusinessDialog(
           slsWithBusiness: item,
           isDeleting: isDeleting,
           onConfirm: () {
@@ -715,7 +715,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder:
-          (context) => MapOptionsDialog(
+          (context) => ReusableMapOptionsDialog(
             mapTypes: MapType.getMapTypes(),
             selectedMapType: selectedMapType,
             selectedLabelType: selectedLabelType,
@@ -806,7 +806,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
   void _showMarkerDialog(TagData tagData) {
     showDialog(
       context: context,
-      builder: (context) => MarkerBrowseDialog(tagData: tagData),
+      builder: (context) => ReusableMarkerDialog(tagData: tagData),
     );
   }
 
@@ -918,7 +918,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
           alignment: Alignment.center,
           width: isSelected ? 28 : 20,
           height: isSelected ? 28 : 20,
-          child: SimpleMarkerBrowseWidget(
+          child: ReusableSimpleMarkerWidget(
             tagData: tagData,
             isSelected: isSelected,
             onTap: onMarkerTap,
@@ -930,7 +930,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
           alignment: Alignment.center,
           width: isSelected ? 130 : 120,
           height: isSelected ? 130 : 120,
-          child: ComplexMarkerBrowseWidget(
+          child: ReusableComplexMarkerWidget(
             tagData: tagData,
             isSelected: isSelected,
             labelType: labelType,
@@ -968,7 +968,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder:
-          (context) => SlsUpdateDialog(
+          (context) => ReusableSlsUpdateDialog(
             onDownloadPressed: (sls) {
               _browseBloc.add(UpdateSlsBusiness(slsWithBusiness: sls));
             },
@@ -1680,7 +1680,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                     child: Column(
                                       children: [
                                         if (state.data.showFinder)
-                                          SlsFinderWidget(
+                                          ReusableSlsFinderWidget(
                                             isFindingSls:
                                                 state.data.isFindingSls,
                                             isFindingSlsError:
@@ -2029,7 +2029,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                       ),
 
                     // Sls with business sidebar
-                    SlsWithBusinessSidebar(
+                    ReusableSlsWithBusinessSidebar(
                       isOpen: state.data.isSlsWithBusinessSidebarOpen,
                       items: state.data.filteredSlsWithBusinessList,
                       onClose: () => _toggleSlsWithBusinessSidebar(false),

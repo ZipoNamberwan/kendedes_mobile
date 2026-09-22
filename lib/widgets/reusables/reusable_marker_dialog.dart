@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 
-class MarkerBrowseDialog extends StatelessWidget {
+class ReusableMarkerDialog extends StatelessWidget {
   final TagData tagData;
   final void Function(TagData tagData)? onMove;
 
-  const MarkerBrowseDialog({super.key, required this.tagData, this.onMove});
+  const ReusableMarkerDialog({super.key, required this.tagData, this.onMove});
 
   @override
   Widget build(BuildContext context) {

@@ -4,10 +4,10 @@ import 'package:kendedes_mobile/bloc/browse/browse_bloc.dart';
 import 'package:kendedes_mobile/bloc/browse/browse_state.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 
-class SlsUpdateDialog extends StatelessWidget {
+class ReusableSlsUpdateDialog extends StatelessWidget {
   final void Function(SlsWithBusiness item) onDownloadPressed;
 
-  const SlsUpdateDialog({super.key, required this.onDownloadPressed});
+  const ReusableSlsUpdateDialog({super.key, required this.onDownloadPressed});
 
   String _valueOrDash(String? value) {
     final trimmed = value?.trim();

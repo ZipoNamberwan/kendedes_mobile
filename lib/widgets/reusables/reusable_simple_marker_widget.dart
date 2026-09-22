@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 
-class SimpleMarkerBrowseWidget extends StatelessWidget {
+class ReusableSimpleMarkerWidget extends StatelessWidget {
   final TagData tagData;
   final bool isSelected;
   final VoidCallback onTap;
   final bool isMoveMode;
 
-  const SimpleMarkerBrowseWidget({
+  const ReusableSimpleMarkerWidget({
     super.key,
     required this.tagData,
     required this.isSelected,

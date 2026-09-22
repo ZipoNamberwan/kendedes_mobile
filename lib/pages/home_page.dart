@@ -396,8 +396,8 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 14),
                   _buildMenuCard(
                     context: context,
-                    title: 'Check Hasil SE2026',
-                    subtitle: 'Cek hasil pendataan SE2026.',
+                    title: 'Pindah Tagging Hasil SE2026',
+                    subtitle: 'Menu untuk memindahkan tagging hasil SE2026 yang telah dilakukan.',
                     icon: Icons.fact_check_rounded,
                     iconColor: Colors.teal,
                     onTap: () {

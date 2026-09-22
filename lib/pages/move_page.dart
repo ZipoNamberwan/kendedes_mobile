@@ -7,8 +7,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:kendedes_mobile/bloc/move/move_bloc.dart';
 import 'package:kendedes_mobile/bloc/move/move_event.dart';
 import 'package:kendedes_mobile/bloc/move/move_state.dart';
-import 'package:kendedes_mobile/bloc/polygon/polygon_event.dart'
-    as polygonevent;
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/marker_display_strategy.dart';
 import 'package:kendedes_mobile/models/area/regency.dart';
@@ -19,26 +17,22 @@ import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
-import 'package:kendedes_mobile/models/polygon.dart' as polygonmodel;
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/browse_clustered_markers_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/browse_color_legend_dialog.dart';
 import 'package:kendedes_mobile/widgets/move_widgets/move_sidebar_widget.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/complex_marker_browse_widget.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/delete_sls_with_business_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/map_options_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/marker_browse_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/simple_marker_browse_widget.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/sls_finder_widget.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/sls_update_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/sls_with_business_sidebar.dart';
-import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_complex_marker_widget.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_delete_sls_with_business_dialog.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_map_options_dialog.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_marker_dialog.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_simple_marker_widget.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_sls_finder_widget.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_sls_update_dialog.dart';
+import 'package:kendedes_mobile/widgets/reusables/reusable_sls_with_business_sidebar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
 import 'package:kendedes_mobile/widgets/move_widgets/move_location_hint_widget.dart';
-import 'package:kendedes_mobile/widgets/polygon_sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/zoom_level_notification_dialog.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -550,11 +544,6 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
       children: [
         _buildAreaDropdownCard(data),
         const SizedBox(height: 10),
-        // _buildSaveCheckbox(
-        //   value: data.isSaveToLocalDbByArea,
-        //   onChanged: (value) {},
-        //   gradientColors: const [Colors.blue, Colors.indigo],
-        // ),
         const SizedBox(height: 6),
         _buildPrimaryActionButton(
           label: 'Load Hasil SE2026',
@@ -570,23 +559,6 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
     );
   }
 
-  void _showPolygonDeleteConfirmationDialog(
-    polygonmodel.Polygon polygon,
-    bool isDeletingPolygon,
-  ) async {
-    await showDialog(
-      context: context,
-      builder:
-          (context) => DeletePolygonDialog(
-            polygon: polygon,
-            isDeletingPolygon: isDeletingPolygon,
-            onConfirm: () {
-              _moveBloc.add(DeletePolygon(polygon: polygon));
-            },
-          ),
-    );
-  }
-
   void _showSlsWithBusinessDeleteConfirmationDialog(
     SlsWithBusiness item,
     bool isDeleting,
@@ -594,7 +566,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (context) {
-        return DeleteSlsWithBusinessDialog(
+        return ReusableDeleteSlsWithBusinessDialog(
           slsWithBusiness: item,
           isDeleting: isDeleting,
           onConfirm: () {
@@ -624,7 +596,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder:
-          (context) => MapOptionsDialog(
+          (context) => ReusableMapOptionsDialog(
             mapTypes: MapType.getMapTypes(),
             selectedMapType: selectedMapType,
             selectedLabelType: selectedLabelType,
@@ -639,15 +611,6 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
 
   void _toggleSlsWithBusinessSidebar(bool isOpen) {
     _moveBloc.add(SetSlsWithBusinessSidebarOpen(isOpen));
-  }
-
-  void _showColorLegendDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return BrowseColorLegendDialog();
-      },
-    );
   }
 
   Future<void> _showLongPressMenu(
@@ -713,7 +676,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder:
-          (context) => MarkerBrowseDialog(
+          (context) => ReusableMarkerDialog(
             tagData: tagData,
             onMove: (tagData) {
               _moveBloc.add(StartMoveMode(tagData: tagData));
@@ -835,7 +798,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
           alignment: Alignment.center,
           width: isSelected ? 28 : 20,
           height: isSelected ? 28 : 20,
-          child: SimpleMarkerBrowseWidget(
+          child: ReusableSimpleMarkerWidget(
             tagData: tagData,
             isSelected: isSelected,
             onTap: onMarkerTap,
@@ -848,7 +811,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
           alignment: Alignment.center,
           width: isSelected ? 130 : 120,
           height: isSelected ? 130 : 120,
-          child: ComplexMarkerBrowseWidget(
+          child: ReusableComplexMarkerWidget(
             tagData: tagData,
             isSelected: isSelected,
             labelType: labelType,
@@ -886,7 +849,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder:
-          (context) => SlsUpdateDialog(
+          (context) => ReusableSlsUpdateDialog(
             onDownloadPressed: (sls) {
               _moveBloc.add(UpdateSlsBusiness(slsWithBusiness: sls));
             },
@@ -1413,16 +1376,27 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
 
                           const SizedBox(height: 12),
 
-                          // Polygon button
+                          // Downloaded SLS list button
                           _buildActionButton(
-                            icon: Icons.pentagon_outlined,
-                            iconColor: Colors.purple.shade600,
+                            icon: Icons.list_rounded,
+                            iconColor: Colors.blue.shade700,
                             onPressed: () {
-                              _togglePolygonSidebar(true);
+                              _toggleSlsWithBusinessSidebar(true);
                             },
                           ),
 
                           const SizedBox(height: 12),
+
+                          // // Polygon button
+                          // _buildActionButton(
+                          //   icon: Icons.pentagon_outlined,
+                          //   iconColor: Colors.purple.shade600,
+                          //   onPressed: () {
+                          //     _togglePolygonSidebar(true);
+                          //   },
+                          // ),
+
+                          // const SizedBox(height: 12),
 
                           // Clear selection button
                           if (state.data.selectedBusinesses.isNotEmpty) ...[
@@ -1538,54 +1512,6 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          // Color Legend Button
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: _showColorLegendDialog,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.palette,
-                                        size: 12,
-                                        color: Colors.purple.shade600,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Legenda',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.grey.shade800,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
                           // Sls with business needs update warning button
                           if (state
                               .data
@@ -1708,7 +1634,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                                       child: Column(
                                         children: [
                                           if (state.data.showFinder)
-                                            SlsFinderWidget(
+                                            ReusableSlsFinderWidget(
                                               isFindingSls:
                                                   state.data.isFindingSls,
                                               isFindingSlsError:
@@ -1926,32 +1852,6 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                                           ),
                                         ),
                                         const SizedBox(width: 6),
-                                        ...[
-                                          SizedBox(
-                                            width: 36,
-                                            height: 36,
-                                            child: Material(
-                                              color: Colors.transparent,
-                                              child: InkWell(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                onTap: () {
-                                                  _toggleSlsWithBusinessSidebar(
-                                                    true,
-                                                  );
-                                                },
-                                                child: Center(
-                                                  child: Icon(
-                                                    Icons.download_done_rounded,
-                                                    color: Colors.blue.shade700,
-                                                    size: 19,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 4),
-                                        ],
                                         SizedBox(
                                           width: 36,
                                           height: 36,
@@ -2017,7 +1917,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                       ),
 
                     // Sls with business sidebar
-                    SlsWithBusinessSidebar(
+                    ReusableSlsWithBusinessSidebar(
                       isOpen: state.data.isSlsWithBusinessSidebarOpen,
                       items: state.data.filteredSlsWithBusinessList,
                       onClose: () => _toggleSlsWithBusinessSidebar(false),
@@ -2049,24 +1949,6 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
 
                     // Business Sidebar
                     const MoveSidebarWidget(),
-
-                    // Polygon sidebar
-                    PolygonSidebarWidget(
-                      dataId: state.data.currentUser?.id ?? '',
-                      pairType: polygonevent.PolygonPairType.user,
-                      isPolygonSideBarOpen: state.data.isPolygonSideBarOpen,
-                      polygons: state.data.polygons,
-                      onClose: () => _togglePolygonSidebar(false),
-                      onSelect:
-                          (polygon) =>
-                              _moveBloc.add(SelectPolygon(polygon: polygon)),
-                      onUpdate: () => _moveBloc.add(UpdatePolygon()),
-                      onDelete:
-                          (polygon) => _showPolygonDeleteConfirmationDialog(
-                            polygon,
-                            state.data.isDeletingPolygon,
-                          ),
-                    ),
                   ],
                 );
               },

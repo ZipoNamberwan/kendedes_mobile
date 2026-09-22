@@ -15,6 +15,7 @@ import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/requested_area.dart';
@@ -29,6 +30,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
   BrowseBloc() : super(InitializingStarted(message: 'Memuat data...')) {
     on<Initialize>((event, emit) async {
+      emit(InitializingStarted(message: 'Memuat data...'));
       try {
         final User currentUser = AuthRepository().getUser();
 
@@ -412,6 +414,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             sls: slsWithPolygon,
             businessCount: businesses.length,
             user: state.data.currentUser!,
+            interactionMode: InteractionMode.browse,
           );
           final slsWithBusinessCreated = await browseDbRepository
               .createSlsWithBusiness(slsWithBusiness);
@@ -517,9 +520,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                   : [];
 
           if (businesses.isEmpty) {
-            final remainingRefreshingIds = state.data.refreshingSlsIds
-                .where((id) => id != event.slsWithBusiness.id)
-                .toList();
+            final remainingRefreshingIds =
+                state.data.refreshingSlsIds
+                    .where((id) => id != event.slsWithBusiness.id)
+                    .toList();
             emit(
               NoBusinessInsideBounds(
                 message:
@@ -596,8 +600,11 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             sls: slsWithPolygon,
             businessCount: businesses.length,
             user: state.data.currentUser!,
+            interactionMode: event.slsWithBusiness.interactionMode,
           );
-          await browseDbRepository.updateSlsWithBusiness(updatedSlsWithBusiness);
+          await browseDbRepository.updateSlsWithBusiness(
+            updatedSlsWithBusiness,
+          );
 
           // 5. Merge businesses, polygons, and slsWithBusinessList for state
           final mergedBusinesses = List.of(updatedBusinesses);
@@ -612,29 +619,30 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                   ? [...updatedPolygons, updatedPolygon]
                   : updatedPolygons;
 
-          final updatedSlsWithBusinessList = state.data.slsWithBusinessList
-              .map(
-                (item) =>
-                    item.id == updatedSlsWithBusiness.id
-                        ? updatedSlsWithBusiness
-                        : item,
-              )
-              .toList();
+          final updatedSlsWithBusinessList =
+              state.data.slsWithBusinessList
+                  .map(
+                    (item) =>
+                        item.id == updatedSlsWithBusiness.id
+                            ? updatedSlsWithBusiness
+                            : item,
+                  )
+                  .toList();
 
-          final updatedFilteredSlsWithBusinessList = state
-              .data
-              .filteredSlsWithBusinessList
-              .map(
-                (item) =>
-                    item.id == updatedSlsWithBusiness.id
-                        ? updatedSlsWithBusiness
-                        : item,
-              )
-              .toList();
+          final updatedFilteredSlsWithBusinessList =
+              state.data.filteredSlsWithBusinessList
+                  .map(
+                    (item) =>
+                        item.id == updatedSlsWithBusiness.id
+                            ? updatedSlsWithBusiness
+                            : item,
+                  )
+                  .toList();
 
-          final remainingRefreshingIds = state.data.refreshingSlsIds
-              .where((id) => id != event.slsWithBusiness.id)
-              .toList();
+          final remainingRefreshingIds =
+              state.data.refreshingSlsIds
+                  .where((id) => id != event.slsWithBusiness.id)
+                  .toList();
 
           emit(
             BusinessBySlsSuccess(
@@ -649,8 +657,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                 slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
                 polygons: finalPolygons,
                 slsWithBusinessList: updatedSlsWithBusinessList,
-                filteredSlsWithBusinessList:
-                    updatedFilteredSlsWithBusinessList,
+                filteredSlsWithBusinessList: updatedFilteredSlsWithBusinessList,
               ),
             ),
           );
@@ -658,9 +665,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           add(const ResetAllFilter());
         },
         onLoginExpired: (e) {
-          final remainingRefreshingIds = state.data.refreshingSlsIds
-              .where((id) => id != event.slsWithBusiness.id)
-              .toList();
+          final remainingRefreshingIds =
+              state.data.refreshingSlsIds
+                  .where((id) => id != event.slsWithBusiness.id)
+                  .toList();
           emit(
             TokenExpired(
               data: state.data.copyWith(
@@ -672,9 +680,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           );
         },
         onDataProviderError: (e) {
-          final remainingRefreshingIds = state.data.refreshingSlsIds
-              .where((id) => id != event.slsWithBusiness.id)
-              .toList();
+          final remainingRefreshingIds =
+              state.data.refreshingSlsIds
+                  .where((id) => id != event.slsWithBusiness.id)
+                  .toList();
           emit(
             BusinessBySlsFailed(
               errorMessage: e.message,
@@ -687,9 +696,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           );
         },
         onOtherError: (e) {
-          final remainingRefreshingIds = state.data.refreshingSlsIds
-              .where((id) => id != event.slsWithBusiness.id)
-              .toList();
+          final remainingRefreshingIds =
+              state.data.refreshingSlsIds
+                  .where((id) => id != event.slsWithBusiness.id)
+                  .toList();
           emit(
             BusinessBySlsFailed(
               errorMessage: e.toString(),
@@ -1304,6 +1314,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                         sls: slsWithBusiness.sls,
                         businessCount: needUpdateMap[slsWithBusiness.sls.id]!,
                         user: slsWithBusiness.user,
+                        interactionMode: slsWithBusiness.interactionMode,
                       ),
                     )
                     .toList();
@@ -1422,6 +1433,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             sls: slsWithPolygon,
             businessCount: businesses.length,
             user: event.slsWithBusiness.user,
+            interactionMode: event.slsWithBusiness.interactionMode,
           );
           await browseDbRepository.updateSlsWithBusiness(slsWithBusiness);
 

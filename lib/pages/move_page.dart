@@ -507,39 +507,7 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
       ],
     );
   }
-
-  Widget _buildLoadSegment({required IconData icon, required String label}) {
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.blue.shade300, width: 1.5),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.blue.shade700, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.blue.shade700,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
+  
   void _showPolygonDeleteConfirmationDialog(
     polygonmodel.Polygon polygon,
     bool isDeletingPolygon,
@@ -1860,11 +1828,8 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                             const SearchSlsWithBusiness(reset: true),
                           ),
                       onItemTap: (item) {
-                        if (item.sls.polygon != null) {
-                          _moveBloc.add(
-                            SelectPolygon(polygon: item.sls.polygon!),
-                          );
-                        }
+                        _toggleSlsWithBusinessSidebar(false);
+                        _moveBloc.add(GetBusinessByArea(sls: item.sls));
                       },
                       onDeleteTap: (item) {
                         _showSlsWithBusinessDeleteConfirmationDialog(

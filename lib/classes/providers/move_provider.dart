@@ -56,7 +56,7 @@ class MoveProvider {
     List<Map<String, dynamic>> slsWithBusinessData,
   ) async {
     final response = await _dioService.dio.post(
-      '/v2/business-update-checker',
+      '/business-update-checker/move-mode',
       data: slsWithBusinessData,
     );
     return List<Map<String, dynamic>>.from(response.data['data']);

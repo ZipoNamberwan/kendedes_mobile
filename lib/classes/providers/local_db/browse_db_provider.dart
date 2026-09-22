@@ -71,8 +71,8 @@ class BrowseDbProvider {
   }) async {
     return await _dbProvider.db.query(
       'sls_with_business',
-      where: 'user_id = ?',
-      whereArgs: [currentUserId],
+      where: 'user_id = ? AND interaction_mode = ?',
+      whereArgs: [currentUserId, InteractionMode.browse.key],
       orderBy: 'sls_long_code ASC',
     );
   }
@@ -203,8 +203,8 @@ class BrowseDbProvider {
   ) async {
     final result = await _dbProvider.db.query(
       'sls_with_business',
-      where: 'sls_id = ? AND user_id = ?',
-      whereArgs: [slsId, userId],
+      where: 'sls_id = ? AND user_id = ? AND interaction_mode = ?',
+      whereArgs: [slsId, userId, InteractionMode.browse.key],
       limit: 1,
     );
 

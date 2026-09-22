@@ -10,7 +10,7 @@ class InteractionMode {
   static const browse = InteractionMode._('browse', 'Mode Jelajah');
   static const move = InteractionMode._('move', 'Mode Pindah');
 
-  static const values = [tag, browse];
+  static const values = [tag, browse, move];
 
   static InteractionMode? fromKey(String key) {
     return values.where((item) => item.key == key).firstOrNull;

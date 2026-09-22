@@ -14,6 +14,7 @@ import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
@@ -244,6 +245,7 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
             sls: slsWithPolygon,
             businessCount: businesses.length,
             user: state.data.currentUser!,
+            interactionMode: InteractionMode.move,
           );
           final slsWithBusinessCreated = await moveDbRepository
               .createSlsWithBusiness(slsWithBusiness);
@@ -415,6 +417,7 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
             sls: slsWithPolygon,
             businessCount: businesses.length,
             user: state.data.currentUser!,
+            interactionMode: event.slsWithBusiness.interactionMode,
           );
           await moveDbRepository.updateSlsWithBusiness(updatedSlsWithBusiness);
 
@@ -1089,6 +1092,7 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
                         sls: slsWithBusiness.sls,
                         businessCount: needUpdateMap[slsWithBusiness.sls.id]!,
                         user: slsWithBusiness.user,
+                        interactionMode: slsWithBusiness.interactionMode,
                       ),
                     )
                     .toList();
@@ -1207,6 +1211,7 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
             sls: slsWithPolygon,
             businessCount: businesses.length,
             user: event.slsWithBusiness.user,
+            interactionMode: event.slsWithBusiness.interactionMode,
           );
           await moveDbRepository.updateSlsWithBusiness(slsWithBusiness);
 

@@ -8,6 +8,7 @@ class InteractionMode {
 
   static const tag = InteractionMode._('tag', 'Mode Tagging');
   static const browse = InteractionMode._('browse', 'Mode Jelajah');
+  static const move = InteractionMode._('move', 'Mode Pindah');
 
   static const values = [tag, browse];
 

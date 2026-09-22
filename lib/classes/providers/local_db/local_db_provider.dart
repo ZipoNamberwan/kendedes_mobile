@@ -137,9 +137,10 @@ class LocalDbProvider {
       regency_name TEXT,
       id_sbr TEXT,
       original_area TEXT,
+      can_move INTEGER,
+      building_number TEXT,
       FOREIGN KEY(project_id) REFERENCES projects(id),
-      FOREIGN KEY(user_id) REFERENCES users(id),
-      can_move INTEGER
+      FOREIGN KEY(user_id) REFERENCES users(id)
     )
   ''');
 
@@ -583,6 +584,11 @@ class LocalDbProvider {
       await db.execute('''
       ALTER TABLE tag_data
       ADD COLUMN can_move INTEGER DEFAULT 0
+    ''');
+
+      await db.execute('''
+      ALTER TABLE tag_data
+      ADD COLUMN building_number TEXT
     ''');
     }
   }

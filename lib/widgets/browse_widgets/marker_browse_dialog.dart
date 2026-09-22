@@ -93,6 +93,8 @@ class MarkerBrowseDialog extends StatelessWidget {
                         'Wilayah Berdasarkan Hasil Pencacahan',
                         tagData.originalArea ?? 'Tidak tersedia',
                       ),
+                    if (tagData.buildingNumber != null)
+                      _buildInfoRow('Nomor Bangunan', tagData.buildingNumber!),
                     if (tagData.user != null)
                       _buildInfoRow('Ditagging oleh', tagData.user!.firstname),
                     if (tagData.survey != null)

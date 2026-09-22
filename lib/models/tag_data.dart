@@ -47,6 +47,9 @@ class TagData {
   // Move attributes (if any)
   final bool canMove;
 
+  // Additional attributes
+  final String? buildingNumber;
+
   TagData({
     required this.id,
     required this.positionLat,
@@ -83,6 +86,7 @@ class TagData {
     // Area
     this.sls,
     this.canMove = false,
+    this.buildingNumber,
   });
 
   TagData copyWith({
@@ -115,6 +119,7 @@ class TagData {
     String? originalArea,
     Sls? sls,
     bool? canMove,
+    String? buildingNumber,
   }) {
     return TagData(
       id: id ?? this.id,
@@ -146,6 +151,7 @@ class TagData {
       originalArea: originalArea ?? this.originalArea,
       sls: sls ?? this.sls,
       canMove: canMove ?? this.canMove,
+      buildingNumber: buildingNumber ?? this.buildingNumber,
     );
   }
 
@@ -321,6 +327,7 @@ class TagData {
       'original_area': originalArea,
 
       'can_move': canMove ? 1 : 0,
+      'building_number': buildingNumber,
     };
   }
 
@@ -391,11 +398,11 @@ class TagData {
               : null,
       idSbr: json['idsbr'] as String?,
       originalArea: json['original_area'] as String?,
-
       canMove:
           json['can_move'] == true ||
           json['can_move'] == 1 ||
           json['can_move'] == '1',
+      buildingNumber: json['building_number'] as String?,
     );
   }
 
@@ -447,6 +454,7 @@ class TagData {
       idSbr: map['id_sbr'] as String?,
       originalArea: map['original_area'] as String?,
       canMove: map['can_move'] == 1,
+      buildingNumber: map['building_number'] as String?,
     );
   }
 

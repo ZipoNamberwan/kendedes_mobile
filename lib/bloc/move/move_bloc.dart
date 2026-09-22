@@ -157,6 +157,9 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               event.sls.id,
               currentUserId,
             );
+            final localPolygon = await polygonDbRepository.getPolygonById(
+              event.sls.id,
+            );
 
             emit(
               BusinessBySlsSuccess(
@@ -168,6 +171,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
                   isBusinessBySlsLoading: false,
                   businesses: localBusinesses,
                   slsFilterOptions: _getSlsFilterOptions(localBusinesses),
+                  currentSlsPolygon: localPolygon,
+                  clearCurrentSlsPolygon: localPolygon == null,
                 ),
               ),
             );
@@ -257,6 +262,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
                     pairAdded
                         ? [...state.data.polygons, updatedPolygon!]
                         : state.data.polygons,
+                currentSlsPolygon: updatedPolygon,
+                clearCurrentSlsPolygon: updatedPolygon == null,
                 slsWithBusinessList:
                     slsWithBusinessCreated
                         ? [...state.data.slsWithBusinessList, slsWithBusiness]
@@ -453,6 +460,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
                 businesses: businesses,
                 slsFilterOptions: _getSlsFilterOptions(businesses),
                 polygons: finalPolygons,
+                currentSlsPolygon: updatedPolygon,
+                clearCurrentSlsPolygon: updatedPolygon == null,
                 slsWithBusinessList: updatedSlsWithBusinessList,
                 filteredSlsWithBusinessList:
                     updatedFilteredSlsWithBusinessList,
@@ -831,6 +840,11 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               )
               .toList();
 
+      final deletedPolygonId =
+          event.slsWithBusiness.sls.polygon?.id ?? event.slsWithBusiness.sls.id;
+      final shouldClearCurrentPolygon =
+          state.data.currentSlsPolygon?.id == deletedPolygonId;
+
       emit(
         SlsWithBusinessDeleted(
           data: state.data.copyWith(
@@ -839,6 +853,7 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
             polygons: updatedPolygons,
             isDeletingSlsWithBusiness: false,
             businesses: updatedBusinesses,
+            clearCurrentSlsPolygon: shouldClearCurrentPolygon,
           ),
         ),
       );
@@ -1295,6 +1310,8 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
                 businesses: businesses,
                 slsFilterOptions: _getSlsFilterOptions(businesses),
                 polygons: existingPolygonsState,
+                currentSlsPolygon: updatedPolygon,
+                clearCurrentSlsPolygon: updatedPolygon == null,
                 slsWithBusinessList: existingSlsWithBusinessState,
                 filteredSlsWithBusinessList: existingSlsWithBusinessState,
               ),

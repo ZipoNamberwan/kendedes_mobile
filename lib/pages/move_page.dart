@@ -983,25 +983,21 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                           userAgentPackageName: 'com.example.kendedes_mobile',
                         ),
 
-                        // SLS Polygon layer
+                        // SLS Polygon layer (only the currently loaded SLS is shown)
                         PolygonLayer(
                           polygons:
-                              state.data.polygons
-                                  .where(
-                                    (polygonData) =>
-                                        polygonData.type.name.toLowerCase() ==
-                                        'sls',
-                                  )
-                                  .map(
-                                    (polygonData) => Polygon(
-                                      points: polygonData.points,
+                              state.data.currentSlsPolygon != null
+                                  ? [
+                                    Polygon(
+                                      points:
+                                          state.data.currentSlsPolygon!.points,
                                       color: Colors.purple.withValues(
                                         alpha: 0.05,
                                       ),
                                       borderStrokeWidth: 2,
                                       borderColor: Colors.purple,
                                       label:
-                                          '${polygonData.longCode}\n${polygonData.fullName}',
+                                          '${state.data.currentSlsPolygon!.longCode}\n${state.data.currentSlsPolygon!.fullName}',
                                       labelStyle: const TextStyle(
                                         color: Colors.black87,
                                         fontSize: 12,
@@ -1010,8 +1006,8 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                                       labelPlacement:
                                           PolygonLabelPlacement.centroid,
                                     ),
-                                  )
-                                  .toList(),
+                                  ]
+                                  : <Polygon>[],
                         ),
 
                         // Village Polygon layer
@@ -1824,31 +1820,6 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
                                   if (state
                                       .data
                                       .isLoadBusinessContainerExpanded) ...[
-                                    const SizedBox(height: 10),
-
-                                    // Load mode tab (wrapped in a container)
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          _buildLoadSegment(
-                                            icon: Icons.map_rounded,
-                                            label: 'By SLS',
-                                          ),
-                                          const SizedBox(width: 10),
-                                          _buildLoadSegment(
-                                            icon:
-                                                Icons
-                                                    .center_focus_strong_rounded,
-                                            label: 'By Layar',
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                     const SizedBox(height: 8),
                                     _buildAreaContent(state.data),
                                   ],

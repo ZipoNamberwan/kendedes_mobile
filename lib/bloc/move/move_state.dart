@@ -342,6 +342,8 @@ class MoveStateData {
   final List<Polygon> polygons;
   final bool isLoadingPolygon;
   final bool isDeletingPolygon;
+  // The single SLS polygon currently drawn on the map (one area/sls at a time)
+  final Polygon? currentSlsPolygon;
 
   // Filter attribute
   final String? searchQuery;
@@ -418,6 +420,7 @@ class MoveStateData {
     required this.polygons,
     required this.isLoadingPolygon,
     required this.isDeletingPolygon,
+    this.currentSlsPolygon,
 
     this.searchQuery,
     this.selectedSlsFilter,
@@ -496,6 +499,8 @@ class MoveStateData {
     List<Polygon>? polygons,
     bool? isLoadingPolygon,
     bool? isDeletingPolygon,
+    Polygon? currentSlsPolygon,
+    bool? clearCurrentSlsPolygon,
 
     String? searchQuery,
     List<Sls>? slsFilterOptions,
@@ -599,6 +604,10 @@ class MoveStateData {
       polygons: polygons ?? this.polygons,
       isLoadingPolygon: isLoadingPolygon ?? this.isLoadingPolygon,
       isDeletingPolygon: isDeletingPolygon ?? this.isDeletingPolygon,
+      currentSlsPolygon:
+          (clearCurrentSlsPolygon ?? false)
+              ? null
+              : currentSlsPolygon ?? this.currentSlsPolygon,
 
       searchQuery:
           resetAllFilter ?? false

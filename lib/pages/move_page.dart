@@ -4,11 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:kendedes_mobile/bloc/browse/browse_bloc.dart';
-import 'package:kendedes_mobile/bloc/browse/browse_event.dart';
-import 'package:kendedes_mobile/bloc/browse/browse_state.dart';
-import 'package:kendedes_mobile/bloc/polygon/polygon_event.dart'
-    as polygonevent;
+import 'package:kendedes_mobile/bloc/move/move_bloc.dart';
+import 'package:kendedes_mobile/bloc/move/move_event.dart';
+import 'package:kendedes_mobile/bloc/move/move_state.dart';
 import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/marker_display_strategy.dart';
 import 'package:kendedes_mobile/models/area/regency.dart';
@@ -19,11 +17,9 @@ import 'package:kendedes_mobile/models/label_type.dart';
 import 'package:kendedes_mobile/models/map_type.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
-import 'package:kendedes_mobile/models/polygon.dart' as polygonmodel;
 import 'package:kendedes_mobile/pages/login_page.dart';
 import 'package:kendedes_mobile/widgets/browse_widgets/browse_clustered_markers_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/browse_color_legend_dialog.dart';
-import 'package:kendedes_mobile/widgets/browse_widgets/browse_sidebar_widget.dart';
+import 'package:kendedes_mobile/widgets/move_widgets/move_sidebar_widget.dart';
 import 'package:kendedes_mobile/widgets/reusables/reusable_complex_marker_widget.dart';
 import 'package:kendedes_mobile/widgets/reusables/reusable_delete_sls_with_business_dialog.dart';
 import 'package:kendedes_mobile/widgets/reusables/reusable_map_options_dialog.dart';
@@ -32,39 +28,35 @@ import 'package:kendedes_mobile/widgets/reusables/reusable_simple_marker_widget.
 import 'package:kendedes_mobile/widgets/reusables/reusable_sls_finder_widget.dart';
 import 'package:kendedes_mobile/widgets/reusables/reusable_sls_update_dialog.dart';
 import 'package:kendedes_mobile/widgets/reusables/reusable_sls_with_business_sidebar.dart';
-import 'package:kendedes_mobile/widgets/delete_polygon_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
-import 'package:kendedes_mobile/widgets/polygon_sidebar_widget.dart';
+import 'package:kendedes_mobile/widgets/move_widgets/move_location_hint_widget.dart';
 import 'package:kendedes_mobile/widgets/zoom_level_notification_dialog.dart';
 import 'package:latlong2/latlong.dart';
 
-class BrowsePage extends StatefulWidget {
-  const BrowsePage({super.key});
+class MovePage extends StatefulWidget {
+  const MovePage({super.key});
 
   @override
-  State<BrowsePage> createState() => _BrowsePageState();
+  State<MovePage> createState() => _MovePageState();
 }
 
-class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
+class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
   late final MapController _mapController;
-  late BrowseBloc _browseBloc;
+  late MoveBloc _moveBloc;
   late AnimationController _rippleController;
   late Animation<double> _rippleAnimation;
   late AnimationController _warningPulseController;
   late Animation<double> _warningPulseAnimation;
-
-  bool _confirmToZoom = false;
-  bool _forceGetTaggingInsideBounds = false;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
 
-    _browseBloc = context.read<BrowseBloc>()..add(Initialize());
+    _moveBloc = context.read<MoveBloc>()..add(Initialize());
 
     _rippleController = AnimationController(
       duration: const Duration(seconds: 2),
@@ -92,7 +84,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
         ),
       ).listen((Position position) {
         final newLocation = LatLng(position.latitude, position.longitude);
-        _browseBloc.add(UpdateCurrentLocation(newPosition: newLocation));
+        _moveBloc.add(UpdateCurrentLocation(newPosition: newLocation));
       });
     } catch (e) {
       CustomSnackBar.showError(
@@ -111,39 +103,17 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
   }
 
   void _afterInitSuccess() {
-    _browseBloc.add(GetCurrentLocation());
+    _moveBloc.add(GetCurrentLocation());
 
     _mapController.mapEventStream.listen((event) {
       if (event is MapEventMove) {
-        _browseBloc.add(UpdateZoom(zoomLevel: event.camera.zoom));
+        _moveBloc.add(UpdateZoom(zoomLevel: event.camera.zoom));
       }
 
       if (event is MapEventRotate) {
-        _browseBloc.add(UpdateRotation(rotation: event.camera.rotation));
-      }
-
-      _logCurrentBounds();
-
-      if (event is MapEventMove) {
-        if (_confirmToZoom | _forceGetTaggingInsideBounds) {
-          _confirmToZoom = false;
-          _forceGetTaggingInsideBounds = false;
-          _getBusinessInsideBounds();
-          return;
-        }
+        _moveBloc.add(UpdateRotation(rotation: event.camera.rotation));
       }
     });
-  }
-
-  void _getBusinessInsideBounds() {
-    _browseBloc.add(GetBusinessInsideBounds());
-  }
-
-  void _logCurrentBounds() {
-    final bounds = _mapController.camera.visibleBounds;
-    _browseBloc.add(
-      UpdateVisibleMapBounds(sw: bounds.southWest, ne: bounds.northEast),
-    );
   }
 
   Widget _buildDropdown<T>({
@@ -284,7 +254,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAreaDropdownCard(BrowseStateData data) {
+  Widget _buildAreaDropdownCard(MoveStateData data) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -299,10 +269,10 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                 displayText:
                     (regency) => '[${regency.shortCode}] ${regency.name}',
                 onChanged: (value) {
-                  _browseBloc.add(SelectRegency(regency: value));
+                  _moveBloc.add(SelectRegency(regency: value));
                 },
                 onClear: () {
-                  _browseBloc.add(const ClearSelectedRegency());
+                  _moveBloc.add(const ClearSelectedRegency());
                 },
               ),
             ),
@@ -317,10 +287,10 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                     (subdistrict) =>
                         '[${subdistrict.shortCode}] ${subdistrict.name}',
                 onChanged: (value) {
-                  _browseBloc.add(SelectSubdistrict(subdistrict: value));
+                  _moveBloc.add(SelectSubdistrict(subdistrict: value));
                 },
                 onClear: () {
-                  _browseBloc.add(const ClearSelectedSubdistrict());
+                  _moveBloc.add(const ClearSelectedSubdistrict());
                 },
               ),
             ),
@@ -338,10 +308,10 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                 displayText:
                     (village) => '[${village.shortCode}] ${village.name}',
                 onChanged: (value) {
-                  _browseBloc.add(SelectVillage(village: value));
+                  _moveBloc.add(SelectVillage(village: value));
                 },
                 onClear: () {
-                  _browseBloc.add(const ClearSelectedVillage());
+                  _moveBloc.add(const ClearSelectedVillage());
                 },
               ),
             ),
@@ -354,10 +324,10 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                 isLoading: data.isLoadingSls,
                 displayText: (sls) => '[${sls.shortCode}] ${sls.name}',
                 onChanged: (value) {
-                  _browseBloc.add(SelectSls(sls: value));
+                  _moveBloc.add(SelectSls(sls: value));
                 },
                 onClear: () {
-                  _browseBloc.add(const ClearSelectedSls());
+                  _moveBloc.add(const ClearSelectedSls());
                 },
               ),
             ),
@@ -507,150 +477,57 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     );
   }
 
-  // Widget _buildSaveCheckbox({
-  //   required bool value,
-  //   required ValueChanged<bool?> onChanged,
-  //   required List<Color> gradientColors,
-  // }) {
-  //   return CheckboxListTile(
-  //     value: value,
-  //     onChanged: onChanged,
-  //     title: Text(
-  //       'Simpan ke database lokal',
-  //       style: TextStyle(
-  //         fontSize: 11,
-  //         fontWeight: FontWeight.w400,
-  //         color: Colors.grey.shade500,
-  //       ),
-  //     ),
-  //     activeColor: gradientColors.first.withValues(alpha: 0.7),
-  //     checkboxScaleFactor: 0.85,
-  //     side: BorderSide(color: Colors.grey.shade300, width: 1.2),
-  //     controlAffinity: ListTileControlAffinity.leading,
-  //     contentPadding: EdgeInsets.zero,
-  //     dense: true,
-  //     visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-  //   );
-  // }
-
-  Widget _buildAreaContent(BrowseStateData data) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildAreaDropdownCard(data),
-        const SizedBox(height: 10),
-        // _buildSaveCheckbox(
-        //   value: data.isSaveToLocalDbByArea,
-        //   onChanged: (value) {},
-        //   gradientColors: const [Colors.blue, Colors.indigo],
-        // ),
-        const SizedBox(height: 6),
-        _buildPrimaryActionButton(
-          label: 'Load Prelist By SLS',
-          icon: Icons.map_rounded,
-          gradientColors: const [Colors.blue, Colors.indigo],
-          isLoading: data.isBusinessBySlsLoading,
-          isEnabled: data.selectedSls != null,
-          onPressed: () {
-            _browseBloc.add(GetBusinessByArea(sls: data.selectedSls!));
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildScreenContent(BrowseStateData data) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'Muat semua prelist usaha yang terlihat di layar peta Anda. Minimum zoom level adalah ${MapConfig.minimumZoomToGetTaggingInsideBounds}.',
-          style: TextStyle(
-            color: Colors.grey.shade700,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 10),
-        // _buildSaveCheckbox(
-        //   value: data.isSaveToLocalDbByScreen,
-        //   onChanged: (value) {},
-        //   gradientColors: const [Colors.orange, Colors.deepOrange],
-        // ),
-        const SizedBox(height: 6),
-        _buildPrimaryActionButton(
-          label: 'Load Prelist di Layar',
-          icon: Icons.center_focus_strong_rounded,
-          gradientColors: const [Colors.orange, Colors.deepOrange],
-          isLoading: data.isBusinessInsideBoundsLoading,
-          onPressed: () {
-            _browseBloc.add(const GetBusinessInsideBounds());
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoadSegment({
-    required BusinessLoadMode mode,
+  Widget _buildMoveModeButton({
     required IconData icon,
     required String label,
-    required bool isSelected,
+    required Color color,
     required VoidCallback onTap,
   }) {
-    return Expanded(
+    return Container(
+      height: 64,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        gradient: LinearGradient(colors: [color, color]),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(32),
+          splashColor: Colors.white.withValues(alpha: 0.2),
+          highlightColor: Colors.white.withValues(alpha: 0.1),
           onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color:
-                  isSelected
-                      ? (mode == BusinessLoadMode.area
-                          ? Colors.blue.shade50
-                          : Colors.orange.shade50)
-                      : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color:
-                    isSelected
-                        ? (mode == BusinessLoadMode.area
-                            ? Colors.blue.shade300
-                            : Colors.orange.shade300)
-                        : Colors.transparent,
-                width: 1.5,
-              ),
-            ),
+          child: Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  color:
-                      isSelected
-                          ? (mode == BusinessLoadMode.area
-                              ? Colors.blue.shade700
-                              : Colors.orange.shade700)
-                          : Colors.grey.shade500,
-                  size: 18,
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 18),
                 ),
-                const SizedBox(width: 6),
                 Text(
                   label,
-                  style: TextStyle(
-                    color:
-                        isSelected
-                            ? (mode == BusinessLoadMode.area
-                                ? Colors.blue.shade700
-                                : Colors.orange.shade700)
-                            : Colors.grey.shade700,
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
@@ -661,20 +538,24 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     );
   }
 
-  void _showPolygonDeleteConfirmationDialog(
-    polygonmodel.Polygon polygon,
-    bool isDeletingPolygon,
-  ) async {
-    await showDialog(
-      context: context,
-      builder:
-          (context) => DeletePolygonDialog(
-            polygon: polygon,
-            isDeletingPolygon: isDeletingPolygon,
-            onConfirm: () {
-              _browseBloc.add(DeletePolygon(polygon: polygon));
-            },
-          ),
+  Widget _buildAreaContent(MoveStateData data) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildAreaDropdownCard(data),
+        const SizedBox(height: 10),
+        const SizedBox(height: 6),
+        _buildPrimaryActionButton(
+          label: 'Load Hasil SE2026',
+          icon: Icons.map_rounded,
+          gradientColors: const [Colors.blue, Colors.indigo],
+          isLoading: data.isBusinessBySlsLoading,
+          isEnabled: data.selectedSls != null,
+          onPressed: () {
+            _moveBloc.add(GetBusinessByArea(sls: data.selectedSls!));
+          },
+        ),
+      ],
     );
   }
 
@@ -689,7 +570,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
           slsWithBusiness: item,
           isDeleting: isDeleting,
           onConfirm: () {
-            _browseBloc.add(DeleteSlsWithBusiness(slsWithBusiness: item));
+            _moveBloc.add(DeleteSlsWithBusiness(slsWithBusiness: item));
           },
           onCancel: () {
             Navigator.of(context).pop();
@@ -701,11 +582,11 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
   }
 
   void _togglePolygonSidebar(bool isOpen) {
-    _browseBloc.add(SetPolygonSideBarOpen(isOpen));
+    _moveBloc.add(SetPolygonSideBarOpen(isOpen));
   }
 
-  void _toggleBrowseSidebar(bool isOpen) {
-    _browseBloc.add(SetBrowseSideBarOpen(isOpen));
+  void _toggleMoveSidebar(bool isOpen) {
+    _moveBloc.add(SetMoveSideBarOpen(isOpen));
   }
 
   void _showMapOptionsDialog(
@@ -720,8 +601,8 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             selectedMapType: selectedMapType,
             selectedLabelType: selectedLabelType,
             onApply: (mapType, labelType) {
-              _browseBloc.add(SelectMapType(mapType));
-              _browseBloc.add(SelectLabelType(labelType));
+              _moveBloc.add(SelectMapType(mapType));
+              _moveBloc.add(SelectLabelType(labelType));
             },
             labelTypes: LabelType.values,
           ),
@@ -729,16 +610,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
   }
 
   void _toggleSlsWithBusinessSidebar(bool isOpen) {
-    _browseBloc.add(SetSlsWithBusinessSidebarOpen(isOpen));
-  }
-
-  void _showColorLegendDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return BrowseColorLegendDialog();
-      },
-    );
+    _moveBloc.add(SetSlsWithBusinessSidebarOpen(isOpen));
   }
 
   Future<void> _showLongPressMenu(
@@ -795,10 +667,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
 
     switch (value) {
       case 'find_sls':
-        _browseBloc.add(FindSls(latLng: latlng));
-        break;
-      case 'get_business_by_point':
-        _browseBloc.add(GetBusinessByPoint(point: latlng));
+        _moveBloc.add(FindSls(latLng: latlng));
         break;
     }
   }
@@ -806,7 +675,17 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
   void _showMarkerDialog(TagData tagData) {
     showDialog(
       context: context,
-      builder: (context) => ReusableMarkerDialog(tagData: tagData),
+      builder:
+          (context) => ReusableMarkerDialog(
+            tagData: tagData,
+            onMove: (tagData) {
+              _moveBloc.add(StartMoveMode(tagData: tagData));
+              _mapController.move(
+                LatLng(tagData.positionLat, tagData.positionLng),
+                _mapController.camera.zoom,
+              );
+            },
+          ),
     );
   }
 
@@ -897,13 +776,14 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
     bool isSelected,
     String? labelType,
     double currentZoom,
-    Size mapSize,
-  ) {
+    Size mapSize, {
+    bool isMoveMode = false,
+  }) {
     void onMarkerTap() {
       _handleMarkerClick(
         tagData,
-        _browseBloc.state.data.filteredBusinesses,
-        _browseBloc.state.data.selectedBusinesses,
+        _moveBloc.state.data.filteredBusinesses,
+        _moveBloc.state.data.selectedBusinesses,
         currentZoom,
         mapSize,
       );
@@ -922,6 +802,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             tagData: tagData,
             isSelected: isSelected,
             onTap: onMarkerTap,
+            isMoveMode: isMoveMode,
           ),
         );
       default:
@@ -935,6 +816,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             isSelected: isSelected,
             labelType: labelType,
             onTap: onMarkerTap,
+            isMoveMode: isMoveMode,
           ),
         );
     }
@@ -948,7 +830,6 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             message: message,
             onYes: () {
               Navigator.of(context).pop();
-              _confirmToZoom = true;
               _mapController.move(
                 _mapController.camera.center,
                 MapConfig.minimumZoomToGetTaggingInsideBounds,
@@ -970,7 +851,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
       builder:
           (context) => ReusableSlsUpdateDialog(
             onDownloadPressed: (sls) {
-              _browseBloc.add(UpdateSlsBusiness(slsWithBusiness: sls));
+              _moveBloc.add(UpdateSlsBusiness(slsWithBusiness: sls));
             },
           ),
     );
@@ -979,7 +860,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    return BlocConsumer<BrowseBloc, BrowseState>(
+    return BlocConsumer<MoveBloc, MoveState>(
       listener: (context, state) {
         if (state is InitializingSuccess) {
           _afterInitSuccess();
@@ -1000,7 +881,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
               ),
               state.data.currentZoom,
             );
-            _toggleBrowseSidebar(false);
+            _toggleMoveSidebar(false);
           }
         } else if (state is ZoomLevelNotification) {
           _showZoomLevelNotificationDialog(state.message);
@@ -1061,6 +942,22 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             state.data.slsWithBusinessListForUpdate,
             false,
           );
+        } else if (state is MoveTagSuccess) {
+          CustomSnackBar.showSuccess(
+            context,
+            message: 'Lokasi usaha berhasil dipindahkan.',
+          );
+        } else if (state is MoveTagError) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => MessageDialog(
+                  title: 'Gagal Memindahkan Lokasi',
+                  message: state.errorMessage,
+                  type: MessageType.error,
+                  buttonText: 'Tutup',
+                ),
+          );
         }
       },
       builder: (context, state) {
@@ -1075,7 +972,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
             errorMessage: state.errorMessage,
             retryButtonText: 'Coba Lagi',
             onRetry: () {
-              _browseBloc.add(Initialize());
+              _moveBloc.add(Initialize());
             },
           );
         }
@@ -1099,6 +996,11 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                         onLongPress: (tapPosition, latlng) {
                           _showLongPressMenu(tapPosition, latlng);
                         },
+                        onTap: (tapPosition, latLng) {
+                          if (state.data.isMoveMode) {
+                            _moveBloc.add(MoveTag(newPosition: latLng));
+                          }
+                        },
                       ),
                       children: [
                         TileLayer(
@@ -1108,25 +1010,21 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                           userAgentPackageName: 'com.example.kendedes_mobile',
                         ),
 
-                        // SLS Polygon layer
+                        // SLS Polygon layer (only the currently loaded SLS is shown)
                         PolygonLayer(
                           polygons:
-                              state.data.polygons
-                                  .where(
-                                    (polygonData) =>
-                                        polygonData.type.name.toLowerCase() ==
-                                        'sls',
-                                  )
-                                  .map(
-                                    (polygonData) => Polygon(
-                                      points: polygonData.points,
+                              state.data.currentSlsPolygon != null
+                                  ? [
+                                    Polygon(
+                                      points:
+                                          state.data.currentSlsPolygon!.points,
                                       color: Colors.purple.withValues(
                                         alpha: 0.05,
                                       ),
                                       borderStrokeWidth: 2,
                                       borderColor: Colors.purple,
                                       label:
-                                          '${polygonData.longCode}\n${polygonData.fullName}',
+                                          '${state.data.currentSlsPolygon!.longCode}\n${state.data.currentSlsPolygon!.fullName}',
                                       labelStyle: const TextStyle(
                                         color: Colors.black87,
                                         fontSize: 12,
@@ -1135,8 +1033,8 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                       labelPlacement:
                                           PolygonLabelPlacement.centroid,
                                     ),
-                                  )
-                                  .toList(),
+                                  ]
+                                  : <Polygon>[],
                         ),
 
                         // Village Polygon layer
@@ -1191,6 +1089,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                 state.data.selectedLabelType?.key,
                                 state.data.currentZoom,
                                 mapSize,
+                                isMoveMode: state.data.isMoveMode,
                               );
                             }),
 
@@ -1259,8 +1158,55 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                   ),
                                 ),
                               ),
+
+                            // Original Moved Marker
+                            if (state.data.isMoveMode &&
+                                state.data.originalMovedTag != null)
+                              _buildTagMarker(
+                                state.data.originalMovedTag!,
+                                false,
+                                state.data.selectedLabelType?.key,
+                                state.data.currentZoom,
+                                mapSize,
+                              ),
+
+                            // New Moved Marker
+                            if (state.data.isMoveMode &&
+                                state.data.newMovedTag != null)
+                              _buildTagMarker(
+                                state.data.newMovedTag!,
+                                false,
+                                state.data.selectedLabelType?.key,
+                                state.data.currentZoom,
+                                mapSize,
+                              ),
                           ],
                         ),
+
+                        if (state.data.isMoveMode &&
+                            state.data.originalMovedTag != null &&
+                            state.data.newMovedTag != null)
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                points: [
+                                  LatLng(
+                                    state.data.originalMovedTag!.positionLat,
+                                    state.data.originalMovedTag!.positionLng,
+                                  ),
+                                  LatLng(
+                                    state.data.newMovedTag!.positionLat,
+                                    state.data.newMovedTag!.positionLng,
+                                  ),
+                                ],
+                                pattern: StrokePattern.dashed(
+                                  segments: const [10, 10],
+                                ),
+                                strokeWidth: 4.0,
+                                color: Colors.orange,
+                              ),
+                            ],
+                          ),
 
                         // Scalebar
                         Scalebar(
@@ -1349,7 +1295,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Mode Jelajah',
+                                        'Pengecekan Hasil SE2026',
                                         style: TextStyle(
                                           color: Colors.white.withValues(
                                             alpha: 0.85,
@@ -1372,7 +1318,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                     color: Colors.transparent,
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(14),
-                                      onTap: () => _toggleBrowseSidebar(true),
+                                      onTap: () => _toggleMoveSidebar(true),
                                       child: const Padding(
                                         padding: EdgeInsets.all(12),
                                         child: Icon(
@@ -1430,16 +1376,27 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
 
                           const SizedBox(height: 12),
 
-                          // Polygon button
+                          // Downloaded SLS list button
                           _buildActionButton(
-                            icon: Icons.pentagon_outlined,
-                            iconColor: Colors.purple.shade600,
+                            icon: Icons.list_rounded,
+                            iconColor: Colors.blue.shade700,
                             onPressed: () {
-                              _togglePolygonSidebar(true);
+                              _toggleSlsWithBusinessSidebar(true);
                             },
                           ),
 
                           const SizedBox(height: 12),
+
+                          // // Polygon button
+                          // _buildActionButton(
+                          //   icon: Icons.pentagon_outlined,
+                          //   iconColor: Colors.purple.shade600,
+                          //   onPressed: () {
+                          //     _togglePolygonSidebar(true);
+                          //   },
+                          // ),
+
+                          // const SizedBox(height: 12),
 
                           // Clear selection button
                           if (state.data.selectedBusinesses.isNotEmpty) ...[
@@ -1447,7 +1404,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                               icon: Icons.clear_all_rounded,
                               iconColor: Colors.red,
                               onPressed:
-                                  () => _browseBloc.add(ClearBrowseSelection()),
+                                  () => _moveBloc.add(ClearMoveSelection()),
                             ),
 
                             const SizedBox(height: 12),
@@ -1459,8 +1416,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                             _buildActionButton(
                               icon: Icons.filter_alt_off_rounded,
                               iconColor: Colors.orange.shade700,
-                              onPressed:
-                                  () => _browseBloc.add(ResetAllFilter()),
+                              onPressed: () => _moveBloc.add(ResetAllFilter()),
                             ),
 
                             const SizedBox(height: 12),
@@ -1556,54 +1512,6 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          // Color Legend Button
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: _showColorLegendDialog,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.palette,
-                                        size: 12,
-                                        color: Colors.purple.shade600,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Legenda',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.grey.shade800,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
                           // Sls with business needs update warning button
                           if (state
                               .data
@@ -1658,235 +1566,292 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                       ),
                     ),
 
-                    // Bottom load business container with current location button
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: 16,
-                      child: SafeArea(
-                        top: false,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Current location button and filter warning
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 18),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  // Filter warning
-                                  Expanded(
-                                    child: Column(
-                                      children: [
-                                        if (state.data.showFinder)
-                                          ReusableSlsFinderWidget(
-                                            isFindingSls:
-                                                state.data.isFindingSls,
-                                            isFindingSlsError:
-                                                state.data.isFindingSlsError,
-                                            slsFinderErrorMessage:
-                                                state
-                                                    .data
-                                                    .slsFinderErrorMessage,
-                                            slsFinder: state.data.slsFinder,
-                                            onClose:
-                                                () => _browseBloc.add(
-                                                  const CloseSlsFinder(),
-                                                ),
-                                          ),
-                                        if (state.data.isBusinessFilterActive())
-                                          Container(
-                                            margin: const EdgeInsets.only(
-                                              top: 8,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange.shade50
-                                                  .withValues(alpha: 0.95),
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                              border: Border.all(
-                                                color: Colors.orange.shade200,
-                                                width: 1,
-                                              ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.1),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 2),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  Icons.warning_amber_rounded,
-                                                  size: 14,
-                                                  color: Colors.orange.shade700,
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Flexible(
-                                                  child: Text(
-                                                    'Filter usaha aktif, Anda mungkin tidak melihat semua usaha',
-                                                    style: TextStyle(
-                                                      color:
-                                                          Colors
-                                                              .orange
-                                                              .shade800,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  // My location button
-                                  _buildActionButton(
-                                    icon: Icons.my_location_rounded,
-                                    iconColor: Colors.blue.shade700,
-                                    isEnabled:
-                                        !state.data.isLoadingCurrentLocation,
-                                    onPressed:
-                                        () => _browseBloc.add(
-                                          const GetCurrentLocation(),
-                                        ),
-                                    child:
-                                        state.data.isLoadingCurrentLocation
-                                            ? Stack(
-                                              alignment: Alignment.center,
-                                              children: [
-                                                SizedBox(
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                        color:
-                                                            Colors
-                                                                .blue
-                                                                .shade700,
-                                                        strokeWidth: 2.5,
-                                                      ),
-                                                ),
-                                                Icon(
-                                                  Icons.my_location_rounded,
-                                                  color: Colors.blue.shade700,
-                                                  size: 14,
-                                                ),
-                                              ],
-                                            )
-                                            : Icon(
-                                              Icons.my_location_rounded,
-                                              color: Colors.blue.shade700,
-                                              size: 22,
-                                            ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                    // Move mode hint widget
+                    if (state.data.isMoveMode)
+                      const Positioned(
+                        bottom: 112,
+                        left: 0,
+                        right: 0,
+                        child: MoveLocationHintWidget(),
+                      ),
 
-                            // Load business container
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.98),
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  width: 1,
+                    // Move mode cancel/save buttons
+                    if (state.data.isMoveMode)
+                      Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 32,
+                        child: SafeArea(
+                          top: false,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _buildMoveModeButton(
+                                  icon: Icons.close,
+                                  label: 'Batal',
+                                  color: Colors.grey,
+                                  onTap: () {
+                                    _moveBloc.add(const CancelMoveMode());
+                                  },
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.12),
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.06),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
                               ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Section header with collapse toggle
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              14,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildMoveModeButton(
+                                  icon: Icons.check,
+                                  label: 'Simpan',
+                                  color: Colors.green,
+                                  onTap: () {
+                                    _moveBloc.add(const SaveMoveTag());
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    // Bottom load business container with current location button
+                    if (!state.data.isMoveMode)
+                      Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 16,
+                        child: SafeArea(
+                          top: false,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Current location button and filter warning
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 18),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    // Filter warning
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          if (state.data.showFinder)
+                                            ReusableSlsFinderWidget(
+                                              isFindingSls:
+                                                  state.data.isFindingSls,
+                                              isFindingSlsError:
+                                                  state.data.isFindingSlsError,
+                                              slsFinderErrorMessage:
+                                                  state
+                                                      .data
+                                                      .slsFinderErrorMessage,
+                                              slsFinder: state.data.slsFinder,
+                                              onClose:
+                                                  () => _moveBloc.add(
+                                                    const CloseSlsFinder(),
+                                                  ),
                                             ),
-                                            onTap:
-                                                () => _browseBloc.add(
-                                                  const ToggleLoadBusinessContainer(),
-                                                ),
-                                            child: Padding(
+                                          if (state.data
+                                              .isBusinessFilterActive())
+                                            Container(
+                                              margin: const EdgeInsets.only(
+                                                top: 8,
+                                              ),
                                               padding:
                                                   const EdgeInsets.symmetric(
+                                                    horizontal: 10,
                                                     vertical: 6,
                                                   ),
-                                              child: Row(
-                                                children: [
-                                                  Container(
-                                                    padding:
-                                                        const EdgeInsets.all(6),
-                                                    decoration: BoxDecoration(
-                                                      color:
-                                                          Colors.blue.shade100,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            10,
-                                                          ),
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.storefront_rounded,
-                                                      color:
-                                                          Colors.blue.shade700,
-                                                      size: 18,
-                                                    ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.orange.shade50
+                                                    .withValues(alpha: 0.95),
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                border: Border.all(
+                                                  color: Colors.orange.shade200,
+                                                  width: 1,
+                                                ),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withValues(alpha: 0.1),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 2),
                                                   ),
-                                                  const SizedBox(width: 10),
-                                                  Expanded(
+                                                ],
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.warning_amber_rounded,
+                                                    size: 14,
+                                                    color:
+                                                        Colors.orange.shade700,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Flexible(
                                                     child: Text(
-                                                      'Load Prelist Usaha',
+                                                      'Filter usaha aktif, Anda mungkin tidak melihat semua usaha',
                                                       style: TextStyle(
                                                         color:
                                                             Colors
-                                                                .grey
-                                                                .shade900,
-                                                        fontSize: 15,
+                                                                .orange
+                                                                .shade800,
+                                                        fontSize: 10,
                                                         fontWeight:
-                                                            FontWeight.w700,
-                                                        letterSpacing: 0.2,
+                                                            FontWeight.w500,
                                                       ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 24),
+                                    // My location button
+                                    _buildActionButton(
+                                      icon: Icons.my_location_rounded,
+                                      iconColor: Colors.blue.shade700,
+                                      isEnabled:
+                                          !state.data.isLoadingCurrentLocation,
+                                      onPressed:
+                                          () => _moveBloc.add(
+                                            const GetCurrentLocation(),
+                                          ),
+                                      child:
+                                          state.data.isLoadingCurrentLocation
+                                              ? Stack(
+                                                alignment: Alignment.center,
+                                                children: [
+                                                  SizedBox(
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          color:
+                                                              Colors
+                                                                  .blue
+                                                                  .shade700,
+                                                          strokeWidth: 2.5,
+                                                        ),
+                                                  ),
+                                                  Icon(
+                                                    Icons.my_location_rounded,
+                                                    color: Colors.blue.shade700,
+                                                    size: 14,
+                                                  ),
+                                                ],
+                                              )
+                                              : Icon(
+                                                Icons.my_location_rounded,
+                                                color: Colors.blue.shade700,
+                                                size: 22,
+                                              ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Load business container
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.98),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.12,
+                                      ),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.06,
+                                      ),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Section header with collapse toggle
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                              onTap:
+                                                  () => _moveBloc.add(
+                                                    const ToggleLoadBusinessContainer(),
+                                                  ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 6,
+                                                    ),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                            6,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            Colors
+                                                                .blue
+                                                                .shade100,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              10,
+                                                            ),
+                                                      ),
+                                                      child: Icon(
+                                                        Icons
+                                                            .storefront_rounded,
+                                                        color:
+                                                            Colors
+                                                                .blue
+                                                                .shade700,
+                                                        size: 18,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Expanded(
+                                                      child: Text(
+                                                        'Load Hasil SE2026',
+                                                        style: TextStyle(
+                                                          color:
+                                                              Colors
+                                                                  .grey
+                                                                  .shade900,
+                                                          fontSize: 15,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          letterSpacing: 0.2,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      if (state.data.loadMode ==
-                                          BusinessLoadMode.area) ...[
+                                        const SizedBox(width: 6),
                                         SizedBox(
                                           width: 36,
                                           height: 36,
@@ -1895,133 +1860,56 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                                             child: InkWell(
                                               borderRadius:
                                                   BorderRadius.circular(12),
-                                              onTap: () {
-                                                _toggleSlsWithBusinessSidebar(
-                                                  true,
-                                                );
-                                              },
+                                              onTap:
+                                                  () => _moveBloc.add(
+                                                    const ToggleLoadBusinessContainer(),
+                                                  ),
                                               child: Center(
-                                                child: Icon(
-                                                  Icons.download_done_rounded,
-                                                  color: Colors.blue.shade700,
-                                                  size: 19,
+                                                child: AnimatedRotation(
+                                                  turns:
+                                                      state
+                                                              .data
+                                                              .isLoadBusinessContainerExpanded
+                                                          ? 0
+                                                          : 0.5,
+                                                  duration: const Duration(
+                                                    milliseconds: 300,
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.expand_more_rounded,
+                                                    color: Colors.grey.shade700,
+                                                    size: 24,
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 4),
                                       ],
-                                      SizedBox(
-                                        width: 36,
-                                        height: 36,
-                                        child: Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            onTap:
-                                                () => _browseBloc.add(
-                                                  const ToggleLoadBusinessContainer(),
-                                                ),
-                                            child: Center(
-                                              child: AnimatedRotation(
-                                                turns:
-                                                    state
-                                                            .data
-                                                            .isLoadBusinessContainerExpanded
-                                                        ? 0
-                                                        : 0.5,
-                                                duration: const Duration(
-                                                  milliseconds: 300,
-                                                ),
-                                                child: Icon(
-                                                  Icons.expand_more_rounded,
-                                                  color: Colors.grey.shade700,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (state
-                                      .data
-                                      .isLoadBusinessContainerExpanded) ...[
-                                    const SizedBox(height: 10),
-
-                                    // Load mode tab (wrapped in a container)
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          _buildLoadSegment(
-                                            mode: BusinessLoadMode.area,
-                                            icon: Icons.map_rounded,
-                                            label: 'By SLS',
-                                            onTap:
-                                                () => _browseBloc.add(
-                                                  SetBusinessLoadMode(
-                                                    loadMode:
-                                                        BusinessLoadMode.area,
-                                                  ),
-                                                ),
-                                            isSelected:
-                                                state.data.loadMode ==
-                                                BusinessLoadMode.area,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          _buildLoadSegment(
-                                            mode: BusinessLoadMode.screen,
-                                            icon:
-                                                Icons
-                                                    .center_focus_strong_rounded,
-                                            label: 'By Layar',
-                                            onTap:
-                                                () => _browseBloc.add(
-                                                  SetBusinessLoadMode(
-                                                    loadMode:
-                                                        BusinessLoadMode.screen,
-                                                  ),
-                                                ),
-                                            isSelected:
-                                                state.data.loadMode ==
-                                                BusinessLoadMode.screen,
-                                          ),
-                                        ],
-                                      ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    if (state.data.loadMode ==
-                                        BusinessLoadMode.area)
-                                      _buildAreaContent(state.data)
-                                    else
-                                      _buildScreenContent(state.data),
+                                    if (state
+                                        .data
+                                        .isLoadBusinessContainerExpanded) ...[
+                                      const SizedBox(height: 8),
+                                      _buildAreaContent(state.data),
+                                    ],
                                   ],
-                                ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
                     // Sidebar overlay
                     if (state.data.isSlsWithBusinessSidebarOpen ||
                         state.data.isPolygonSideBarOpen ||
-                        state.data.isBrowseSideBarOpen)
+                        state.data.isMoveSideBarOpen)
                       GestureDetector(
                         onTap: () {
                           _toggleSlsWithBusinessSidebar(false);
                           _togglePolygonSidebar(false);
-                          _toggleBrowseSidebar(false);
+                          _toggleMoveSidebar(false);
                         },
                         child: Container(
                           color: Colors.black.withValues(alpha: 0.3),
@@ -2034,19 +1922,16 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                       items: state.data.filteredSlsWithBusinessList,
                       onClose: () => _toggleSlsWithBusinessSidebar(false),
                       onSearch:
-                          (value) => _browseBloc.add(
+                          (value) => _moveBloc.add(
                             SearchSlsWithBusiness(query: value),
                           ),
                       onClear:
-                          () => _browseBloc.add(
+                          () => _moveBloc.add(
                             const SearchSlsWithBusiness(reset: true),
                           ),
                       onItemTap: (item) {
-                        if (item.sls.polygon != null) {
-                          _browseBloc.add(
-                            SelectPolygon(polygon: item.sls.polygon!),
-                          );
-                        }
+                        _toggleSlsWithBusinessSidebar(false);
+                        _moveBloc.add(GetBusinessByArea(sls: item.sls));
                       },
                       onDeleteTap: (item) {
                         _showSlsWithBusinessDeleteConfirmationDialog(
@@ -2055,7 +1940,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                         );
                       },
                       onRefreshTap: (item) {
-                        _browseBloc.add(
+                        _moveBloc.add(
                           RefreshSlsWithBusiness(slsWithBusiness: item),
                         );
                       },
@@ -2063,25 +1948,7 @@ class _BrowsePageState extends State<BrowsePage> with TickerProviderStateMixin {
                     ),
 
                     // Business Sidebar
-                    const BrowseSidebarWidget(),
-
-                    // Polygon sidebar
-                    PolygonSidebarWidget(
-                      dataId: state.data.currentUser?.id ?? '',
-                      pairType: polygonevent.PolygonPairType.user,
-                      isPolygonSideBarOpen: state.data.isPolygonSideBarOpen,
-                      polygons: state.data.polygons,
-                      onClose: () => _togglePolygonSidebar(false),
-                      onSelect:
-                          (polygon) =>
-                              _browseBloc.add(SelectPolygon(polygon: polygon)),
-                      onUpdate: () => _browseBloc.add(UpdatePolygon()),
-                      onDelete:
-                          (polygon) => _showPolygonDeleteConfirmationDialog(
-                            polygon,
-                            state.data.isDeletingPolygon,
-                          ),
-                    ),
+                    const MoveSidebarWidget(),
                   ],
                 );
               },

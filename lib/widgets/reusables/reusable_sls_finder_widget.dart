@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 
-class SlsFinderWidget extends StatelessWidget {
+class ReusableSlsFinderWidget extends StatelessWidget {
 	final bool isFindingSls;
 	final bool isFindingSlsError;
 	final String? slsFinderErrorMessage;
 	final Sls? slsFinder;
 	final VoidCallback onClose;
 
-	const SlsFinderWidget({
+	const ReusableSlsFinderWidget({
 		super.key,
 		required this.isFindingSls,
 		required this.isFindingSlsError,

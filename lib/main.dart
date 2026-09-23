@@ -8,6 +8,7 @@ import 'package:kendedes_mobile/bloc/kbli_util/kbli_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_bloc.dart';
 import 'package:kendedes_mobile/bloc/login/login_event.dart';
 import 'package:kendedes_mobile/bloc/login/register_bloc.dart';
+import 'package:kendedes_mobile/bloc/move/move_bloc.dart';
 import 'package:kendedes_mobile/bloc/photo_util/photo_util_bloc.dart';
 import 'package:kendedes_mobile/bloc/polygon/polygon_bloc.dart';
 import 'package:kendedes_mobile/bloc/project/project_bloc.dart';
@@ -22,11 +23,13 @@ import 'package:kendedes_mobile/classes/repositories/browse_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/area_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/browse_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/local_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/move_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/organization_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/photo_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/polygon_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/project_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/tagging_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/move_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/polygon_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/project_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/tagging_repository.dart';
@@ -142,6 +145,8 @@ Future<void> _initializeApp() async {
   await PhotoDbRepository().init();
   await InfoDbRepository().init();
   await InfoRepository().init();
+  await MoveRepository().init();
+  await MoveDbRepository().init();
 }
 
 class MyApp extends StatefulWidget {
@@ -162,6 +167,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late PhotoUtilBloc _photoUtilBloc;
   late KbliBloc _kbliBloc;
   late InfoBloc _infoBloc;
+  late MoveBloc _moveBloc;
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -179,6 +185,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _photoUtilBloc = PhotoUtilBloc();
     _kbliBloc = KbliBloc();
     _infoBloc = InfoBloc();
+    _moveBloc = MoveBloc();
 
     // Check once on cold start
     _checkForUpdate();
@@ -265,6 +272,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         BlocProvider<PhotoUtilBloc>(create: (context) => _photoUtilBloc),
         BlocProvider<KbliBloc>(create: (context) => _kbliBloc),
         BlocProvider<InfoBloc>(create: (context) => _infoBloc),
+        BlocProvider<MoveBloc>(create: (context) => _moveBloc),
       ],
       child: BlocListener<VersionBloc, VersionState>(
         listener: (context, versionState) {

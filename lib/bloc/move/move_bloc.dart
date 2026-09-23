@@ -2,14 +2,13 @@ import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:kendedes_mobile/bloc/browse/browse_event.dart';
-import 'package:kendedes_mobile/bloc/browse/browse_state.dart';
+import 'package:kendedes_mobile/bloc/move/move_event.dart';
+import 'package:kendedes_mobile/bloc/move/move_state.dart';
 import 'package:kendedes_mobile/classes/api_server_handler.dart';
-import 'package:kendedes_mobile/classes/map_config.dart';
 import 'package:kendedes_mobile/classes/repositories/auth_repository.dart';
-import 'package:kendedes_mobile/classes/repositories/browse_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/move_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/area_db_repository.dart';
-import 'package:kendedes_mobile/classes/repositories/local_db/browse_db_repository.dart';
+import 'package:kendedes_mobile/classes/repositories/local_db/move_db_repository.dart';
 import 'package:kendedes_mobile/classes/repositories/local_db/polygon_db_repository.dart';
 import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
@@ -17,20 +16,19 @@ import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
 import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
-import 'package:kendedes_mobile/models/project.dart';
-import 'package:kendedes_mobile/models/requested_area.dart';
 import 'package:kendedes_mobile/models/sls_with_business.dart';
 import 'package:kendedes_mobile/models/tag_data.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 
-class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
+class MoveBloc extends Bloc<MoveEvent, MoveState> {
   final Uuid _uuid = const Uuid();
 
-  BrowseBloc() : super(InitializingStarted(message: 'Memuat data...')) {
+  MoveBloc() : super(InitializingStarted(message: 'Memuat data...')) {
     on<Initialize>((event, emit) async {
       emit(InitializingStarted(message: 'Memuat data...'));
+      
       try {
         final User currentUser = AuthRepository().getUser();
 
@@ -49,39 +47,14 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         }
         final regencies = await AreaDbRepository().getRegencies();
 
-        // 2. Init browse project list
-        List<Project> browseProjectList = [];
-        browseProjectList = await BrowseDbRepository().getProjectsByUser(
-          currentUser.id,
-        );
-
-        // 3. Init existing polygons
+        // 2. Init existing polygons
         final polygons = await PolygonDbRepository().getPolygonsByUser(
           currentUser.id,
         );
 
-        // 4. Init SLS with business list
-        List<SlsWithBusiness> slsWithBusinessList = await BrowseDbRepository()
+        // 3. Init SLS with business list
+        List<SlsWithBusiness> slsWithBusinessList = await MoveDbRepository()
             .getSlsWithBusinessList(currentUserId: currentUser.id);
-
-        // 5. Init businesses list from the local DB based on the browse project id
-        List<TagData> businesses = [];
-        if (browseProjectList.isNotEmpty) {
-          businesses = await BrowseDbRepository().getBusinessesByBrowseProjects(
-            browseProjectList.map((project) => project.id).toList(),
-            currentUser.id,
-          );
-        }
-
-        // 6. Init filter options for project type and sls filter based on the initialized businesses list
-        final projectTypesFilterOptions = <ProjectType>[
-          ProjectType.kendedesGroup,
-          ProjectType.sbr,
-          ProjectType.agriculture,
-          ProjectType.eform,
-          ProjectType.enumeration,
-          ProjectType.other,
-        ];
 
         emit(
           InitializingSuccess(
@@ -91,11 +64,6 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               polygons: polygons,
               slsWithBusinessList: slsWithBusinessList,
               filteredSlsWithBusinessList: slsWithBusinessList,
-              businesses: businesses,
-              filteredBusinesses:
-                  businesses, // Initialize filteredBusinesses with the full list of businesses
-              projectTypesFilterOptions: projectTypesFilterOptions,
-              slsFilterOptions: _getSlsFilterOptions(businesses),
               slsWithBusinessListForUpdate: [],
               updatedSlsWithBusinessId: [],
             ),
@@ -115,7 +83,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<GetCurrentLocation>((event, emit) async {
       emit(
-        BrowseState(data: state.data.copyWith(isLoadingCurrentLocation: true)),
+        MoveState(data: state.data.copyWith(isLoadingCurrentLocation: true)),
       );
 
       try {
@@ -151,186 +119,47 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<UpdateZoom>((event, emit) {
       emit(
-        BrowseState(data: state.data.copyWith(currentZoom: event.zoomLevel)),
+        MoveState(data: state.data.copyWith(currentZoom: event.zoomLevel)),
       );
     });
 
     on<UpdateRotation>((event, emit) {
-      emit(BrowseState(data: state.data.copyWith(rotation: event.rotation)));
+      emit(MoveState(data: state.data.copyWith(rotation: event.rotation)));
     });
 
     on<UpdateCurrentLocation>((event, emit) async {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(currentLocation: event.newPosition),
         ),
       );
     });
 
-    on<UpdateVisibleMapBounds>((event, emit) {
-      emit(
-        BrowseState(
-          data: state.data.copyWith(
-            northEastCorner: event.ne,
-            southWestCorner: event.sw,
-          ),
-        ),
-      );
-    });
-
-    on<GetBusinessInsideBounds>((event, emit) async {
-      if (state.data.currentZoom <
-          MapConfig.minimumZoomToGetTaggingInsideBounds) {
-        emit(
-          ZoomLevelNotification(
-            message:
-                'Minimum zoom level untuk mendapatkan prelist usaha adalah '
-                '${MapConfig.minimumZoomToGetTaggingInsideBounds}. Apakah akan memperbesar zoom?',
-            data: state.data.copyWith(isBusinessInsideBoundsLoading: false),
-          ),
-        );
-        return;
-      } else {
-        await ApiServerHandler.run(
-          action: () async {
-            emit(
-              BrowseState(
-                data: state.data.copyWith(isBusinessInsideBoundsLoading: true),
-              ),
-            );
-
-            final ne = state.data.northEastCorner;
-            final sw = state.data.southWestCorner;
-
-            final businesses = await BrowseRepository().getBusinessesInBox(
-              minLat: sw?.latitude ?? 0.0,
-              minLng: sw?.longitude ?? 0.0,
-              maxLat: ne?.latitude ?? 0.0,
-              maxLng: ne?.longitude ?? 0.0,
-            );
-
-            final requestedArea = RequestedArea(
-              northeast: ne ?? const LatLng(0, 0),
-              southwest: sw ?? const LatLng(0, 0),
-            );
-
-            if (businesses.isEmpty) {
-              emit(
-                NoBusinessInsideBounds(
-                  message: 'Tidak ada prelist usaha di area ini',
-                  data: state.data.copyWith(
-                    isBusinessInsideBoundsLoading: false,
-                    requestedAreas: [
-                      ...state.data.requestedAreas,
-                      requestedArea,
-                    ],
-                    // isFirstTimeMapLoading: false,
-                  ),
-                ),
-              );
-            } else {
-              // Create a copy of the current businesses list
-              final updatedNearbyBusiness = List.of(state.data.businesses);
-
-              // Use a Set for efficient duplicate checks
-              final existingIds =
-                  updatedNearbyBusiness.map((e) => e.id).toSet();
-
-              // Add only new businesses
-              updatedNearbyBusiness.addAll(
-                businesses.where(
-                  (business) => !existingIds.contains(business.id),
-                ),
-              );
-
-              emit(
-                BrowseState(
-                  data: state.data.copyWith(
-                    isBusinessInsideBoundsLoading: false,
-                    businesses: updatedNearbyBusiness,
-                    slsFilterOptions: _getSlsFilterOptions(
-                      updatedNearbyBusiness,
-                    ),
-                    requestedAreas: [
-                      ...state.data.requestedAreas,
-                      requestedArea,
-                    ],
-                    // isFirstTimeMapLoading: false,
-                  ),
-                ),
-              );
-
-              // Reset filter when new business inside bounds is fetched
-              add(ResetAllFilter());
-            }
-          },
-          onLoginExpired: (e) {
-            emit(
-              TokenExpired(
-                data: state.data.copyWith(
-                  isBusinessInsideBoundsLoading: false,
-                  isBusinessInsideBoundsError: true,
-                  // isFirstTimeMapLoading: false,
-                ),
-              ),
-            );
-          },
-          onDataProviderError: (e) {
-            emit(
-              BusinessInsideBoundsFailed(
-                errorMessage: e.message,
-                data: state.data.copyWith(
-                  isBusinessInsideBoundsLoading: false,
-                  isBusinessInsideBoundsError: true,
-                  // isFirstTimeMapLoading: false,
-                ),
-              ),
-            );
-          },
-          onOtherError: (e) {
-            emit(
-              BusinessInsideBoundsFailed(
-                errorMessage: e.toString(),
-                data: state.data.copyWith(
-                  isBusinessInsideBoundsLoading: false,
-                  isBusinessInsideBoundsError: true,
-                  // isFirstTimeMapLoading: false,
-                ),
-              ),
-            );
-          },
-        );
-      }
-    });
-
     on<GetBusinessByArea>((event, emit) async {
-      final browseDbRepository = BrowseDbRepository();
+      final moveDbRepository = MoveDbRepository();
       final polygonDbRepository = PolygonDbRepository();
       final currentUserId = state.data.currentUser?.id ?? '';
 
       await ApiServerHandler.run(
         action: () async {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(isBusinessBySlsLoading: true),
             ),
           );
 
           // 1. Check if local data is up-to-date
-          final needToDownload = await browseDbRepository
+          final needToDownload = await moveDbRepository
               .needToDownloadBusinessFromServer(event.sls.id, currentUserId);
 
           // 2. If local data is sufficient, load from DB and return early
           if (!needToDownload) {
-            final localBusinesses = await browseDbRepository.getBusinessesBySls(
+            final localBusinesses = await moveDbRepository.getBusinessesBySls(
               event.sls.id,
               currentUserId,
             );
-
-            final mergedBusinesses = List.of(state.data.businesses);
-            final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
-            mergedBusinesses.addAll(
-              localBusinesses.where((b) => existingIds.add(b.remoteId)),
+            final localPolygon = await polygonDbRepository.getPolygonById(
+              event.sls.id,
             );
 
             emit(
@@ -341,8 +170,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                 ),
                 data: state.data.copyWith(
                   isBusinessBySlsLoading: false,
-                  businesses: mergedBusinesses,
-                  slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
+                  businesses: localBusinesses,
+                  slsFilterOptions: _getSlsFilterOptions(localBusinesses),
+                  currentSlsPolygon: localPolygon,
+                  clearCurrentSlsPolygon: localPolygon == null,
                 ),
               ),
             );
@@ -353,7 +184,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           }
 
           // 3. Fetch businesses from server
-          final response = await BrowseRepository().getBusinessesBySls(
+          final response = await MoveRepository().getBusinessesBySls(
             event.sls.id,
           );
           List<TagData> businesses =
@@ -378,18 +209,18 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               businesses.map((b) => b.copyWith(id: _uuid.v4())).toList();
 
           // 5. Save users to local DB if not already exist
-          await browseDbRepository.insertUniqueUsersFromBusinesses(businesses);
+          await moveDbRepository.insertUniqueUsersFromBusinesses(businesses);
 
           // 6. Get unique business.project values from the fetched businesses and save to local DB if not already exist
           // Modify the user_id field of the project to be the current user's id before saving to local DB
           // Modify the unique projects id to new uuid
-          await browseDbRepository.insertUniqueProjectsFromBusinesses(
+          await moveDbRepository.insertUniqueProjectsFromBusinesses(
             businesses,
             state.data.currentUser,
           );
 
           // 7. Save the business data to local DB
-          await browseDbRepository.insertBusinessesDataBatch(
+          await moveDbRepository.insertBusinessesDataBatch(
             businesses,
             currentUserId,
           );
@@ -414,17 +245,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             sls: slsWithPolygon,
             businessCount: businesses.length,
             user: state.data.currentUser!,
-            interactionMode: InteractionMode.browse,
+            interactionMode: InteractionMode.move,
           );
-          final slsWithBusinessCreated = await browseDbRepository
+          final slsWithBusinessCreated = await moveDbRepository
               .createSlsWithBusiness(slsWithBusiness);
-
-          // 10. Update businesses list in state, ensuring no duplicates
-          final mergedBusinesses = List.of(state.data.businesses);
-          final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
-          mergedBusinesses.addAll(
-            businesses.where((b) => existingIds.add(b.remoteId)),
-          );
 
           emit(
             BusinessBySlsSuccess(
@@ -434,12 +258,14 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               ),
               data: state.data.copyWith(
                 isBusinessBySlsLoading: false,
-                businesses: mergedBusinesses,
-                slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
+                businesses: businesses,
+                slsFilterOptions: _getSlsFilterOptions(businesses),
                 polygons:
                     pairAdded
                         ? [...state.data.polygons, updatedPolygon!]
                         : state.data.polygons,
+                currentSlsPolygon: updatedPolygon,
+                clearCurrentSlsPolygon: updatedPolygon == null,
                 slsWithBusinessList:
                     slsWithBusinessCreated
                         ? [...state.data.slsWithBusinessList, slsWithBusiness]
@@ -490,12 +316,12 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     });
 
     on<RefreshSlsWithBusiness>((event, emit) async {
-      final browseDbRepository = BrowseDbRepository();
+      final moveDbRepository = MoveDbRepository();
       final polygonDbRepository = PolygonDbRepository();
       final currentUserId = state.data.currentUser?.id ?? '';
 
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             isBusinessBySlsLoading: true,
             refreshingSlsIds: [
@@ -509,7 +335,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       await ApiServerHandler.run(
         action: () async {
           // 1. Fetch businesses from server
-          final response = await BrowseRepository().getBusinessesBySls(
+          final response = await MoveRepository().getBusinessesBySls(
             event.slsWithBusiness.sls.id,
           );
           List<TagData> businesses =
@@ -520,10 +346,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                   : [];
 
           if (businesses.isEmpty) {
-            final remainingRefreshingIds =
-                state.data.refreshingSlsIds
-                    .where((id) => id != event.slsWithBusiness.id)
-                    .toList();
+            final remainingRefreshingIds = state.data.refreshingSlsIds
+                .where((id) => id != event.slsWithBusiness.id)
+                .toList();
             emit(
               NoBusinessInsideBounds(
                 message:
@@ -544,7 +369,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                 event.slsWithBusiness.sls.id,
           );
 
-          await browseDbRepository.deleteBusinessesBySlsId(
+          await moveDbRepository.deleteBusinessesBySlsId(
             event.slsWithBusiness.sls.id,
             currentUserId,
           );
@@ -559,26 +384,18 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                   )
                   .toList();
 
-          List<TagData> updatedBusinesses =
-              state.data.businesses
-                  .where(
-                    (business) =>
-                        business.sls?.id != event.slsWithBusiness.sls.id,
-                  )
-                  .toList();
-
           // 3. Process new fetched businesses
           businesses =
               businesses.map((b) => b.copyWith(id: _uuid.v4())).toList();
 
-          await browseDbRepository.insertUniqueUsersFromBusinesses(businesses);
+          await moveDbRepository.insertUniqueUsersFromBusinesses(businesses);
 
-          await browseDbRepository.insertUniqueProjectsFromBusinesses(
+          await moveDbRepository.insertUniqueProjectsFromBusinesses(
             businesses,
             state.data.currentUser,
           );
 
-          await browseDbRepository.insertBusinessesDataBatch(
+          await moveDbRepository.insertBusinessesDataBatch(
             businesses,
             currentUserId,
           );
@@ -602,16 +419,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             user: state.data.currentUser!,
             interactionMode: event.slsWithBusiness.interactionMode,
           );
-          await browseDbRepository.updateSlsWithBusiness(
-            updatedSlsWithBusiness,
-          );
-
-          // 5. Merge businesses, polygons, and slsWithBusinessList for state
-          final mergedBusinesses = List.of(updatedBusinesses);
-          final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
-          mergedBusinesses.addAll(
-            businesses.where((b) => existingIds.add(b.remoteId)),
-          );
+          await moveDbRepository.updateSlsWithBusiness(updatedSlsWithBusiness);
 
           final finalPolygons =
               (updatedPolygon != null &&
@@ -619,30 +427,29 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                   ? [...updatedPolygons, updatedPolygon]
                   : updatedPolygons;
 
-          final updatedSlsWithBusinessList =
-              state.data.slsWithBusinessList
-                  .map(
-                    (item) =>
-                        item.id == updatedSlsWithBusiness.id
-                            ? updatedSlsWithBusiness
-                            : item,
-                  )
-                  .toList();
+          final updatedSlsWithBusinessList = state.data.slsWithBusinessList
+              .map(
+                (item) =>
+                    item.id == updatedSlsWithBusiness.id
+                        ? updatedSlsWithBusiness
+                        : item,
+              )
+              .toList();
 
-          final updatedFilteredSlsWithBusinessList =
-              state.data.filteredSlsWithBusinessList
-                  .map(
-                    (item) =>
-                        item.id == updatedSlsWithBusiness.id
-                            ? updatedSlsWithBusiness
-                            : item,
-                  )
-                  .toList();
+          final updatedFilteredSlsWithBusinessList = state
+              .data
+              .filteredSlsWithBusinessList
+              .map(
+                (item) =>
+                    item.id == updatedSlsWithBusiness.id
+                        ? updatedSlsWithBusiness
+                        : item,
+              )
+              .toList();
 
-          final remainingRefreshingIds =
-              state.data.refreshingSlsIds
-                  .where((id) => id != event.slsWithBusiness.id)
-                  .toList();
+          final remainingRefreshingIds = state.data.refreshingSlsIds
+              .where((id) => id != event.slsWithBusiness.id)
+              .toList();
 
           emit(
             BusinessBySlsSuccess(
@@ -653,11 +460,14 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               data: state.data.copyWith(
                 isBusinessBySlsLoading: false,
                 refreshingSlsIds: remainingRefreshingIds,
-                businesses: mergedBusinesses,
-                slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
+                businesses: businesses,
+                slsFilterOptions: _getSlsFilterOptions(businesses),
                 polygons: finalPolygons,
+                currentSlsPolygon: updatedPolygon,
+                clearCurrentSlsPolygon: updatedPolygon == null,
                 slsWithBusinessList: updatedSlsWithBusinessList,
-                filteredSlsWithBusinessList: updatedFilteredSlsWithBusinessList,
+                filteredSlsWithBusinessList:
+                    updatedFilteredSlsWithBusinessList,
               ),
             ),
           );
@@ -665,10 +475,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           add(const ResetAllFilter());
         },
         onLoginExpired: (e) {
-          final remainingRefreshingIds =
-              state.data.refreshingSlsIds
-                  .where((id) => id != event.slsWithBusiness.id)
-                  .toList();
+          final remainingRefreshingIds = state.data.refreshingSlsIds
+              .where((id) => id != event.slsWithBusiness.id)
+              .toList();
           emit(
             TokenExpired(
               data: state.data.copyWith(
@@ -680,10 +489,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           );
         },
         onDataProviderError: (e) {
-          final remainingRefreshingIds =
-              state.data.refreshingSlsIds
-                  .where((id) => id != event.slsWithBusiness.id)
-                  .toList();
+          final remainingRefreshingIds = state.data.refreshingSlsIds
+              .where((id) => id != event.slsWithBusiness.id)
+              .toList();
           emit(
             BusinessBySlsFailed(
               errorMessage: e.message,
@@ -696,10 +504,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           );
         },
         onOtherError: (e) {
-          final remainingRefreshingIds =
-              state.data.refreshingSlsIds
-                  .where((id) => id != event.slsWithBusiness.id)
-                  .toList();
+          final remainingRefreshingIds = state.data.refreshingSlsIds
+              .where((id) => id != event.slsWithBusiness.id)
+              .toList();
           emit(
             BusinessBySlsFailed(
               errorMessage: e.toString(),
@@ -714,15 +521,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       );
     });
 
-    on<GetBusinessByPoint>((event, emit) async {});
-
-    on<SetBusinessLoadMode>((event, emit) {
-      emit(BrowseState(data: state.data.copyWith(loadMode: event.loadMode)));
-    });
-
     on<ToggleLoadBusinessContainer>((event, emit) {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             isLoadBusinessContainerExpanded:
                 !state.data.isLoadBusinessContainerExpanded,
@@ -733,7 +534,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<SelectRegency>((event, emit) async {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             isLoadingSubdistrict: true,
             selectedRegency: event.regency,
@@ -754,7 +555,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         );
       }
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             subdistricts: subdistricts,
             isLoadingSubdistrict: false,
@@ -767,7 +568,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       await ApiServerHandler.run(
         action: () async {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(
                 selectedSubdistrict: event.subdistrict,
                 isLoadingVillage: true,
@@ -782,12 +583,12 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           );
           List<Village> villages = [];
           if (event.subdistrict?.id != null) {
-            villages = await BrowseRepository().getVillagesBySubdistrictId(
+            villages = await MoveRepository().getVillagesBySubdistrictId(
               event.subdistrict!.id,
             );
           }
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(
                 villages: villages,
                 isLoadingVillage: false,
@@ -802,7 +603,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         },
         onDataProviderError: (e) {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(
                 isLoadingVillage: false,
                 isVillageError: true,
@@ -812,7 +613,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         },
         onOtherError: (e) {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(
                 isLoadingVillage: false,
                 isVillageError: true,
@@ -827,7 +628,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       await ApiServerHandler.run(
         action: () async {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(
                 isLoadingSls: true,
                 selectedVillage: event.village,
@@ -839,10 +640,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           );
           List<Sls> sls = [];
           if (event.village != null) {
-            sls = await BrowseRepository().getSlsByVillageId(event.village!.id);
+            sls = await MoveRepository().getSlsByVillageId(event.village!.id);
           }
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(isLoadingSls: false, sls: sls),
             ),
           );
@@ -852,14 +653,14 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         },
         onDataProviderError: (e) {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(isLoadingSls: false, isSlsError: true),
             ),
           );
         },
         onOtherError: (e) {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(isLoadingSls: false, isSlsError: true),
             ),
           );
@@ -868,12 +669,12 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     });
 
     on<SelectSls>((event, emit) {
-      emit(BrowseState(data: state.data.copyWith(selectedSls: event.sls)));
+      emit(MoveState(data: state.data.copyWith(selectedSls: event.sls)));
     });
 
     on<ClearSelectedRegency>((event, emit) {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             clearSelectedRegency: true,
             clearSelectedSubdistrict: true,
@@ -886,7 +687,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<ClearSelectedSubdistrict>((event, emit) {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             clearSelectedSubdistrict: true,
             clearSelectedVillage: true,
@@ -898,7 +699,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<ClearSelectedVillage>((event, emit) {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             clearSelectedVillage: true,
             clearSelectedSls: true,
@@ -908,12 +709,12 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     });
 
     on<ClearSelectedSls>((event, emit) {
-      emit(BrowseState(data: state.data.copyWith(clearSelectedSls: true)));
+      emit(MoveState(data: state.data.copyWith(clearSelectedSls: true)));
     });
 
     on<SelectLabelType>((event, emit) {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(selectedLabelType: event.labelTypeKey),
         ),
       );
@@ -921,7 +722,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<SelectMapType>((event, emit) {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(selectedMapType: event.mapTypeKey),
         ),
       );
@@ -950,12 +751,12 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     });
 
     on<UpdatePolygon>((event, emit) async {
-      emit(BrowseState(data: state.data.copyWith(isLoadingPolygon: true)));
+      emit(MoveState(data: state.data.copyWith(isLoadingPolygon: true)));
       final polygons = await PolygonDbRepository().getPolygonsByUser(
         state.data.currentUser?.id ?? '',
       );
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             polygons: polygons,
             isLoadingPolygon: false,
@@ -979,7 +780,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
     });
 
     on<DeletePolygon>((event, emit) async {
-      emit(BrowseState(data: state.data.copyWith(isDeletingPolygon: true)));
+      emit(MoveState(data: state.data.copyWith(isDeletingPolygon: true)));
       await PolygonDbRepository().removeUserPolygonPair(
         state.data.currentUser?.id ?? '',
         event.polygon.id,
@@ -1000,10 +801,10 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<DeleteSlsWithBusiness>((event, emit) async {
       emit(
-        BrowseState(data: state.data.copyWith(isDeletingSlsWithBusiness: true)),
+        MoveState(data: state.data.copyWith(isDeletingSlsWithBusiness: true)),
       );
 
-      await BrowseDbRepository().deleteSlsWithBusiness(
+      await MoveDbRepository().deleteSlsWithBusiness(
         event.slsWithBusiness.id,
       );
 
@@ -1020,7 +821,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         event.slsWithBusiness.sls.polygon?.id ?? event.slsWithBusiness.sls.id,
       );
 
-      await BrowseDbRepository().deleteBusinessesBySlsId(
+      await MoveDbRepository().deleteBusinessesBySlsId(
         event.slsWithBusiness.sls.id,
         state.data.currentUser?.id ?? '',
       );
@@ -1042,6 +843,11 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               )
               .toList();
 
+      final deletedPolygonId =
+          event.slsWithBusiness.sls.polygon?.id ?? event.slsWithBusiness.sls.id;
+      final shouldClearCurrentPolygon =
+          state.data.currentSlsPolygon?.id == deletedPolygonId;
+
       emit(
         SlsWithBusinessDeleted(
           data: state.data.copyWith(
@@ -1050,14 +856,17 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             polygons: updatedPolygons,
             isDeletingSlsWithBusiness: false,
             businesses: updatedBusinesses,
+            clearCurrentSlsPolygon: shouldClearCurrentPolygon,
           ),
         ),
       );
+      // Reset filter so filteredBusinesses (used for map/sidebar) drops the deleted SLS's businesses too
+      add(ResetAllFilter());
     });
 
-    on<SetBrowseSideBarOpen>((event, emit) {
+    on<SetMoveSideBarOpen>((event, emit) {
       final newDataState = state.data.copyWith(
-        isBrowseSideBarOpen: event.isOpen,
+        isMoveSideBarOpen: event.isOpen,
         // filteredBusinesses:
         //     event.isOpen
         //         ? state.data.businesses
@@ -1065,9 +874,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         // resetAllFilter: event.isOpen,
       );
       if (event.isOpen) {
-        emit(BrowseSideBarOpened(data: newDataState));
+        emit(MoveSideBarOpened(data: newDataState));
       } else {
-        emit(BrowseSideBarClosed(data: newDataState));
+        emit(MoveSideBarClosed(data: newDataState));
       }
     });
 
@@ -1087,7 +896,6 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       final filtered = _applyFilters(
         allTags: state.data.businesses,
         query: newQuery,
-        projectType: state.data.selectedProjectTypeFilters,
         sls: state.data.selectedSlsFilter,
       );
 
@@ -1099,37 +907,8 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       if (event.reset ?? false) {
         emit(SearchQueryCleared(data: newDataState));
       } else {
-        emit(BrowseState(data: newDataState));
+        emit(MoveState(data: newDataState));
       }
-    });
-
-    on<FilterBusinessByProjectType>((event, emit) {
-      late List<ProjectType> updatedFilters;
-
-      if (event.reset ?? false) {
-        // Reset: clear all filters
-        updatedFilters = [];
-      } else {
-        // Use the list directly from the event
-        updatedFilters = event.projectTypes;
-      }
-
-      final filtered = _applyFilters(
-        allTags: state.data.businesses,
-        query: state.data.searchQuery,
-        projectType: updatedFilters,
-        sls: state.data.selectedSlsFilter,
-      );
-
-      emit(
-        BrowseState(
-          data: state.data.copyWith(
-            filteredBusinesses: filtered,
-            selectedProjectTypeFilters: updatedFilters,
-            resetProjectTypeFilter: event.reset ?? false,
-          ),
-        ),
-      );
     });
 
     on<FilterBusinessBySls>((event, emit) {
@@ -1137,12 +916,11 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       final filtered = _applyFilters(
         allTags: state.data.businesses,
         query: state.data.searchQuery,
-        projectType: state.data.selectedProjectTypeFilters,
         sls: selectedSls,
       );
 
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             filteredBusinesses: filtered,
             selectedSlsFilter: selectedSls,
@@ -1160,8 +938,8 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       );
     });
 
-    on<ClearBrowseSelection>((event, emit) {
-      emit(BrowseState(data: state.data.copyWith(selectedBusinesses: [])));
+    on<ClearMoveSelection>((event, emit) {
+      emit(MoveState(data: state.data.copyWith(selectedBusinesses: [])));
     });
 
     on<SearchSlsWithBusiness>((event, emit) {
@@ -1195,7 +973,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       if (event.reset ?? false) {
         emit(SearchSlsWithBusinessQueryCleared(data: newDataState));
       } else {
-        emit(BrowseState(data: newDataState));
+        emit(MoveState(data: newDataState));
       }
     });
 
@@ -1203,7 +981,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       await ApiServerHandler.run(
         action: () async {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(
                 isFindingSls: true,
                 isFindingSlsError: false,
@@ -1214,13 +992,13 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             ),
           );
 
-          final sls = await BrowseRepository().findSlsByLatLng(
+          final sls = await MoveRepository().findSlsByLatLng(
             event.latLng.latitude,
             event.latLng.longitude,
           );
 
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(
                 isFindingSls: false,
                 slsFinder: sls,
@@ -1242,7 +1020,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         },
         onDataProviderError: (e) {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(
                 isFindingSls: false,
                 isFindingSlsError: true,
@@ -1254,7 +1032,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         },
         onOtherError: (e) {
           emit(
-            BrowseState(
+            MoveState(
               data: state.data.copyWith(
                 isFindingSls: false,
                 isFindingSlsError: true,
@@ -1269,7 +1047,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<CloseSlsFinder>((event, emit) {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             showFinder: false,
             resetSlsFinder: true,
@@ -1281,7 +1059,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<CheckBusinessDataUpdate>((event, emit) async {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             slsWithBusinessListForUpdate: [],
             updatedSlsWithBusinessId: [],
@@ -1291,7 +1069,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       if (state.data.slsWithBusinessList.isNotEmpty) {
         await ApiServerHandler.run(
           action: () async {
-            final result = await BrowseRepository().checkBusinessDataUpdate(
+            final result = await MoveRepository().checkBusinessDataUpdate(
               state.data.slsWithBusinessList,
             );
 
@@ -1341,7 +1119,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           },
           onDataProviderError: (e) {
             emit(
-              BrowseState(
+              MoveState(
                 data: state.data.copyWith(
                   slsWithBusinessListForUpdate: [],
                   updatedSlsWithBusinessId: [],
@@ -1351,7 +1129,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
           },
           onOtherError: (e) {
             emit(
-              BrowseState(
+              MoveState(
                 data: state.data.copyWith(
                   slsWithBusinessListForUpdate: [],
                   updatedSlsWithBusinessId: [],
@@ -1365,7 +1143,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
 
     on<UpdateSlsBusiness>((event, emit) async {
       emit(
-        BrowseState(
+        MoveState(
           data: state.data.copyWith(
             updatingSlsWithBusinessId: event.slsWithBusiness,
           ),
@@ -1373,7 +1151,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
       );
       await ApiServerHandler.run(
         action: () async {
-          final browseDbRepository = BrowseDbRepository();
+          final moveDbRepository = MoveDbRepository();
           final polygonDbRepository = PolygonDbRepository();
           final currentUserId = state.data.currentUser?.id ?? '';
 
@@ -1385,7 +1163,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               state.data.updatedSlsWithBusinessId;
 
           // 1. Fetch businesses from server
-          final response = await BrowseRepository().getBusinessesBySls(
+          final response = await MoveRepository().getBusinessesBySls(
             event.slsWithBusiness.sls.id,
           );
           List<TagData> businesses =
@@ -1435,7 +1213,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
             user: event.slsWithBusiness.user,
             interactionMode: event.slsWithBusiness.interactionMode,
           );
-          await browseDbRepository.updateSlsWithBusiness(slsWithBusiness);
+          await moveDbRepository.updateSlsWithBusiness(slsWithBusiness);
 
           existingSlsWithBusinessState =
               existingSlsWithBusinessState
@@ -1481,7 +1259,7 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                     .toList();
 
             if (idsToDelete.isNotEmpty) {
-              final success = await BrowseDbRepository().deleteBusinessesByIds(
+              final success = await MoveDbRepository().deleteBusinessesByIds(
                 idsToDelete,
                 currentUserId,
               );
@@ -1501,27 +1279,20 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               businesses.map((b) => b.copyWith(id: _uuid.v4())).toList();
 
           // 5a. Save users to local DB if not already exist
-          await browseDbRepository.insertUniqueUsersFromBusinesses(businesses);
+          await moveDbRepository.insertUniqueUsersFromBusinesses(businesses);
 
           // 5b. Get unique business.project values from the fetched businesses and save to local DB if not already exist
           // Modify the user_id field of the project to be the current user's id before saving to local DB
           // Modify the unique projects id to new uuid
-          await browseDbRepository.insertUniqueProjectsFromBusinesses(
+          await moveDbRepository.insertUniqueProjectsFromBusinesses(
             businesses,
             state.data.currentUser,
           );
 
           // 5c. Save the business data to local DB
-          await browseDbRepository.insertBusinessesDataBatch(
+          await moveDbRepository.insertBusinessesDataBatch(
             businesses,
             currentUserId,
-          );
-
-          // 5d. Update businesses list in state, ensuring no duplicates
-          final mergedBusinesses = [...existingBusinessesState];
-          final existingIds = mergedBusinesses.map((e) => e.remoteId).toSet();
-          mergedBusinesses.addAll(
-            businesses.where((b) => existingIds.add(b.remoteId)),
           );
 
           // 6. Mark this SLS as updated
@@ -1541,9 +1312,11 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
                 updatedSlsWithBusinessId: existingUpdatedSlsWithBusinessIdState,
 
                 isBusinessBySlsLoading: false,
-                businesses: mergedBusinesses,
-                slsFilterOptions: _getSlsFilterOptions(mergedBusinesses),
+                businesses: businesses,
+                slsFilterOptions: _getSlsFilterOptions(businesses),
                 polygons: existingPolygonsState,
+                currentSlsPolygon: updatedPolygon,
+                clearCurrentSlsPolygon: updatedPolygon == null,
                 slsWithBusinessList: existingSlsWithBusinessState,
                 filteredSlsWithBusinessList: existingSlsWithBusinessState,
               ),
@@ -1579,6 +1352,127 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
         },
       );
     });
+
+    // Move tag to new location logic
+    on<StartMoveMode>((event, emit) {
+      emit(
+        MoveState(
+          data: state.data.copyWith(
+            isMoveMode: true,
+            originalMovedTag: event.tagData,
+          ),
+        ),
+      );
+    });
+
+    on<MoveTag>((event, emit) {
+      final originalTag = state.data.originalMovedTag;
+      if (originalTag == null) return;
+
+      final newMovedTag = originalTag.copyWith(
+        positionLat: event.newPosition.latitude,
+        positionLng: event.newPosition.longitude,
+      );
+
+      emit(MoveState(data: state.data.copyWith(newMovedTag: newMovedTag)));
+    });
+
+    on<CancelMoveMode>((event, emit) {
+      emit(
+        MoveState(
+          data: state.data.copyWith(
+            isMoveMode: false,
+            clearOriginalMovedTag: true,
+            clearNewMovedTag: true,
+          ),
+        ),
+      );
+    });
+
+    on<SaveMoveTag>((event, emit) async {
+      try {
+        emit(MoveState(data: state.data));
+
+        final updatedTag = state.data.newMovedTag?.copyWith(
+          hasChanged: true,
+          hasSentToServer: false,
+          updatedAt: DateTime.now(),
+        );
+
+        if (updatedTag == null) {
+          throw Exception('Anda belum memilih lokasi baru');
+        }
+
+        // save new moved position to local DB
+        await MoveDbRepository().insertOrUpdate(
+          updatedTag,
+          state.data.currentUser?.id ?? '',
+        );
+
+        final updatedBusinesses =
+            state.data.businesses
+                .map((b) => b.id == updatedTag.id ? updatedTag : b)
+                .toList();
+        final updatedFilteredBusinesses =
+            state.data.filteredBusinesses
+                .map((b) => b.id == updatedTag.id ? updatedTag : b)
+                .toList();
+        final updatedSelectedBusinesses =
+            state.data.selectedBusinesses
+                .map((b) => b.id == updatedTag.id ? updatedTag : b)
+                .toList();
+
+        emit(
+          MoveTagSuccess(
+            data: state.data.copyWith(
+              businesses: updatedBusinesses,
+              filteredBusinesses: updatedFilteredBusinesses,
+              selectedBusinesses: updatedSelectedBusinesses,
+              isMoveMode: false,
+              clearOriginalMovedTag: true,
+              clearNewMovedTag: true,
+            ),
+          ),
+        );
+
+        await ApiServerHandler.run(
+          action: () async {
+            await MoveRepository().updateBusinessPosition(updatedTag);
+            final savedTag = updatedTag.copyWith(
+              hasChanged: false,
+              hasSentToServer: true,
+            );
+            await MoveDbRepository().insertOrUpdate(
+              savedTag,
+              state.data.currentUser?.id ?? '',
+            );
+
+            final syncedBusinesses =
+                state.data.businesses
+                    .map((b) => b.id == savedTag.id ? savedTag : b)
+                    .toList();
+            final syncedFilteredBusinesses =
+                state.data.filteredBusinesses
+                    .map((b) => b.id == savedTag.id ? savedTag : b)
+                    .toList();
+
+            emit(
+              MoveState(
+                data: state.data.copyWith(
+                  businesses: syncedBusinesses,
+                  filteredBusinesses: syncedFilteredBusinesses,
+                ),
+              ),
+            );
+          },
+          onLoginExpired: (e) {},
+          onDataProviderError: (e) {},
+          onOtherError: (e) {},
+        );
+      } catch (e) {
+        emit(MoveTagError(errorMessage: e.toString(), data: state.data));
+      }
+    });
   }
 
   List<Sls> _getSlsFilterOptions(List<TagData> businesses) {
@@ -1593,15 +1487,12 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
   List<TagData> _applyFilters({
     required List<TagData> allTags,
     required String? query,
-    required List<ProjectType> projectType,
     required Sls? sls,
   }) {
     final normalizedQuery = query?.trim().toLowerCase();
 
     // No filters applied → return all
-    if ((normalizedQuery == null || normalizedQuery.isEmpty) &&
-        projectType.isEmpty &&
-        sls == null) {
+    if ((normalizedQuery == null || normalizedQuery.isEmpty) && sls == null) {
       return allTags;
     }
 
@@ -1616,13 +1507,9 @@ class BrowseBloc extends Bloc<BrowseEvent, BrowseState> {
               false) ||
           (tag.description?.toLowerCase().contains(normalizedQuery) ?? false);
 
-      final matchesProjectType =
-          projectType.isEmpty ||
-          projectType.any((type) => type.matches(tag.project.type));
-
       final matchesSls = sls == null || tag.sls?.id == sls.id;
 
-      return matchesQuery && matchesProjectType && matchesSls;
+      return matchesQuery && matchesSls;
     }).toList();
   }
 

@@ -20,7 +20,7 @@ class LocalDbProvider {
     final String path = '${documentsDirectory.path}/tagging_app.db';
     _database = await openDatabase(
       path,
-      version: 6,
+      version: 8,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -137,6 +137,8 @@ class LocalDbProvider {
       regency_name TEXT,
       id_sbr TEXT,
       original_area TEXT,
+      can_move INTEGER,
+      building_number TEXT,
       FOREIGN KEY(project_id) REFERENCES projects(id),
       FOREIGN KEY(user_id) REFERENCES users(id)
     )
@@ -244,6 +246,7 @@ class LocalDbProvider {
           regency_name TEXT,
 
           business_count INTEGER DEFAULT 0,
+          interaction_mode TEXT DEFAULT 'browse',
 
           user_id TEXT,
           FOREIGN KEY(user_id) REFERENCES users(id)
@@ -575,6 +578,25 @@ class LocalDbProvider {
       await db.execute('''
       ALTER TABLE tag_data
       ADD COLUMN original_area TEXT
+    ''');
+    }
+
+    if (oldVersion < 7) {
+      await db.execute('''
+      ALTER TABLE tag_data
+      ADD COLUMN can_move INTEGER DEFAULT 0
+    ''');
+
+      await db.execute('''
+      ALTER TABLE tag_data
+      ADD COLUMN building_number TEXT
+    ''');
+    }
+
+    if (oldVersion < 8) {
+      await db.execute('''
+      ALTER TABLE sls_with_business
+      ADD COLUMN interaction_mode TEXT DEFAULT 'browse'
     ''');
     }
   }

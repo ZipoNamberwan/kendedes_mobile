@@ -2,11 +2,11 @@ import 'package:kendedes_mobile/classes/providers/local_db/local_db_provider.dar
 import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:sqflite/sqflite.dart';
 
-class BrowseDbProvider {
-  static final BrowseDbProvider _instance = BrowseDbProvider._internal();
-  factory BrowseDbProvider() => _instance;
+class MoveDbProvider {
+  static final MoveDbProvider _instance = MoveDbProvider._internal();
+  factory MoveDbProvider() => _instance;
 
-  BrowseDbProvider._internal();
+  MoveDbProvider._internal();
 
   late LocalDbProvider _dbProvider;
   bool _initialized = false;
@@ -19,7 +19,7 @@ class BrowseDbProvider {
   }
 
   // Local Database Operations
-  Future<void> insertBrowseProject(Map<String, dynamic> data) async {
+  Future<void> insertMoveProject(Map<String, dynamic> data) async {
     await _dbProvider.db.insert(
       'projects',
       data,
@@ -31,7 +31,7 @@ class BrowseDbProvider {
     final result = await _dbProvider.db.query(
       'projects',
       where: 'user_id = ? AND interaction_mode = ?',
-      whereArgs: [userId, InteractionMode.browse.key],
+      whereArgs: [userId, InteractionMode.move.key],
     );
 
     return result;
@@ -72,7 +72,7 @@ class BrowseDbProvider {
     return await _dbProvider.db.query(
       'sls_with_business',
       where: 'user_id = ? AND interaction_mode = ?',
-      whereArgs: [currentUserId, InteractionMode.browse.key],
+      whereArgs: [currentUserId, InteractionMode.move.key],
       orderBy: 'sls_long_code ASC',
     );
   }
@@ -97,6 +97,14 @@ class BrowseDbProvider {
     });
   }
 
+  Future<void> insertOrUpdate(Map<String, dynamic> data) async {
+    await _dbProvider.db.insert(
+      'tag_data',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   Future<void> insertProjectsBatch(List<Map<String, dynamic>> dataList) async {
     final db = _dbProvider.db;
     final batch = db.batch();
@@ -112,7 +120,7 @@ class BrowseDbProvider {
     await batch.commit(noResult: true);
   }
 
-  Future<List<Map<String, dynamic>>> getBusinessesByBrowseProjects(
+  Future<List<Map<String, dynamic>>> getBusinessesByMoveProjects(
     List<String> projectIds,
   ) async {
     final placeholders = List.filled(projectIds.length, '?').join(', ');
@@ -204,7 +212,7 @@ class BrowseDbProvider {
     final result = await _dbProvider.db.query(
       'sls_with_business',
       where: 'sls_id = ? AND user_id = ? AND interaction_mode = ?',
-      whereArgs: [slsId, userId, InteractionMode.browse.key],
+      whereArgs: [slsId, userId, InteractionMode.move.key],
       limit: 1,
     );
 

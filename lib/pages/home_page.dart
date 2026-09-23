@@ -7,6 +7,7 @@ import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/models/user.dart';
 import 'package:kendedes_mobile/pages/browse_page.dart';
 import 'package:kendedes_mobile/pages/info_util/info_list_page.dart';
+import 'package:kendedes_mobile/pages/move_page.dart';
 import 'package:kendedes_mobile/pages/photo_util/photo_list_page.dart';
 // import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/pages/kbli_util/top_kbli_page.dart';
@@ -391,6 +392,20 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
+
+                  const SizedBox(height: 14),
+                  _buildMenuCard(
+                    context: context,
+                    title: 'Pindah Tagging Hasil SE2026',
+                    subtitle: 'Menu untuk memindahkan tagging hasil SE2026 yang telah dilakukan.',
+                    icon: Icons.fact_check_rounded,
+                    iconColor: Colors.teal,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const MovePage()),
+                      );
+                    },
+                  ),
                   const SizedBox(height: 14),
                   _buildMenuCard(
                     context: context,
@@ -405,19 +420,19 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-                  const SizedBox(height: 14),
-                  _buildMenuCard(
-                    context: context,
-                    title: 'Deteksi Anomali',
-                    subtitle: 'Daftar anomali dan kejanggalan data.',
-                    icon: Icons.warning_amber_rounded,
-                    iconColor: Colors.red,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const AnomalyPage()),
-                      );
-                    },
-                  ),
+                  // const SizedBox(height: 14),
+                  // _buildMenuCard(
+                  //   context: context,
+                  //   title: 'Deteksi Anomali',
+                  //   subtitle: 'Daftar anomali dan kejanggalan data.',
+                  //   icon: Icons.warning_amber_rounded,
+                  //   iconColor: Colors.red,
+                  //   onTap: () {
+                  //     Navigator.of(context).push(
+                  //       MaterialPageRoute(builder: (_) => const AnomalyPage()),
+                  //     );
+                  //   },
+                  // ),
                   // const SizedBox(height: 14),
                   // _buildMenuCard(
                   //   context: context,

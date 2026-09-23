@@ -2,6 +2,7 @@ import 'package:kendedes_mobile/models/area/regency.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
 import 'package:kendedes_mobile/models/area/subdistrict.dart';
 import 'package:kendedes_mobile/models/area/village.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/polygon.dart';
 import 'package:kendedes_mobile/models/user.dart';
 
@@ -10,12 +11,14 @@ class SlsWithBusiness {
   final Sls sls;
   final int businessCount;
   final User user;
+  final InteractionMode interactionMode;
 
   SlsWithBusiness({
     required this.id,
     required this.sls,
     required this.businessCount,
     required this.user,
+    required this.interactionMode,
   });
 
   /// Convert to database format for sls_with_business table
@@ -41,6 +44,7 @@ class SlsWithBusiness {
 
       'business_count': businessCount,
       'user_id': user.id,
+      'interaction_mode': interactionMode.key,
     };
   }
 
@@ -80,6 +84,9 @@ class SlsWithBusiness {
       ),
       businessCount: json['business_count'] as int,
       user: User.fromJson(json['user'] as Map<String, dynamic>),
+      interactionMode:
+          InteractionMode.fromKey(json['interaction_mode'] as String) ??
+          InteractionMode.browse,
     );
   }
 

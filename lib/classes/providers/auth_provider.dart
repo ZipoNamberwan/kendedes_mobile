@@ -70,7 +70,7 @@ class AuthProvider {
     required String firebaseToken,
   }) async {
     final response = await _dioService.dio.post(
-      '/login/google',
+      '/login/google/v2',
       data: {'firebaseToken': firebaseToken},
     );
 

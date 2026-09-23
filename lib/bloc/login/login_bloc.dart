@@ -259,7 +259,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           onDataProviderError: (e) {
             emit(
               LoginFailed(
-                errorMessage: e.message,
+                errorMessage: 'Akun Anda tidak diijinkan untuk mengakses Kendedes Mobile',
                 data: state.data.copyWith(
                   isLoginGoogleLoading: false,
                   isLoginGoogleFailed: true,

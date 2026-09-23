@@ -365,17 +365,6 @@ class MoveDbRepository {
       return true;
     }
 
-    List<String> projectIds =
-        (await getProjectsByUser(userId)).map((p) => p.id).toList();
-    final businessCount = await getBusinessCountBySlsId(slsId, projectIds);
-    if (businessCount == null) {
-      return true;
-    }
-
-    if (slsWithBusinessCount != businessCount) {
-      return true;
-    }
-
     final hasPolygon = await hasPolygonBySlsId(slsId, userId);
     return !hasPolygon;
   }

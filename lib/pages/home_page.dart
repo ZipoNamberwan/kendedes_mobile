@@ -420,19 +420,19 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-                  const SizedBox(height: 14),
-                  _buildMenuCard(
-                    context: context,
-                    title: 'Deteksi Anomali',
-                    subtitle: 'Daftar anomali dan kejanggalan data.',
-                    icon: Icons.warning_amber_rounded,
-                    iconColor: Colors.red,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const AnomalyPage()),
-                      );
-                    },
-                  ),
+                  // const SizedBox(height: 14),
+                  // _buildMenuCard(
+                  //   context: context,
+                  //   title: 'Deteksi Anomali',
+                  //   subtitle: 'Daftar anomali dan kejanggalan data.',
+                  //   icon: Icons.warning_amber_rounded,
+                  //   iconColor: Colors.red,
+                  //   onTap: () {
+                  //     Navigator.of(context).push(
+                  //       MaterialPageRoute(builder: (_) => const AnomalyPage()),
+                  //     );
+                  //   },
+                  // ),
                   // const SizedBox(height: 14),
                   // _buildMenuCard(
                   //   context: context,

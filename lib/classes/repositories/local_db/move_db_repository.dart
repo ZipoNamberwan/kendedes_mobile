@@ -107,8 +107,22 @@ class MoveDbRepository {
     return items;
   }
 
-  Future<void> insertOrUpdate(TagData business) async {
-    await _moveDbProvider.insertOrUpdate(business.toLocalDbJson());
+  Future<void> insertOrUpdate(TagData business, String userId) async {
+    final businessJson = Map<String, dynamic>.from(business.toLocalDbJson());
+
+    // Business from server still holds server project id, replace it with existing project's local id
+    final existingProjects = await getProjectsByUser(userId);
+    final matchingProject = existingProjects.firstWhere(
+      (project) => project.remoteId == business.project.remoteId,
+      orElse:
+          () =>
+              throw StateError(
+                'Project not found for remote_id=${business.project.remoteId}',
+              ),
+    );
+    businessJson['project_id'] = matchingProject.id;
+
+    await _moveDbProvider.insertOrUpdate(businessJson);
   }
 
   Future<void> insertBusinessesDataBatch(

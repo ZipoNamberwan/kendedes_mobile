@@ -1404,7 +1404,10 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
         }
 
         // save new moved position to local DB
-        await MoveDbRepository().insertOrUpdate(updatedTag);
+        await MoveDbRepository().insertOrUpdate(
+          updatedTag,
+          state.data.currentUser?.id ?? '',
+        );
 
         final updatedBusinesses =
             state.data.businesses
@@ -1439,7 +1442,10 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               hasChanged: false,
               hasSentToServer: true,
             );
-            await MoveDbRepository().insertOrUpdate(savedTag);
+            await MoveDbRepository().insertOrUpdate(
+              savedTag,
+              state.data.currentUser?.id ?? '',
+            );
 
             final syncedBusinesses =
                 state.data.businesses

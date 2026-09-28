@@ -40,6 +40,7 @@ class MoveDbRepository {
     final userJson = user?.toJson();
 
     final maps = await _moveDbProvider.getProjectsByUser(currentUserId);
+
     return maps.map((map) {
       final mutableMap = Map<String, dynamic>.from(map);
       if (userJson != null) {
@@ -306,12 +307,15 @@ class MoveDbRepository {
     }).toList();
   }
 
-  Future<List<TagData>> getBusinessesBySls(String slsId, String userId) async {
+  Future<List<TagData>> getBusinessesBySls(
+    String slsLongCode,
+    String userId,
+  ) async {
     final existingProjects = await getProjectsByUser(userId);
     final projectIds = existingProjects.map((p) => p.id).toList();
 
     final businessMaps = await _moveDbProvider.getBusinessesBySls(
-      slsId,
+      slsLongCode,
       projectIds,
     );
     final existingUsers = await getAllUsers();

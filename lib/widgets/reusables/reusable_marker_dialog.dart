@@ -6,8 +6,14 @@ import 'package:kendedes_mobile/models/tag_data.dart';
 class ReusableMarkerDialog extends StatelessWidget {
   final TagData tagData;
   final void Function(TagData tagData)? onMove;
+  final void Function(TagData tagData)? onOpenInWeb;
 
-  const ReusableMarkerDialog({super.key, required this.tagData, this.onMove});
+  const ReusableMarkerDialog({
+    super.key,
+    required this.tagData,
+    this.onMove,
+    this.onOpenInWeb,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +97,7 @@ class ReusableMarkerDialog extends StatelessWidget {
                       ),
                     if (tagData.project.type.key == ProjectType.enumeration.key)
                       _buildInfoRow(
-                        'Wilayah Berdasarkan Hasil Pencacahan',
+                        'Wilayah Berdasarkan Prelist SE2026',
                         tagData.originalArea ?? 'Tidak tersedia',
                       ),
                     if (tagData.buildingNumber != null)
@@ -111,19 +117,26 @@ class ReusableMarkerDialog extends StatelessWidget {
                 ),
               ),
             ),
-            if (onMove != null && tagData.canMove)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (onOpenInWeb != null && tagData.shouldShowFasihUrl())
+                    _buildActionButton(
+                      icon: Icons.open_in_browser,
+                      label: 'Lihat di Web',
+                      color: Colors.orange,
+                      onPressed: () => onOpenInWeb!(tagData),
+                    ),
+                  if (onMove != null && tagData.canMove)
                     _buildActionButton(
                       icon: Icons.open_with,
                       label: 'Pindah',
@@ -133,9 +146,9 @@ class ReusableMarkerDialog extends StatelessWidget {
                         onMove!(tagData);
                       },
                     ),
-                  ],
-                ),
+                ],
               ),
+            ),
           ],
         ),
       ),

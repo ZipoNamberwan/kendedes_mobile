@@ -133,14 +133,16 @@ class MoveDbProvider {
   }
 
   Future<List<Map<String, dynamic>>> getBusinessesBySls(
-    String slsId,
+    String slsLongCode,
     List<String> projectIds,
   ) async {
+    
     final placeholders = List.filled(projectIds.length, '?').join(', ');
     final result = await _dbProvider.db.query(
       'tag_data',
-      where: 'sls_id = ? AND project_id IN ($placeholders)',
-      whereArgs: [slsId, ...projectIds],
+      where:
+          'substr(original_area, 1, 14) = substr(?, 1, 14) AND project_id IN ($placeholders)',
+      whereArgs: [slsLongCode, ...projectIds],
     );
     return result;
   }

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
+import 'package:kendedes_mobile/models/interaction_mode.dart';
 import 'package:kendedes_mobile/models/project.dart';
 import 'package:kendedes_mobile/models/survey.dart';
 import 'package:kendedes_mobile/models/user.dart';
@@ -469,6 +470,10 @@ class TagData {
 
   @override
   String toString() => 'TagData(id: $id, businessName: $businessName)';
+
+  bool shouldShowFasihUrl() {
+    return project.interactionMode.key == InteractionMode.move.key;
+  }
 }
 
 enum TagType { auto, manual, move }

@@ -29,6 +29,7 @@ import 'package:kendedes_mobile/widgets/reusables/reusable_sls_finder_widget.dar
 import 'package:kendedes_mobile/widgets/reusables/reusable_sls_update_dialog.dart';
 import 'package:kendedes_mobile/widgets/reusables/reusable_sls_with_business_sidebar.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/custom_snackbar.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/error_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/loading_scaffold.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/message_dialog.dart';
@@ -678,6 +679,9 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
       builder:
           (context) => ReusableMarkerDialog(
             tagData: tagData,
+            onOpenInWeb: (tagData) {
+              _moveBloc.add(OpenTagDataInWeb(tagData: tagData));
+            },
             onMove: (tagData) {
               _moveBloc.add(StartMoveMode(tagData: tagData));
               _mapController.move(
@@ -687,6 +691,13 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
             },
           ),
     );
+  }
+
+  Future<void> _openUrlInBrowser(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   // Helper: pixel distance between two points
@@ -942,6 +953,8 @@ class _MovePageState extends State<MovePage> with TickerProviderStateMixin {
             state.data.slsWithBusinessListForUpdate,
             false,
           );
+        } else if (state is TagDataWebUrlReady) {
+          _openUrlInBrowser(state.url);
         } else if (state is MoveTagSuccess) {
           CustomSnackBar.showSuccess(
             context,

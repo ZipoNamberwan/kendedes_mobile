@@ -292,6 +292,14 @@ class MoveTagError extends MoveState {
   List<Object> get props => [data, errorMessage];
 }
 
+class TagDataWebUrlReady extends MoveState {
+  final String url;
+  const TagDataWebUrlReady({required this.url, required super.data});
+
+  @override
+  List<Object> get props => [data, url];
+}
+
 class MoveTagSuccess extends MoveState {
   const MoveTagSuccess({required super.data});
 

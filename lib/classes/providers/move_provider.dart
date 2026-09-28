@@ -1,3 +1,4 @@
+import 'package:kendedes_mobile/classes/app_config.dart';
 import 'package:kendedes_mobile/classes/providers/local_db/local_db_provider.dart';
 import 'package:kendedes_mobile/classes/services/dio_service.dart';
 import 'package:kendedes_mobile/models/area/sls.dart';
@@ -28,6 +29,10 @@ class MoveProvider {
       queryParameters: {'sls': slsId},
     );
     return Map<String, dynamic>.from(response.data['data']);
+  }
+
+  String getTagDataWebUrl(String remoteId) {
+    return '${AppConfig.apiUrl}/fasih/tag_data/$remoteId';
   }
 
   Future<List<Village>> getVillagesBySubdistrictId(String subdistrictId) async {

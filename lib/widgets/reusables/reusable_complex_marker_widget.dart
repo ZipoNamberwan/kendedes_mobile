@@ -65,20 +65,32 @@ class ReusableComplexMarkerWidget extends StatelessWidget {
               onTap: isMoveMode ? null : onTap, // Disable tap when in move mode
               child: Container(
                 // duration: const Duration(milliseconds: 300),
-                width: isSelected ? 40 : 30,
-                height: isSelected ? 40 : 30,
+                width:
+                    isSelected
+                        ? MapConfig.complexMarkerCircleSizeSelected
+                        : MapConfig.complexMarkerCircleSize,
+                height:
+                    isSelected
+                        ? MapConfig.complexMarkerCircleSizeSelected
+                        : MapConfig.complexMarkerCircleSize,
                 decoration: BoxDecoration(
                   color: displayColor,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: Colors.white,
-                    width: isSelected ? 4 : 3,
+                    width:
+                        isSelected
+                            ? MapConfig.complexMarkerBorderWidthSelected
+                            : MapConfig.complexMarkerBorderWidth,
                   ),
                 ),
                 child: Icon(
                   Icons.location_on,
                   color: Colors.white,
-                  size: isSelected ? 20 : 16,
+                  size:
+                      isSelected
+                          ? MapConfig.complexMarkerIconSizeSelected
+                          : MapConfig.complexMarkerIconSize,
                 ),
               ),
             ),

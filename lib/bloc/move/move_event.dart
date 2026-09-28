@@ -218,6 +218,14 @@ class StartMoveMode extends MoveEvent {
   List<Object?> get props => [tagData];
 }
 
+class OpenTagDataInWeb extends MoveEvent {
+  final TagData tagData;
+  const OpenTagDataInWeb({required this.tagData});
+
+  @override
+  List<Object?> get props => [tagData];
+}
+
 class MoveTag extends MoveEvent {
   final LatLng newPosition;
   const MoveTag({required this.newPosition});

@@ -155,7 +155,7 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
           // 2. If local data is sufficient, load from DB and return early
           if (!needToDownload) {
             final localBusinesses = await moveDbRepository.getBusinessesBySls(
-              event.sls.id,
+              event.sls.longCode,
               currentUserId,
             );
             final localPolygon = await polygonDbRepository.getPolygonById(
@@ -191,7 +191,7 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               response['businesses'] != null
                   ? List<Map<String, dynamic>>.from(
                     response['businesses'],
-                  ).map((data) => TagData.fromServerJson(data)).toList()
+                  ).map((data) => _withMoveMode(TagData.fromServerJson(data))).toList()
                   : [];
 
           if (businesses.isEmpty) {
@@ -342,7 +342,7 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               response['businesses'] != null
                   ? List<Map<String, dynamic>>.from(
                     response['businesses'],
-                  ).map((data) => TagData.fromServerJson(data)).toList()
+                  ).map((data) => _withMoveMode(TagData.fromServerJson(data))).toList()
                   : [];
 
           if (businesses.isEmpty) {
@@ -1170,7 +1170,7 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
               response['businesses'] != null
                   ? List<Map<String, dynamic>>.from(
                     response['businesses'],
-                  ).map((data) => TagData.fromServerJson(data)).toList()
+                  ).map((data) => _withMoveMode(TagData.fromServerJson(data))).toList()
                   : [];
 
           if (businesses.isEmpty) {
@@ -1365,6 +1365,15 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
       );
     });
 
+    on<OpenTagDataInWeb>((event, emit) {
+      emit(
+        TagDataWebUrlReady(
+          url: MoveRepository().getTagDataWebUrl(event.tagData.remoteId),
+          data: state.data,
+        ),
+      );
+    });
+
     on<MoveTag>((event, emit) {
       final originalTag = state.data.originalMovedTag;
       if (originalTag == null) return;
@@ -1474,6 +1483,11 @@ class MoveBloc extends Bloc<MoveEvent, MoveState> {
       }
     });
   }
+
+  // Server data comes with a placeholder interaction mode, stamp it as move to match the local DB copy
+  TagData _withMoveMode(TagData business) => business.copyWith(
+    project: business.project.copyWith(interactionMode: InteractionMode.move),
+  );
 
   List<Sls> _getSlsFilterOptions(List<TagData> businesses) {
     return businesses

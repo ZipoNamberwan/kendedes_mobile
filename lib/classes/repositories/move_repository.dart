@@ -25,6 +25,10 @@ class MoveRepository {
     return response;
   }
 
+  String getTagDataWebUrl(String remoteId) {
+    return _moveProvider.getTagDataWebUrl(remoteId);
+  }
+
   Future<List<Village>> getVillagesBySubdistrictId(String subdistrictId) async {
     return await _moveProvider.getVillagesBySubdistrictId(subdistrictId);
   }

@@ -11,7 +11,6 @@ import 'package:kendedes_mobile/pages/move_page.dart';
 import 'package:kendedes_mobile/pages/photo_util/photo_list_page.dart';
 // import 'package:kendedes_mobile/pages/project_list_page.dart';
 import 'package:kendedes_mobile/pages/kbli_util/top_kbli_page.dart';
-import 'package:kendedes_mobile/pages/anomaly_util/anomaly_page.dart';
 import 'package:kendedes_mobile/widgets/logout_confirmation_dialog.dart';
 import 'package:kendedes_mobile/widgets/other_widgets/about_app_dialog.dart';
 import 'package:kendedes_mobile/widgets/profile_form_dialog.dart';
